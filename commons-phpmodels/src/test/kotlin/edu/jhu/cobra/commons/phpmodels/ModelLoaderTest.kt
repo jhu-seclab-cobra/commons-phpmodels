@@ -15,8 +15,8 @@ import kotlin.test.assertNull
  *   spellings route to their subtypes.
  * - `generator entry decodes beside flat models` — deduction routes the
  *   name/find/where/model form.
- * - `signature narrows per subject kind` — callable, class, typed, and
- *   property signatures selected by the entry's subject.
+ * - `signature narrows per subject kind` — callable, class, typed (with its
+ *   literal value), and property signatures selected by the entry's subject.
  * - `signature-only entry asserts existence` — an empty body beside a
  *   signature loads.
  * - `propagation beside a callable signature derives returns` — the
@@ -166,6 +166,7 @@ internal class ModelLoaderTest {
                     constant: PHP_EOL
                   signature:
                     type: string
+                    value: "\n"
                 - subject:
                     property: mysqli::${'$'}insert_id
                   signature:
@@ -181,7 +182,8 @@ internal class ModelLoaderTest {
         assertEquals(Classifier.CLASS, classSig.classifier)
         assertEquals("base", classSig.parent)
         assertEquals(listOf("traversable"), classSig.interfaces)
-        assertIs<SignatureInfo.TypedSignature>(assertIs<SubjectModel>(entries[2]).signature)
+        val typed = assertIs<SignatureInfo.TypedSignature>(assertIs<SubjectModel>(entries[2]).signature)
+        assertEquals("\n", typed.value)
         val property = assertIs<SignatureInfo.PropertySignature>(assertIs<SubjectModel>(entries[3]).signature)
         assertEquals(Visibility.PUBLIC, property.visibility)
     }

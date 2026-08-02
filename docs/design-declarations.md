@@ -38,7 +38,8 @@ describable kind, holding exactly the fields
   `returnType: DeclaredType` (function, method)
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`
-- `TypedSignature` — `type: DeclaredType` (constant, class constant)
+- `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
+  class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
   `static: Boolean`
 

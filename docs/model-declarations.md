@@ -17,7 +17,11 @@ declaration kind, with no nesting of one declaration inside another.
   kind:
   - *function*, *method* — parameter list, declared return type.
   - *class* — classifier (class, interface, trait, enum), parent, interfaces.
-  - *constant*, *class constant* — declared type.
+  - *constant*, *class constant* — declared type, literal value. The value
+    is the constant's spelled literal, stored losslessly; absent when the
+    declaring source does not state one (hand-written entries). Consumers
+    that materialize built-in constants read it; it never influences the
+    returns classification.
   - *property* — declared type, visibility, static.
   - *predefined variable* — no signature; superglobals are hand-declared.
 - **Parameter** — One declared parameter: name, declared type, optional,

@@ -56,11 +56,13 @@ public sealed interface SignatureInfo {
     }
 
     /**
-     * A typed value declaration: the declared type alone (constant and
-     * class-constant subjects).
+     * A typed value declaration: declared type and, when the declaring source
+     * states one, the spelled literal value (constant and class-constant
+     * subjects).
      */
     public data class TypedSignature(
         val type: DeclaredType,
+        val value: String? = null,
     ) : SignatureInfo
 
     /**
