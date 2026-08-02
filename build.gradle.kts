@@ -21,7 +21,7 @@ subprojects {
     apply(plugin = "io.gitlab.arturbosch.detekt")
 
     group = "edu.jhu.cobra"
-    version = "0.1.0"
+    version = "0.1.1"
 
     repositories {
         mavenCentral()
@@ -32,7 +32,6 @@ subprojects {
         explicitApi()
         jvmToolchain {
             languageVersion.set(JavaLanguageVersion.of(jvmVersion))
-            vendor.set(JvmVendorSpec.ADOPTIUM)
         }
     }
 
