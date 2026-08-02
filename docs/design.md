@@ -11,7 +11,8 @@ and the sectioned model body. Entry forms and generators:
 - **Classes:** `VulnClassId`, `ProvenanceId` (value classes), `VulnClassDecl`,
   `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `Propagation`,
   `SourceDecl`, `SinkPoint`, `SanitizerDecl`, `ModelBody`, `ValueSemantics`,
-  `ModelYaml` (object), `VocabularyLoader` (object), `PolicyLoader` (object)
+  `ModelYaml` (internal object), `VocabularyLoader` (object), `PolicyLoader`
+  (object), `ModelLoader` (object)
 - **Sealed hierarchies:** `ModelSubject` (seven subtypes:
   `FunctionSubject`, `ClassSubject`, `MethodSubject`, `ClassConstantSubject`,
   `PropertySubject`, `ConstantSubject`, `VariableSubject`); `Port`
@@ -20,8 +21,8 @@ and the sectioned model body. Entry forms and generators:
 - **Relationships:** `ModelBody` contains the optional section values;
   `Propagation` contains two `Port`s; `SinkPoint` contains one
   `Port.Argument` and one `VulnClassId`; `TaintPolicy` is built from
-  `PolicyRow`s; `VocabularyLoader` and `PolicyLoader` decode through
-  `ModelYaml`. All arrows one-way into the data types.
+  `PolicyRow`s; the three loaders decode through `ModelYaml`. All arrows
+  one-way into the data types.
 - **Exceptions:** `VocabularyException` extends `IllegalArgumentException`,
   raised on undeclared or duplicate vocabulary references;
   `IllegalArgumentException` from `init` blocks and creators on every other
@@ -31,9 +32,11 @@ and the sectioned model body. Entry forms and generators:
   library.
 
 Package `edu.jhu.cobra.commons.phpmodels`, single module, `explicitApi()`.
-Every type above is public — exposing them is the library's purpose.
-Dependencies: Jackson (`jackson-dataformat-yaml`, `jackson-module-kotlin`)
-only. No dependency on any analyzer or value-lattice library.
+Every model type is public — exposing them is the library's purpose.
+`ModelYaml` is internal: no Jackson type crosses the public API, so Jackson
+stays an `implementation` dependency. Dependencies: Jackson
+(`jackson-dataformat-yaml`, `jackson-module-kotlin`) only. No dependency on
+any analyzer or value-lattice library.
 
 ## Class / Type Specifications
 
@@ -87,15 +90,18 @@ forbidden elsewhere, leading namespace slashes stripped). Violations throw
 `IllegalArgumentException` inside the creator. Jackson mechanism verified in
 [impl.md](impl.md).
 
-**Subtypes and identity:**
-- `FunctionSubject(name)` — folded.
-- `ClassSubject(name)` — folded.
-- `MethodSubject(owner, name)` — both folded; spelled `class::name`.
-- `ClassConstantSubject(owner, name)` — owner folded, name sensitive.
-- `PropertySubject(owner, name)` — owner folded, name sensitive; spelled
-  `class::$name`, stored without the `$`.
-- `ConstantSubject(name)` — sensitive.
-- `VariableSubject(name)` — folded; spelled `$name`, stored without the `$`.
+**Subtypes, YAML kind keys, and identity:**
+- `FunctionSubject(name)` — `function:`, folded.
+- `ClassSubject(name)` — `class:`, folded.
+- `MethodSubject(owner, name)` — `method:`, both folded; spelled
+  `class::name`.
+- `ClassConstantSubject(owner, name)` — `class_constant:`, owner folded,
+  name sensitive.
+- `PropertySubject(owner, name)` — `property:`, owner folded, name
+  sensitive; spelled `class::$name`, stored without the `$`.
+- `ConstantSubject(name)` — `constant:`, sensitive.
+- `VariableSubject(name)` — `variable:`, folded; spelled `$name`, stored
+  without the `$`.
 
 **Validation:** blank identity fields are rejected in `init`.
 
@@ -130,20 +136,22 @@ port under one category; a non-empty neutralized category set.
 ### ModelBody
 
 **Responsibility:** The sectioned statement of one model: five optional
-assertion sections, at least one section present (counting the signature at
-the entry level). One shape shared by the flat entry and the generator body,
-so a body written in either form carries the same validation.
+assertion sections. One shape shared by the flat entry and the generator
+body, so a body written in either form carries the same validation. An
+all-absent body is constructible — a signature-only entry has one — and the
+at-least-one-section rule therefore lives at the entry level, where the
+signature is visible: `SubjectModel` requires a signature or a non-empty
+body, `ModelGenerator` requires a non-empty body.
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `sources: List<SourceDecl>?`, `sinks: List<SinkPoint>?`,
 `sanitizers: List<SanitizerDecl>?`.
 
-**Validation (`init`):** at least one section declared; propagation requires
-returns (the value-semantics unit is asserted whole or not at all — the
-signature-derived completion happens in the entry, before construction); a
-declared section is non-empty.
+**Validation (`init`):** propagation requires returns (the value-semantics
+unit is asserted whole or not at all — the signature-derived completion
+happens in the entry, before construction); a declared section is non-empty.
 
-**Methods:** `declaresOnlySources: Boolean`;
+**Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
 `fun valueSemantics(): ValueSemantics?` — null when returns is undeclared.
 
 ### ValueSemantics
@@ -162,29 +170,33 @@ interpretable body: `STR`, `NUM`, `BOOL`, `ANY`.
 `ANY` otherwise. Mapping into a consumer's value lattice is the consumer's
 extension; this library owns no lattice type.
 
-### ModelYaml
+### ModelYaml (internal)
 
 **Responsibility:** The one YAML decoder every document of the format passes
 through, so the strictness is declared once: `FAIL_ON_UNKNOWN_PROPERTIES`
 and `ACCEPT_CASE_INSENSITIVE_ENUMS` on a Kotlin-module mapper
-([impl.md](impl.md)).
+([impl.md](impl.md)). Wraps every `JsonProcessingException` in
+`IllegalArgumentException` with the underlying reason. Internal — the three
+loaders are the public surface, so no Jackson type crosses the API.
+
+### VocabularyLoader, PolicyLoader, ModelLoader
+
+**Responsibility:** The public decode surface, one loader per document kind,
+each reading a caller-supplied `InputStream`. Where the documents live —
+classpath resource, file, artifact — is the caller's value placement, not
+this library's.
 
 **Methods:**
-- `fun <T> decode(input: InputStream, shape: TypeReference<T>): T` — decodes
-  one document; wraps every `JsonProcessingException` in
-  `IllegalArgumentException` with the underlying reason. The caller owns the
-  stream and its origin — this library reads no classpath resource of its
-  own.
-
-### VocabularyLoader, PolicyLoader
-
-**Responsibility:** Decode one vocabulary / policy document from a
-caller-supplied stream into `Vocabulary` / `List<PolicyRow>`, interning
-names and validating references. A repeated name within a vocabulary section
-is a `VocabularyException` (one of the two declarations would be lost).
-`PolicyLoader.load(input, vocabulary)` validates every row tag against the
-supplied vocabulary. Where the documents live — classpath resource, file,
-artifact — is the caller's value placement, not this library's.
+- `VocabularyLoader.load(input): Vocabulary` — interns names; a repeated
+  name within a section is a `VocabularyException` (one of the two
+  declarations would be lost).
+- `PolicyLoader.load(input, vocabulary): List<PolicyRow>` — validates every
+  row tag against the supplied vocabulary.
+- `ModelLoader.load(input): List<ModelEntry>` — decodes one model document's
+  entries ([design-generators.md](design-generators.md)); construction-time
+  validation runs during the decode. Vocabulary interning of the entries'
+  color and category references stays with the caller, which owns the
+  cross-document load order.
 
 ## Exception / Error Types
 

@@ -73,6 +73,8 @@ and compose into the body.
   into the value-semantics unit with the derived classification before body
   construction, so `ModelBody`'s propagation-requires-returns rule holds
   unchanged.
+- At least one section present: a signature or a non-empty body — an entry
+  asserting nothing is a load failure.
 - Body-internal validation lives in `ModelBody` ([design.md](design.md)).
 
 ### SubjectKind
@@ -110,8 +112,10 @@ every generated declaration traces back to.
 `val where: List<SubjectConstraint>`, `val model: ModelBody`.
 
 **Validation (`init`):** `name` is non-blank; `where` contains at least one
-`NameConstraint`; a `ClassConstraint` requires `find == METHOD`;
-`find == VARIABLE` ⟹ the body declares only sources. Name uniqueness spans
+`NameConstraint`; a `ClassConstraint` requires `find == METHOD`; the body
+is non-empty (a generator attaches no signature, so an empty body asserts
+nothing); `find == VARIABLE` ⟹ the body declares only sources. Name
+uniqueness spans
 one whole load across layers, so it is the loading consumer's check, not
 this class's.
 
