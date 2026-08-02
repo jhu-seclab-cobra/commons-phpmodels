@@ -54,6 +54,12 @@ spelling only.
 | Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the guard scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
 | Optional `when` field (`@param:JsonProperty("when")`, nullable, defaulted) on the flat model form | Decodes when present, stays null when absent; deduction routing unchanged | — |
 | `when` key on the generator form | Rejected — the field belongs to the flat form only | `UnrecognizedPropertyException` |
+| Sealed interface + `@JsonTypeInfo(Id.NAME, As.WRAPPER_OBJECT)` + `@JsonSubTypes` | One-key mapping (`function: strlen`) routes the wrapper key to the named subtype's delegating string creator | — |
+| Unknown wrapper key (`trait: foo`) | Rejected | `InvalidTypeIdException` |
+| `require(...)` inside a wrapper-routed delegating creator | Rejected at decode | `ValueInstantiationException` |
+| `init { require(...) }` in a `@JvmInline value class` | Rejected at decode — the value-class unwrapping path wraps the `IllegalArgumentException` in a plain `JsonMappingException`, **not** `ValueInstantiationException` | `JsonMappingException` |
+| Creator parameters `(kind: String, signature: JsonNode)` + `treeToValue(node, subtype)` inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |
+| Stray key inside a `treeToValue`-narrowed node | Rejected — the inner failure propagates unwrapped, not re-wrapped as `ValueInstantiationException` | `UnrecognizedPropertyException` |
 
 All failure types extend `JsonMappingException`, itself a
 `JsonProcessingException`. One catch in `ModelYaml.decode` therefore covers
@@ -67,6 +73,8 @@ every decode failure, which is what lets a caller present a single
   with the types in the implementation phase. Re-verify by running the probe
   tests after any Jackson version bump.
 - The one-key subject mapping (`function: strlen`) and the entry-level
-  signature deduction are new to this library; their Jackson mechanisms are
-  pinned by probes here before the production types rely on them, and their
-  verified rows are added to the table above as they land.
+  signature narrowing are pinned by `JacksonSubjectProbeTest`; their verified
+  rows are in the table above. Two failure types differ from the general
+  pattern — a value-class `init` failure and a stray key under `treeToValue`
+  — but both still extend `JsonProcessingException`, so the single-catch
+  contract in `ModelYaml` is unaffected.
