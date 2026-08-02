@@ -25,7 +25,6 @@ import kotlin.test.assertIs
  * not leak in.
  */
 class JacksonSubjectProbeTest {
-
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
     @JsonSubTypes(
         JsonSubTypes.Type(value = ProbeFunction::class, name = "function"),
@@ -33,7 +32,9 @@ class JacksonSubjectProbeTest {
     )
     sealed interface ProbeSubject
 
-    class ProbeFunction(val name: String) : ProbeSubject {
+    class ProbeFunction(
+        val name: String,
+    ) : ProbeSubject {
         companion object {
             @JvmStatic
             @JsonCreator
@@ -41,7 +42,10 @@ class JacksonSubjectProbeTest {
         }
     }
 
-    class ProbeMethod(val owner: String, val name: String) : ProbeSubject {
+    class ProbeMethod(
+        val owner: String,
+        val name: String,
+    ) : ProbeSubject {
         companion object {
             @JvmStatic
             @JsonCreator
@@ -53,14 +57,17 @@ class JacksonSubjectProbeTest {
         }
     }
 
-    data class ProbeEntry(val subject: ProbeSubject, val note: String? = null)
+    data class ProbeEntry(
+        val subject: ProbeSubject,
+        val note: String? = null,
+    )
 
-    private val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
-        .registerKotlinModule()
-        .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+    private val mapper: ObjectMapper =
+        ObjectMapper(YAMLFactory())
+            .registerKotlinModule()
+            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
-    private inline fun <reified T> decode(yaml: String): T =
-        mapper.readValue(yaml, jacksonTypeRef<T>())
+    private inline fun <reified T> decode(yaml: String): T = mapper.readValue(yaml, jacksonTypeRef<T>())
 
     @Test
     fun `wrapper object key routes to the subtype string creator`() {
@@ -96,9 +103,10 @@ class JacksonSubjectProbeTest {
         // The value-class unwrapping path reports the init failure as a plain
         // JsonMappingException (not ValueInstantiationException); still a
         // JsonProcessingException, so the one-catch load boundary holds.
-        val failure = assertFailsWith<JsonMappingException> {
-            decode<ProbeTyped>("type: 'not a type!'\n")
-        }
+        val failure =
+            assertFailsWith<JsonMappingException> {
+                decode<ProbeTyped>("type: 'not a type!'\n")
+            }
         assertIs<IllegalArgumentException>(failure.cause)
         assertEquals("int", decode<ProbeTyped>("type: int\n").type.raw)
     }
@@ -123,17 +131,26 @@ class JacksonSubjectProbeTest {
 }
 
 @JvmInline
-value class ProbeType(val raw: String) {
+value class ProbeType(
+    val raw: String,
+) {
     init {
         require(raw.all { it.isLetterOrDigit() || it == '_' || it == '\\' }) { "Bad type '$raw'" }
     }
 }
 
-data class ProbeTyped(val type: ProbeType)
+data class ProbeTyped(
+    val type: ProbeType,
+)
 
 sealed interface ProbeSig {
-    data class Callable(val returnType: String) : ProbeSig
-    data class Typed(val type: String) : ProbeSig
+    data class Callable(
+        val returnType: String,
+    ) : ProbeSig
+
+    data class Typed(
+        val type: String,
+    ) : ProbeSig
 }
 
 /**
@@ -141,11 +158,15 @@ sealed interface ProbeSig {
  * signature as a raw tree and converts it to the subtype the sibling `kind`
  * field selects, through the same strict mapper.
  */
-class ProbeSigEntry private constructor(val kind: String, val signature: ProbeSig) {
+class ProbeSigEntry private constructor(
+    val kind: String,
+    val signature: ProbeSig,
+) {
     companion object {
-        private val mapper: ObjectMapper = ObjectMapper(YAMLFactory())
-            .registerKotlinModule()
-            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        private val mapper: ObjectMapper =
+            ObjectMapper(YAMLFactory())
+                .registerKotlinModule()
+                .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
         @JvmStatic
         @JsonCreator
@@ -153,10 +174,11 @@ class ProbeSigEntry private constructor(val kind: String, val signature: ProbeSi
             kind: String,
             signature: com.fasterxml.jackson.databind.JsonNode,
         ): ProbeSigEntry {
-            val decoded: ProbeSig = when (kind) {
-                "callable" -> mapper.treeToValue(signature, ProbeSig.Callable::class.java)
-                else -> mapper.treeToValue(signature, ProbeSig.Typed::class.java)
-            }
+            val decoded: ProbeSig =
+                when (kind) {
+                    "callable" -> mapper.treeToValue(signature, ProbeSig.Callable::class.java)
+                    else -> mapper.treeToValue(signature, ProbeSig.Typed::class.java)
+                }
             return ProbeSigEntry(kind, decoded)
         }
     }

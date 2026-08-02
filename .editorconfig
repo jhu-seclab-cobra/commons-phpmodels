@@ -1,0 +1,6 @@
+root = true
+
+# Aligns ktlint's wrapping rules with detekt's MaxLineLength (120), so the
+# two checks agree on which lines must break.
+[*.{kt,kts}]
+max_line_length = 120
