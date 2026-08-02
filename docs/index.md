@@ -1,0 +1,19 @@
+# commons-phpmodels — the declarative model format for PHP declarations
+
+Sectioned models — one entry per PHP declaration asserting value semantics,
+taint effects, and signatures — the subjects they name, the two-axis color
+vocabulary and policy they validate against, and the strict YAML decoding
+that rejects malformed configuration. Consumers (analyzers, compilers) own
+layer ordering, branch selection, subject resolution, and every query.
+
+| File | Content |
+|------|---------|
+| concept.md | Problem, scope, terminology, data flow, scenarios. |
+| model.md | Model sections, subjects, color model, relations, invariants. |
+| model-guards.md | Conditional models: when guard, branches, combination semantics. |
+| model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
+| design.md | Vocabulary, policy, subjects, ports, body types, decoder, loaders. |
+| design-generators.md | Entry forms, generator constraints, entry-level validation. |
+| design-guards.md | Guard types and the guard scalar. |
+| design-declarations.md | Signature types, parameters, declared-type vocabulary. |
+| impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
