@@ -17,3 +17,4 @@ layer ordering, branch selection, subject resolution, and every query.
 | design-guards.md | Guard types and the guard scalar. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
 | impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
+| llms.txt | Agent-consumable documentation index (llmstxt.org format). |

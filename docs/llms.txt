@@ -1,0 +1,30 @@
+# commons-phpmodels
+
+> Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
+
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
+
+## Instructions for Agents
+
+- Call `ModelLoader.load(input)` to decode a model document into `List<ModelEntry>`.
+- Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
+- Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
+- Intern color and category strings of decoded model entries through `Vocabulary.requireProvenance` / `Vocabulary.requireVulnClass` — `ModelLoader` does not.
+- Never write `returns:` beside a callable `signature:` in a model file — load failure.
+- Never hand-build subject instances from split strings — pass the PHP-native spelling to the subtype creator.
+
+## Loading
+
+- [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
+
+## Decoded Types
+
+- [Entries and Bodies](llms/entries.md): `ModelEntry`, `SubjectModel`, `ModelGenerator`, `ModelBody`, guards, ports, propagation.
+- [Subjects and Signatures](llms/subjects.md): The seven subject kinds, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
+- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, interned identifiers, `TaintPolicy`.
+
+## Optional
+
+- [Concepts](concept.md): Problem, scope, terminology, data flow, scenarios.
+- [Domain model](model.md): Model sections, subjects, color model, invariants.
+- [Design](design.md): Full type specifications and validation rules.

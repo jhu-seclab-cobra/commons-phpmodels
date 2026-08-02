@@ -1,0 +1,211 @@
+# commons-phpmodels
+
+> Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
+
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
+
+## Instructions for Agents
+
+- Call `ModelLoader.load(input)` to decode a model document into `List<ModelEntry>`.
+- Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
+- Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
+- Intern color and category strings of decoded model entries through `Vocabulary.requireProvenance` / `Vocabulary.requireVulnClass` — `ModelLoader` does not.
+- Never write `returns:` beside a callable `signature:` in a model file — load failure.
+- Never hand-build subject instances from split strings — pass the PHP-native spelling to the subtype creator.
+
+## Loading
+
+- [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
+
+## Decoded Types
+
+- [Entries and Bodies](llms/entries.md): `ModelEntry`, `SubjectModel`, `ModelGenerator`, `ModelBody`, guards, ports, propagation.
+- [Subjects and Signatures](llms/subjects.md): The seven subject kinds, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
+- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, interned identifiers, `TaintPolicy`.
+
+## Optional
+
+- [Concepts](concept.md): Problem, scope, terminology, data flow, scenarios.
+- [Domain model](model.md): Model sections, subjects, color model, invariants.
+- [Design](design.md): Full type specifications and validation rules.
+
+---
+
+# Referenced Documents
+
+## Source: llms/loaders.md
+
+# Loaders
+
+> Public decode surface: one loader object per document kind, reading a caller-supplied `InputStream`.
+
+## Quick Start
+
+```kotlin
+val vocabulary = VocabularyLoader.load(vocabYaml.byteInputStream())
+val policy = PolicyLoader.load(policyYaml.byteInputStream(), vocabulary)
+val entries = ModelLoader.load(modelsYaml.byteInputStream())
+```
+
+## API
+
+- **`ModelLoader.load(input: InputStream): List<ModelEntry>`** — Decodes one model document's entries in file order. Raises `IllegalArgumentException` on any format violation.
+- **`VocabularyLoader.load(input: InputStream): Vocabulary`** — Decodes the two-axis vocabulary. Raises `VocabularyException` when a name repeats within a section.
+- **`PolicyLoader.load(input: InputStream, vocabulary: Vocabulary): List<PolicyRow>`** — Decodes policy rows, interning every tag against `vocabulary`. Raises `VocabularyException` on an undeclared color or category.
+
+## Configuration
+
+- No configuration. Document location — classpath resource, file, artifact — is the caller's choice; loaders take streams only.
+- Vocabulary document keys: `vulnClasses`, `provenances`; each entry carries `name` and `description`.
+- Policy row keys: `origin` (one provenance name), `enables` (list of vuln-class names).
+
+## Gotchas
+
+- Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
+- The input stream is consumed and closed by the load call.
+- `VocabularyException` extends `IllegalArgumentException`; one catch covers both.
+- `ModelLoader` does not intern the color and category strings inside decoded entries — pass them through `Vocabulary.requireProvenance` / `requireVulnClass` after loading.
+- Load order: vocabulary first, then policy; model documents load independently.
+
+---
+
+## Source: llms/entries.md
+
+# Entries and Bodies
+
+> Decoded model entries: flat subject models, generators, and the sectioned assertion body.
+
+## Quick Start
+
+```kotlin
+val entries = ModelLoader.load(yaml.byteInputStream())
+for (entry in entries) {
+    when (entry) {
+        is SubjectModel -> entry.subject to entry.body
+        is ModelGenerator -> entry.name to entry.model
+    }
+}
+```
+
+## API
+
+- **`ModelEntry`** — Sealed supertype of the two entry forms.
+- **`SubjectModel(subject: ModelSubject, guard: WhenGuard?, signature: SignatureInfo?, body: ModelBody)`** — One flat entry: a named subject with its assertions.
+- **`ModelGenerator(name: String, find: SubjectKind, where: List<SubjectConstraint>, model: ModelBody)`** — Pattern entry; `matches(subject: ModelSubject): Boolean` tests one candidate. `find` is `FUNCTION`, `METHOD`, or `VARIABLE`; constraints are `name`/`class` regex patterns.
+- **`ModelBody`** — Five optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `sources: List<SourceDecl>?`, `sinks: List<SinkPoint>?`, `sanitizers: List<SanitizerDecl>?`. `isEmpty: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
+- **`ValueSemantics(returns: ReturnKind, propagation: List<Propagation>)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow).
+- **`Propagation(from: Port, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side).
+- **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Return` (spelling `return`). `Port.parse(raw: String): Port`.
+- **`WhenGuard(port: Port.Argument, value: GuardValue)`** — Equality guard on one argument; bool, int, or string scalar.
+- **`SourceDecl(provenance: Set<ProvenanceId>)`** — Non-empty produced color set.
+- **`SinkPoint(port: Port.Argument, category: VulnClassId)`** — One dangerously consumed argument under one category.
+- **`SanitizerDecl(categories: Set<VulnClassId>)`** — Non-empty neutralized category set.
+- **`ReturnKind`** — Enum `STR`, `NUM`, `BOOL`, `ANY`; `join(other: ReturnKind): ReturnKind` gives itself when equal, `ANY` otherwise.
+
+## Configuration
+
+- Entry form is deduced from keys: `subject:` starts a flat model; `name:`/`find:`/`where:`/`model:` starts a generator. No `type:` discriminator.
+- Generator `name` is load-unique per document.
+
+## Gotchas
+
+- An entry asserting nothing — no signature, empty body — is rejected at load.
+- `propagation` without `returns` is rejected; the value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
+- Explicit `returns:` beside a callable `signature:` is rejected — one fact, one source.
+- A `when:` guard on a non-callable subject is rejected.
+- Section admissibility follows subject kind: `variable` entries declare sources only; `class` entries declare nothing besides their signature.
+- Multiple entries per subject act as guard clauses in declaration order; an unguarded entry is the default branch. Branch selection is the consumer's job.
+
+---
+
+## Source: llms/subjects.md
+
+# Subjects and Signatures
+
+> The PHP declaration a model identifies, and the decoded signature section per declaration kind.
+
+## Quick Start
+
+```kotlin
+val subject = MethodSubject.parse("mysqli::query")
+val model = ModelLoader.load(yaml.byteInputStream()).single() as SubjectModel
+model.subject == subject
+```
+
+## API
+
+- **`ModelSubject`** — Sealed; equality over the folded identity, usable as a lookup key. One subtype per kind; each companion carries `parse(raw: String)` taking the PHP-native spelling.
+
+| Subtype | YAML key | Spelling | Case |
+|---------|----------|----------|------|
+| `FunctionSubject(name)` | `function:` | `strlen` | folded |
+| `ClassSubject(name)` | `class:` | `mysqli` | folded |
+| `MethodSubject(owner, name)` | `method:` | `mysqli::query` | both folded |
+| `ClassConstantSubject(owner, name)` | `class_constant:` | `Exception::SEVERITY_ERROR` | owner folded, name sensitive |
+| `PropertySubject(owner, name)` | `property:` | `mysqli::$insert_id` | owner folded, name sensitive |
+| `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive |
+| `VariableSubject(name)` | `variable:` | `$_GET` | folded |
+
+- **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
+- **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType)`** — function, method.
+- **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String?, interfaces: List<String>)`** — class; parent and interfaces case-folded.
+- **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
+- **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
+- **`ParameterInfo(name: String, type: DeclaredType, optional: Boolean, byRef: Boolean, variadic: Boolean)`** — one declared parameter; position is list order.
+- **`DeclaredType(raw: String)`** — Value class over a keyword type or class name; `toReturnKind(): ReturnKind` derives the classification (string → STR; int, float → NUM; bool → BOOL; else ANY).
+- **`Classifier`** — Enum `CLASS`, `INTERFACE`, `TRAIT`, `ENUM`.
+- **`Visibility`** — Enum `PUBLIC`, `PROTECTED`, `PRIVATE`.
+
+## Configuration
+
+- Keyword type vocabulary: `string`, `int`, `float`, `bool`, `array`, `object`, `callable`, `resource`, `mixed`, `void`, `null`, `iterable`. Any other spelling must be a class name.
+- Enum values decode case-insensitively from lowercase file vocabulary (`classifier: class`, `visibility: public`).
+
+## Gotchas
+
+- `::` grammar is closed: exactly one separator, both sides non-empty; `$` is mandatory for property names and forbidden elsewhere; leading namespace slashes are stripped.
+- `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_get")` matches the spelling `$_GET`.
+- A signature subtype that does not match the entry's subject kind is rejected at load.
+- `variable` entries never carry a signature — superglobals are hand-declared.
+- The returns classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.
+
+---
+
+## Source: llms/vocabulary.md
+
+# Vocabulary and Policy
+
+> The two closed declared sets — danger categories and origin colors — and the origin → categories taint policy.
+
+## Quick Start
+
+```kotlin
+val vocabulary = VocabularyLoader.load(vocabYaml.byteInputStream())
+val policy = TaintPolicy(PolicyLoader.load(policyYaml.byteInputStream(), vocabulary))
+policy.isDangerous(vocabulary.requireProvenance("remote"), vocabulary.requireVulnClass("sqli"))
+```
+
+## API
+
+- **`Vocabulary(vulnClasses: Map<VulnClassId, VulnClassDecl>, provenances: Map<ProvenanceId, ProvenanceDecl>)`** — Sole authority for what category and color names exist.
+- **`Vocabulary.requireVulnClass(raw: String): VulnClassId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary.requireProvenance(raw: String): ProvenanceId`** — Interns and validates a color name. Raises `VocabularyException` when undeclared.
+- **`VulnClassId(id: String)`**, **`ProvenanceId(id: String)`** — Interned lowercase reference tokens (value classes). Use past the load boundary instead of raw strings.
+- **`VulnClassDecl(id: VulnClassId, description: String)`**, **`ProvenanceDecl(id: ProvenanceId, description: String)`** — One declared vocabulary entry.
+- **`PolicyRow(origin: ProvenanceId, enables: Set<VulnClassId>)`** — One policy statement.
+- **`TaintPolicy(rows: List<PolicyRow>)`** — The folded origin → categories matrix; rows sharing an origin accumulate by union.
+- **`TaintPolicy.isDangerous(color: ProvenanceId, category: VulnClassId): Boolean`** — Whether the origin enables the category.
+
+## Configuration
+
+- Vocabulary document: two sections `vulnClasses` and `provenances`, each a list of `{name, description}` entries.
+- Policy document: a list of `{origin, enables}` rows.
+
+## Gotchas
+
+- Identifiers are lowercased at interning; declare and reference names in lowercase.
+- A repeated name within a vocabulary section raises `VocabularyException` at load.
+- `VocabularyException` extends `IllegalArgumentException`.
+- Model entries decoded by `ModelLoader` carry raw color/category strings — intern them through `requireProvenance` / `requireVulnClass` yourself.
+
+---
