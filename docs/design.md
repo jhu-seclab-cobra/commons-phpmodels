@@ -1,28 +1,25 @@
 # PHP Models — Type Model Design
 
-The assertion-axis types: vocabulary, policy, subjects, ports, propagations,
-and the sectioned model body. Entry forms and generators:
-[design-generators.md](design-generators.md). Guards:
-[design-guards.md](design-guards.md). Signatures:
+The assertion-axis types: vocabulary, policy, and the sectioned model body.
+Subjects, ports, and propagations: [design-subjects.md](design-subjects.md).
+Entry forms and generators: [design-generators.md](design-generators.md).
+Guards: [design-guards.md](design-guards.md). Signatures:
 [design-declarations.md](design-declarations.md).
 
 ## Design Overview
 
 - **Classes:** `VulnClassId`, `ProvenanceId` (value classes), `VulnClassDecl`,
-  `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `Propagation`,
+  `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`,
   `SourceDecl`, `SinkPoint`, `SanitizerDecl`, `ModelBody`, `ValueSemantics`,
   `ModelYaml` (internal object), `VocabularyLoader` (object), `PolicyLoader`
   (object), `ModelLoader` (object)
-- **Sealed hierarchies:** `ModelSubject` (seven subtypes:
-  `FunctionSubject`, `ClassSubject`, `MethodSubject`, `ClassConstantSubject`,
-  `PropertySubject`, `ConstantSubject`, `VariableSubject`); `Port`
-  (`Argument`, `Return`)
+- **Sealed hierarchies:** `ModelSubject` and `Port` — specified in
+  [design-subjects.md](design-subjects.md)
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
-  `Propagation` contains two `Port`s; `SinkPoint` contains one
-  `Port.Argument` and one `VulnClassId`; `TaintPolicy` is built from
-  `PolicyRow`s; the three loaders decode through `ModelYaml`. All arrows
-  one-way into the data types.
+  `SinkPoint` contains one `Port.Argument` and one `VulnClassId`;
+  `TaintPolicy` is built from `PolicyRow`s; the three loaders decode
+  through `ModelYaml`. All arrows one-way into the data types.
 - **Exceptions:** `VocabularyException` extends `IllegalArgumentException`,
   raised on undeclared or duplicate vocabulary references;
   `IllegalArgumentException` from `init` blocks and creators on every other
@@ -73,59 +70,6 @@ danger categories it enables. `TaintPolicy` — the folded origin→categories
 matrix; rows sharing an origin accumulate by union.
 
 **Methods:** `TaintPolicy.isDangerous(color, category): Boolean`.
-
-### ModelSubject (sealed)
-
-**Responsibility:** The PHP declaration a model identifies. One subtype per
-kind, holding exactly that kind's identity fields, case-folded per the table
-in [model-declarations.md](model-declarations.md). Equality over the folded
-identity, so a subject is usable as a lookup key.
-
-**Decoding:** the YAML form is a one-key mapping — the key names the kind,
-the value is the PHP-native spelling string (`function: strlen`,
-`method: mysqli::query`). Each subtype's companion carries a creator taking
-the raw spelling; one private splitter owns the `::` grammar (exactly one
-separator, both sides non-empty, `$` mandatory for property names and
-forbidden elsewhere, leading namespace slashes stripped). Violations throw
-`IllegalArgumentException` inside the creator. Jackson mechanism verified in
-[impl.md](impl.md).
-
-**Subtypes, YAML kind keys, and identity:**
-- `FunctionSubject(name)` — `function:`, folded.
-- `ClassSubject(name)` — `class:`, folded.
-- `MethodSubject(owner, name)` — `method:`, both folded; spelled
-  `class::name`.
-- `ClassConstantSubject(owner, name)` — `class_constant:`, owner folded,
-  name sensitive.
-- `PropertySubject(owner, name)` — `property:`, owner folded, name
-  sensitive; spelled `class::$name`, stored without the `$`.
-- `ConstantSubject(name)` — `constant:`, sensitive.
-- `VariableSubject(name)` — `variable:`, folded; spelled `$name`, stored
-  without the `$`.
-
-**Validation:** blank identity fields are rejected in `init`.
-
-### Port (sealed)
-
-**Responsibility:** One explicitly named location in a call, decoded from
-the string spellings `argument(n)` and `return`. No bare integer and no
-sentinel value exists anywhere in the port vocabulary.
-
-**Subtypes:** `Argument(position: Int)` — `position >= 0`, with its own
-narrowing creator (a field typed as the subtype does not consult the
-supertype's creator, [impl.md](impl.md)); `Return` (object).
-
-**Methods:** companion `parse(raw: String): Port` — the decode entry point;
-`IllegalArgumentException` on any other spelling.
-
-### Propagation
-
-**Responsibility:** One declared flow between two ports. Accepts the synonym
-spellings `from`/`input` and `to`/`output` as four nullable creator
-parameters — a Jackson alias would let a pair naming both spellings decode
-silently ([impl.md](impl.md)).
-
-**Validation:** exactly one spelling per side; `to != from`.
 
 ### SourceDecl, SinkPoint, SanitizerDecl
 

@@ -37,7 +37,9 @@ describable kind, holding exactly the fields
 - `CallableSignature` — `params: List<ParameterInfo>`,
   `returnType: DeclaredType` (function, method)
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
-  `interfaces: List<String>`
+  `interfaces: List<String>`; a `data class` with a private constructor
+  whose companion `invoke` factory — also the Jackson creator — folds the
+  inheritance edges into the stored, compared form ([impl.md](impl.md))
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
@@ -82,7 +84,7 @@ malformed-entry failure.
 
 ## Validation Rules
 
-- The `::` splitter in the subject creators ([design.md](design.md)) is the
+- The `::` splitter in the subject creators ([design-subjects.md](design-subjects.md)) is the
   single authority for member spellings; no other code inspects subject
   strings.
 - Case folding happens inside the subject creators, once; every consumer

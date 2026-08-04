@@ -9,9 +9,10 @@ Signatures: [design-declarations.md](design-declarations.md).
 ## Design Overview
 
 - **Sealed hierarchies:** `ModelEntry` (top-level decoded entry:
-  `SubjectModel`, `ModelGenerator`); `SubjectConstraint` (`NameConstraint`,
-  `ClassConstraint`)
-- **Data holders:** `SubjectModel`, `ModelGenerator`
+  `SubjectModel`, `ModelGenerator`); `SubjectConstraint` (sealed base
+  `PatternConstraint`; subtypes `NameConstraint`, `ClassConstraint`)
+- **Data holders:** `SubjectModel`, `ModelGenerator`, `SectionFields`
+  (internal decode holder)
 - **Enums:** `SubjectKind` (FUNCTION, METHOD, VARIABLE)
 - **Relationships:** `SubjectModel` contains one `ModelSubject`, at most one
   `WhenGuard`, at most one `SignatureInfo`, and one `ModelBody`;
@@ -60,7 +61,10 @@ the form carries no name.
 (decoded from the optional `when:` field), `val signature: SignatureInfo?`
 ([design-declarations.md](design-declarations.md)), `val body: ModelBody`.
 The five assertion sections decode flat beside `subject` — no wrapper key —
-and compose into the body.
+gathered into the entry creator through one unwrapped parameter of the
+internal holder `SectionFields`, which carries the raw sections before the
+signature-derived returns completion and rejects any unknown key
+([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
 - `subject` admits only the sections its kind allows: a non-callable subject
@@ -87,15 +91,17 @@ declaration-only kinds are matched explicitly, never by pattern.
 ### SubjectConstraint
 
 **Responsibility:** One condition a found subject must satisfy. Sealed: the
-`constraint` discriminator names the identity field, the subtype carries the
-pattern compiled at construction.
+`constraint` discriminator names the identity field; the sealed base
+`PatternConstraint` carries the shared body — the declared `pattern`, its
+compilation, per-concrete-kind equality over the pattern, and the spelling.
 
 **Subtypes:**
-- `NameConstraint(pattern: String)` — over the subject's own name.
+- `NameConstraint(pattern: String)` — over the subject's own name (the
+  `ModelSubject.name` every kind exposes, [design-subjects.md](design-subjects.md)).
 - `ClassConstraint(pattern: String)` — over a method subject's owning class.
 
-**State:** each holds `val regex: Regex`, compiled in `init`; an invalid
-pattern throws there, so no uncompiled pattern survives the load.
+**State:** the base holds `val regex: Regex`, compiled at construction; an
+invalid pattern throws there, so no uncompiled pattern survives the load.
 
 **Methods:** `fun matches(field: String): Boolean` — entire-field match
 against the case-folded identity, never a substring match.
