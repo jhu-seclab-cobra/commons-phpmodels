@@ -9,6 +9,7 @@ import edu.jhu.cobra.commons.phpmodels.SignatureInfo.CallableSignature
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.ClassSignature
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.PropertySignature
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.TypedSignature
+import kotlin.reflect.KClass
 
 /**
  * One decoded configuration entry: a [SubjectModel] naming its subject
@@ -60,14 +61,7 @@ public class SubjectModel(
     // and guards belong to callable kinds; value-producing kinds declare
     // sources; a class declares nothing besides its signature.
     private fun validateAdmissibility() {
-        val expected =
-            when (subject) {
-                is FunctionSubject, is MethodSubject -> CallableSignature::class
-                is ClassSubject -> ClassSignature::class
-                is ConstantSubject, is ClassConstantSubject -> TypedSignature::class
-                is PropertySubject -> PropertySignature::class
-                is VariableSubject -> null
-            }
+        val expected = signatureTypeFor(subject)
         require(signature == null || (expected != null && expected.isInstance(signature))) {
             "Entry for $subject carries a signature its kind does not admit: $signature"
         }
@@ -123,16 +117,25 @@ public class SubjectModel(
         private fun narrowSignature(
             subject: ModelSubject,
             node: JsonNode,
-        ): SignatureInfo =
-            when (subject) {
-                is FunctionSubject, is MethodSubject -> ModelYaml.narrow(node, CallableSignature::class.java)
-                is ClassSubject -> ModelYaml.narrow(node, ClassSignature::class.java)
-                is ConstantSubject, is ClassConstantSubject -> ModelYaml.narrow(node, TypedSignature::class.java)
-                is PropertySubject -> ModelYaml.narrow(node, PropertySignature::class.java)
-                is VariableSubject ->
-                    throw IllegalArgumentException(
+        ): SignatureInfo {
+            val expected =
+                signatureTypeFor(subject)
+                    ?: throw IllegalArgumentException(
                         "Entry for $subject carries a signature; superglobals are hand-declared",
                     )
+            return ModelYaml.narrow(node, expected.java)
+        }
+
+        // The one authority for the subject-kind → signature-subtype mapping;
+        // the admissibility check and the decode-time narrowing both read it.
+        // Null marks the kind whose entries admit no signature.
+        private fun signatureTypeFor(subject: ModelSubject): KClass<out SignatureInfo>? =
+            when (subject) {
+                is FunctionSubject, is MethodSubject -> CallableSignature::class
+                is ClassSubject -> ClassSignature::class
+                is ConstantSubject, is ClassConstantSubject -> TypedSignature::class
+                is PropertySubject -> PropertySignature::class
+                is VariableSubject -> null
             }
     }
 }
