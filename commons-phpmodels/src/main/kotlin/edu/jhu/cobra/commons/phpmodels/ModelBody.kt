@@ -1,5 +1,7 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import com.fasterxml.jackson.annotation.JsonCreator
+
 /**
  * One declared flow between two ports of a call.
  *
@@ -12,24 +14,30 @@ package edu.jhu.cobra.commons.phpmodels
  * @throws IllegalArgumentException If a side is missing or doubled, or the flow
  *   targets its own source port.
  */
-public class Propagation(
-    from: Port.Argument? = null,
-    input: Port.Argument? = null,
-    to: Port? = null,
-    output: Port? = null,
+@ConsistentCopyVisibility
+public data class Propagation private constructor(
+    val from: Port.Argument,
+    val to: Port,
 ) {
-    public val from: Port.Argument = exactlyOne("from", from, "input", input)
-    public val to: Port = exactlyOne("to", to, "output", output)
-
     init {
-        require(this.to != this.from) { "Propagation from ${this.from} targets its own source port" }
+        require(to != from) { "Propagation from $from targets its own source port" }
     }
 
-    override fun equals(other: Any?): Boolean = other is Propagation && from == other.from && to == other.to
-
-    override fun hashCode(): Int = 31 * from.hashCode() + to.hashCode()
-
-    override fun toString(): String = "Propagation(from=$from, to=$to)"
+    public companion object {
+        /** Resolves each side's synonym pair into the stored, compared port. */
+        @JvmStatic
+        @JsonCreator
+        public operator fun invoke(
+            from: Port.Argument? = null,
+            input: Port.Argument? = null,
+            to: Port? = null,
+            output: Port? = null,
+        ): Propagation =
+            Propagation(
+                exactlyOne("from", from, "input", input),
+                exactlyOne("to", to, "output", output),
+            )
+    }
 }
 
 private fun <T : Any> exactlyOne(

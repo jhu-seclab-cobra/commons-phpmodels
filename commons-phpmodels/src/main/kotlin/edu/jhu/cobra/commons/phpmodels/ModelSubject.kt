@@ -28,231 +28,189 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = ConstantSubject::class, name = "constant"),
     JsonSubTypes.Type(value = VariableSubject::class, name = "variable"),
 )
-public sealed interface ModelSubject
+public sealed interface ModelSubject {
+    /** The subject's own declared name, folded or sensitive per its kind. */
+    public val name: String
+}
 
 /**
- * A function declaration, identified by its name alone.
+ * Shared identity of the kinds a name alone identifies: the blank check,
+ * value equality within one concrete kind, the name-based hash, and the
+ * `kind name` spelling. Subtypes fold [name] before delegating here when
+ * their kind is case-insensitive.
  *
- * @property name Case-folded function name.
+ * @property name The declared name, exactly as the subtype passed it.
  * @throws IllegalArgumentException If the declared name is blank.
  */
-public class FunctionSubject(
-    name: String,
+public sealed class NamedSubject(
+    private val kind: String,
+    final override val name: String,
+    private val spelledPrefix: String = "",
 ) : ModelSubject {
-    public val name: String = name.lowercase()
-
     init {
-        require(this.name.isNotBlank()) { "Function subject declares a blank name" }
+        require(name.isNotBlank()) { "${kind.replaceFirstChar(Char::uppercaseChar)} subject declares a blank name" }
     }
 
-    override fun equals(other: Any?): Boolean = other is FunctionSubject && other.name == name
+    final override fun equals(other: Any?): Boolean =
+        other is NamedSubject && other::class == this::class && other.name == name
 
-    override fun hashCode(): Int = name.hashCode()
+    final override fun hashCode(): Int = name.hashCode()
 
-    override fun toString(): String = "function $name"
+    final override fun toString(): String = "$kind $spelledPrefix$name"
+}
 
+/**
+ * Shared identity of the kinds an owning class plus a member name identify:
+ * the folded owner, the blank checks, value equality within one concrete
+ * kind, the owner-and-name hash, and the `kind owner::name` spelling.
+ * Subtypes fold [name] before delegating here when their kind is
+ * case-insensitive.
+ *
+ * @property owner Case-folded name of the owning class.
+ * @property name The declared member name, exactly as the subtype passed it.
+ * @throws IllegalArgumentException If either declared name is blank.
+ */
+public sealed class MemberSubject(
+    private val kind: String,
+    owner: String,
+    final override val name: String,
+    private val spelledPrefix: String = "",
+) : ModelSubject {
+    public val owner: String = owner.lowercase()
+
+    init {
+        val label = kind.replaceFirstChar(Char::uppercaseChar)
+        require(this.owner.isNotBlank()) { "$label subject declares a blank class" }
+        require(name.isNotBlank()) { "$label subject '${this.owner}' declares a blank name" }
+    }
+
+    final override fun equals(other: Any?): Boolean =
+        other is MemberSubject && other::class == this::class && other.owner == owner && other.name == name
+
+    final override fun hashCode(): Int = 31 * owner.hashCode() + name.hashCode()
+
+    final override fun toString(): String = "$kind $owner::$spelledPrefix$name"
+}
+
+/** A function declaration, identified by its case-folded name alone. */
+public class FunctionSubject(
+    name: String,
+) : NamedSubject(KIND, name.lowercase()) {
     public companion object {
+        private const val KIND = "function"
+
         /** @throws IllegalArgumentException If [raw] is not a plain function name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): FunctionSubject = FunctionSubject(simpleName("function", raw))
+        public fun parse(raw: String): FunctionSubject = FunctionSubject(simpleName(KIND, raw))
     }
 }
 
 /**
  * A class-like declaration (class, interface, trait, or enum), identified by
- * its name alone.
- *
- * @property name Case-folded class name.
- * @throws IllegalArgumentException If the declared name is blank.
+ * its case-folded name alone.
  */
 public class ClassSubject(
     name: String,
-) : ModelSubject {
-    public val name: String = name.lowercase()
-
-    init {
-        require(this.name.isNotBlank()) { "Class subject declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean = other is ClassSubject && other.name == name
-
-    override fun hashCode(): Int = name.hashCode()
-
-    override fun toString(): String = "class $name"
-
+) : NamedSubject(KIND, name.lowercase()) {
     public companion object {
+        private const val KIND = "class"
+
         /** @throws IllegalArgumentException If [raw] is not a plain class name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): ClassSubject = ClassSubject(simpleName("class", raw))
+        public fun parse(raw: String): ClassSubject = ClassSubject(simpleName(KIND, raw))
     }
 }
 
 /**
  * A method declaration, identified by its owning class together with its own
- * name; spelled `class::name`.
- *
- * @property owner Case-folded name of the owning class.
- * @property name Case-folded method name.
- * @throws IllegalArgumentException If either declared name is blank.
+ * name, both case-folded; spelled `class::name`.
  */
 public class MethodSubject(
     owner: String,
     name: String,
-) : ModelSubject {
-    public val owner: String = owner.lowercase()
-    public val name: String = name.lowercase()
-
-    init {
-        require(this.owner.isNotBlank()) { "Method subject declares a blank class" }
-        require(this.name.isNotBlank()) { "Method subject '${this.owner}' declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean = other is MethodSubject && other.owner == owner && other.name == name
-
-    override fun hashCode(): Int = 31 * owner.hashCode() + name.hashCode()
-
-    override fun toString(): String = "method $owner::$name"
-
+) : MemberSubject(KIND, owner, name.lowercase()) {
     public companion object {
+        private const val KIND = "method"
+
         /** @throws IllegalArgumentException If [raw] is not a `class::name` spelling. */
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): MethodSubject {
-            val (owner, name) = memberPieces("method", raw)
+            val (owner, name) = memberPieces(KIND, raw)
             return MethodSubject(owner, name)
         }
     }
 }
 
 /**
- * A class-constant declaration, identified by its owning class together with
- * its own name; spelled `class::NAME`.
- *
- * @property owner Case-folded name of the owning class.
- * @property name Case-sensitive constant name.
- * @throws IllegalArgumentException If either declared name is blank.
+ * A class-constant declaration, identified by its case-folded owning class
+ * together with its case-sensitive name; spelled `class::NAME`.
  */
 public class ClassConstantSubject(
     owner: String,
     name: String,
-) : ModelSubject {
-    public val owner: String = owner.lowercase()
-    public val name: String = name
-
-    init {
-        require(this.owner.isNotBlank()) { "Class-constant subject declares a blank class" }
-        require(this.name.isNotBlank()) { "Class-constant subject '${this.owner}' declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean =
-        other is ClassConstantSubject && other.owner == owner && other.name == name
-
-    override fun hashCode(): Int = 31 * owner.hashCode() + name.hashCode()
-
-    override fun toString(): String = "class constant $owner::$name"
-
+) : MemberSubject(KIND, owner, name) {
     public companion object {
+        private const val KIND = "class constant"
+
         /** @throws IllegalArgumentException If [raw] is not a `class::NAME` spelling. */
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): ClassConstantSubject {
-            val (owner, name) = memberPieces("class constant", raw)
+            val (owner, name) = memberPieces(KIND, raw)
             return ClassConstantSubject(owner, name)
         }
     }
 }
 
 /**
- * A property declaration, identified by its owning class together with its own
- * name; spelled `class::$name`, stored without the `$`.
- *
- * @property owner Case-folded name of the owning class.
- * @property name Case-sensitive property name, without the leading `$`.
- * @throws IllegalArgumentException If either declared name is blank.
+ * A property declaration, identified by its case-folded owning class together
+ * with its case-sensitive name; spelled `class::$name`, stored without the
+ * `$`.
  */
 public class PropertySubject(
     owner: String,
     name: String,
-) : ModelSubject {
-    public val owner: String = owner.lowercase()
-    public val name: String = name
-
-    init {
-        require(this.owner.isNotBlank()) { "Property subject declares a blank class" }
-        require(this.name.isNotBlank()) { "Property subject '${this.owner}' declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean = other is PropertySubject && other.owner == owner && other.name == name
-
-    override fun hashCode(): Int = 31 * owner.hashCode() + name.hashCode()
-
-    override fun toString(): String = "property $owner::\$$name"
-
+) : MemberSubject(KIND, owner, name, spelledPrefix = "$") {
     public companion object {
+        private const val KIND = "property"
+
         /** @throws IllegalArgumentException If [raw] is not a `class::${'$'}name` spelling. */
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): PropertySubject {
-            val (owner, dollarName) = memberPieces("property", raw, dollarName = true)
+            val (owner, dollarName) = memberPieces(KIND, raw, dollarName = true)
             return PropertySubject(owner, dollarName)
         }
     }
 }
 
-/**
- * A global constant declaration, identified by its name alone.
- *
- * @property name Case-sensitive constant name.
- * @throws IllegalArgumentException If the declared name is blank.
- */
+/** A global constant declaration, identified by its case-sensitive name alone. */
 public class ConstantSubject(
     name: String,
-) : ModelSubject {
-    public val name: String = name
-
-    init {
-        require(this.name.isNotBlank()) { "Constant subject declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean = other is ConstantSubject && other.name == name
-
-    override fun hashCode(): Int = name.hashCode()
-
-    override fun toString(): String = "constant $name"
-
+) : NamedSubject(KIND, name) {
     public companion object {
+        private const val KIND = "constant"
+
         /** @throws IllegalArgumentException If [raw] is not a plain constant name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): ConstantSubject = ConstantSubject(simpleName("constant", raw))
+        public fun parse(raw: String): ConstantSubject = ConstantSubject(simpleName(KIND, raw))
     }
 }
 
 /**
- * A language-predefined variable, such as a superglobal array; spelled
- * `${'$'}name`, stored without the `$`.
- *
- * @property name Case-folded variable name, without the leading `$`.
- * @throws IllegalArgumentException If the declared name is blank.
+ * A language-predefined variable, such as a superglobal array, identified by
+ * its case-folded name; spelled `${'$'}name`, stored without the `$`.
  */
 public class VariableSubject(
     name: String,
-) : ModelSubject {
-    public val name: String = name.lowercase()
-
-    init {
-        require(this.name.isNotBlank()) { "Variable subject declares a blank name" }
-    }
-
-    override fun equals(other: Any?): Boolean = other is VariableSubject && other.name == name
-
-    override fun hashCode(): Int = name.hashCode()
-
-    override fun toString(): String = "variable \$$name"
-
+) : NamedSubject(KIND, name.lowercase(), spelledPrefix = "$") {
     public companion object {
+        private const val KIND = "variable"
+
         /** @throws IllegalArgumentException If [raw] is not a `${'$'}name` spelling. */
         @JvmStatic
         @JsonCreator

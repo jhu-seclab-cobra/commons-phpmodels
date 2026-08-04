@@ -23,6 +23,14 @@ import kotlin.test.assertNotEquals
  * - `variable spelling requires the dollar prefix` — a bare name fails; the
  *   stored name drops the `$`.
  * - `blank identity is rejected` — a blank name fails construction.
+ * - `constructors fold like the creators` — direct construction folds the
+ *   same identity fields the spelling creators fold.
+ * - `subjects of different kinds never compare equal` — same identity under
+ *   two kinds stays distinct.
+ * - `equal subjects agree on hash code` — a subject is usable as a lookup
+ *   key.
+ * - `subjects spell themselves in kind-prefixed form` — the toString
+ *   spelling of every kind.
  */
 internal class ModelSubjectTest {
     @Test
@@ -92,5 +100,42 @@ internal class ModelSubjectTest {
         assertFailsWith<IllegalArgumentException> { FunctionSubject(" ") }
         assertFailsWith<IllegalArgumentException> { MethodSubject("mysqli", " ") }
         assertFailsWith<IllegalArgumentException> { ConstantSubject("") }
+    }
+
+    @Test
+    fun `constructors fold like the creators`() {
+        assertEquals(FunctionSubject.parse("strlen"), FunctionSubject("STRLEN"))
+        assertEquals(MethodSubject.parse("mysqli::query"), MethodSubject("MySQLi", "Query"))
+        assertEquals(ClassConstantSubject.parse("mysqli::REPORT_ERROR"), ClassConstantSubject("MYSQLI", "REPORT_ERROR"))
+        assertEquals(VariableSubject.parse("\$_get"), VariableSubject("_GET"))
+    }
+
+    @Test
+    fun `subjects of different kinds never compare equal`() {
+        assertNotEquals<ModelSubject>(FunctionSubject("query"), ClassSubject("query"))
+        assertNotEquals<ModelSubject>(ConstantSubject("query"), FunctionSubject("query"))
+        assertNotEquals<ModelSubject>(MethodSubject("mysqli", "query"), PropertySubject("mysqli", "query"))
+        assertNotEquals<ModelSubject>(FunctionSubject("query"), VariableSubject("query"))
+    }
+
+    @Test
+    fun `equal subjects agree on hash code`() {
+        assertEquals(FunctionSubject("STRLEN").hashCode(), FunctionSubject.parse("strlen").hashCode())
+        assertEquals(MethodSubject("MySQLi", "Query").hashCode(), MethodSubject.parse("mysqli::query").hashCode())
+        assertEquals(
+            PropertySubject("MYSQLI", "insert_id").hashCode(),
+            PropertySubject.parse("mysqli::\$insert_id").hashCode(),
+        )
+    }
+
+    @Test
+    fun `subjects spell themselves in kind-prefixed form`() {
+        assertEquals("function strlen", FunctionSubject("strlen").toString())
+        assertEquals("class mysqli", ClassSubject("mysqli").toString())
+        assertEquals("method mysqli::query", MethodSubject("mysqli", "query").toString())
+        assertEquals("class constant mysqli::REPORT_ERROR", ClassConstantSubject("mysqli", "REPORT_ERROR").toString())
+        assertEquals("property mysqli::\$insert_id", PropertySubject("mysqli", "insert_id").toString())
+        assertEquals("constant PHP_EOL", ConstantSubject("PHP_EOL").toString())
+        assertEquals("variable \$_get", VariableSubject("_GET").toString())
     }
 }

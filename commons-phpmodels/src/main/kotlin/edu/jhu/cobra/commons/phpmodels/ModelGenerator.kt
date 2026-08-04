@@ -29,26 +29,34 @@ public sealed interface SubjectConstraint {
 }
 
 /**
- * A constraint over the subject's own name.
+ * Shared body of the constraint kinds: the declared pattern, its compilation,
+ * and value equality over the pattern within one concrete kind.
  *
+ * @property pattern The declared pattern source.
  * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
  */
-public data class NameConstraint(
-    val pattern: String,
+public sealed class PatternConstraint(
+    public val pattern: String,
 ) : SubjectConstraint {
-    override val regex: Regex = Regex(pattern)
+    final override val regex: Regex = Regex(pattern)
+
+    final override fun equals(other: Any?): Boolean =
+        other is PatternConstraint && other::class == this::class && other.pattern == pattern
+
+    final override fun hashCode(): Int = pattern.hashCode()
+
+    final override fun toString(): String = "${this::class.simpleName}(pattern=$pattern)"
 }
 
-/**
- * A constraint over a method subject's owning class.
- *
- * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
- */
-public data class ClassConstraint(
-    val pattern: String,
-) : SubjectConstraint {
-    override val regex: Regex = Regex(pattern)
-}
+/** A constraint over the subject's own name. */
+public class NameConstraint(
+    pattern: String,
+) : PatternConstraint(pattern)
+
+/** A constraint over a method subject's owning class. */
+public class ClassConstraint(
+    pattern: String,
+) : PatternConstraint(pattern)
 
 /**
  * One decoded generator entry: its unique name, the subject kind to find, the
@@ -105,12 +113,6 @@ private val ModelSubject.kind: SubjectKind?
 
 private fun SubjectConstraint.satisfiedBy(subject: ModelSubject): Boolean =
     when (this) {
-        is NameConstraint ->
-            when (subject) {
-                is FunctionSubject -> matches(subject.name)
-                is MethodSubject -> matches(subject.name)
-                is VariableSubject -> matches(subject.name)
-                is ClassSubject, is ClassConstantSubject, is ConstantSubject, is PropertySubject -> false
-            }
+        is NameConstraint -> matches(subject.name)
         is ClassConstraint -> subject is MethodSubject && matches(subject.owner)
     }

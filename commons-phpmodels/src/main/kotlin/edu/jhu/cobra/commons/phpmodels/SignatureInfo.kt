@@ -1,5 +1,7 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import com.fasterxml.jackson.annotation.JsonCreator
+
 /**
  * The decoded signature section of a declaration entry: what the declaration
  * looks like, never what an analysis believes about it. One subtype per
@@ -30,29 +32,27 @@ public sealed interface SignatureInfo {
      * @property interfaces Case-folded implemented interface names.
      * @throws IllegalArgumentException If the parent or an interface name is blank.
      */
-    public class ClassSignature(
-        public val classifier: Classifier,
-        parent: String? = null,
-        interfaces: List<String> = emptyList(),
+    @ConsistentCopyVisibility
+    public data class ClassSignature private constructor(
+        val classifier: Classifier,
+        val parent: String?,
+        val interfaces: List<String>,
     ) : SignatureInfo {
-        public val parent: String? = parent?.lowercase()
-        public val interfaces: List<String> = interfaces.map { it.lowercase() }
-
         init {
-            require(this.parent == null || this.parent.isNotBlank()) { "Class signature declares a blank parent" }
-            require(this.interfaces.none { it.isBlank() }) { "Class signature declares a blank interface" }
+            require(parent == null || parent.isNotBlank()) { "Class signature declares a blank parent" }
+            require(interfaces.none { it.isBlank() }) { "Class signature declares a blank interface" }
         }
 
-        override fun equals(other: Any?): Boolean =
-            other is ClassSignature &&
-                other.classifier == classifier &&
-                other.parent == parent &&
-                other.interfaces == interfaces
-
-        override fun hashCode(): Int = 31 * (31 * classifier.hashCode() + parent.hashCode()) + interfaces.hashCode()
-
-        override fun toString(): String =
-            "ClassSignature(classifier=$classifier, parent=$parent, interfaces=$interfaces)"
+        public companion object {
+            /** Folds the inheritance edges into the stored, compared form. */
+            @JvmStatic
+            @JsonCreator
+            public operator fun invoke(
+                classifier: Classifier,
+                parent: String? = null,
+                interfaces: List<String> = emptyList(),
+            ): ClassSignature = ClassSignature(classifier, parent?.lowercase(), interfaces.map(String::lowercase))
+        }
     }
 
     /**

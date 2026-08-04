@@ -5,6 +5,7 @@ import org.junit.jupiter.params.provider.CsvSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 /**
  * Declared-type vocabulary and signature field validation.
@@ -19,6 +20,9 @@ import kotlin.test.assertFailsWith
  * - `class signature rejects blank inheritance names` — a blank parent or
  *   interface fails.
  * - `parameter rejects a blank name` — parameter identity is non-blank.
+ * - `class signatures compare by folded fields` — equality and hash code
+ *   over classifier, folded parent, and folded interfaces.
+ * - `class signature spells its fields` — the toString form.
  */
 internal class SignatureInfoTest {
     @Test
@@ -62,5 +66,26 @@ internal class SignatureInfoTest {
     @Test
     fun `parameter rejects a blank name`() {
         assertFailsWith<IllegalArgumentException> { ParameterInfo(" ", DeclaredType("string")) }
+    }
+
+    @Test
+    fun `class signatures compare by folded fields`() {
+        val folded = SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable"))
+        val spelled = SignatureInfo.ClassSignature(Classifier.CLASS, "base", listOf("traversable"))
+        assertEquals(spelled, folded)
+        assertEquals(spelled.hashCode(), folded.hashCode())
+        assertNotEquals(SignatureInfo.ClassSignature(Classifier.CLASS, "other", listOf("traversable")), folded)
+        assertNotEquals(
+            SignatureInfo.ClassSignature(Classifier.INTERFACE),
+            SignatureInfo.ClassSignature(Classifier.CLASS),
+        )
+    }
+
+    @Test
+    fun `class signature spells its fields`() {
+        assertEquals(
+            "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable])",
+            SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable")).toString(),
+        )
     }
 }

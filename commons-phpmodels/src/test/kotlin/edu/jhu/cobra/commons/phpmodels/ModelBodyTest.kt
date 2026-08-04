@@ -20,6 +20,8 @@ import kotlin.test.assertNull
  * - `declaresOnlySources reflects the section set` — true for sources alone.
  * - `valueSemantics completes absent propagation to the empty list` — no
  *   flow, not unknown flow; null when returns is undeclared.
+ * - `equal propagations agree on hash code and spelling` — equality over the
+ *   resolved pair, hash-code agreement, and the toString form.
  */
 internal class ModelBodyTest {
     @Test
@@ -42,6 +44,14 @@ internal class ModelBodyTest {
         assertFailsWith<IllegalArgumentException> {
             Propagation(from = Port.Argument(0), to = Port.Argument(0))
         }
+    }
+
+    @Test
+    fun `equal propagations agree on hash code and spelling`() {
+        val plain = Propagation(from = Port.Argument(0), to = Port.Return)
+        val synonym = Propagation(input = Port.Argument(0), output = Port.Return)
+        assertEquals(plain.hashCode(), synonym.hashCode())
+        assertEquals("Propagation(from=argument(0), to=return)", plain.toString())
     }
 
     @Test

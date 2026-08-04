@@ -1,8 +1,10 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import java.util.regex.PatternSyntaxException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 /**
  * Construction rules and subject matching of [ModelGenerator].
@@ -16,6 +18,10 @@ import kotlin.test.assertFailsWith
  *   find fails.
  * - `matches requires kind and every constraint` — entire-field match over
  *   the folded identity; declaration-only kinds never match.
+ * - `constraints compare by pattern within their kind` — equality, hash-code
+ *   agreement, and cross-kind distinctness of the two constraint types.
+ * - `invalid pattern fails at construction` — no uncompiled pattern survives
+ *   the load.
  */
 internal class ModelGeneratorTest {
     private val sources = ModelBody(sources = listOf(SourceDecl(setOf(ProvenanceId("remote")))))
@@ -61,5 +67,19 @@ internal class ModelGeneratorTest {
         assertEquals(false, generator.matches(MethodSubject("pdo", "query")))
         assertEquals(false, generator.matches(FunctionSubject("query")))
         assertEquals(false, generator.matches(MethodSubject("mysqli", "multi_query")))
+    }
+
+    @Test
+    fun `constraints compare by pattern within their kind`() {
+        assertEquals(NameConstraint("get.*"), NameConstraint("get.*"))
+        assertEquals(NameConstraint("get.*").hashCode(), NameConstraint("get.*").hashCode())
+        assertNotEquals(NameConstraint("get.*"), NameConstraint("set.*"))
+        assertNotEquals<SubjectConstraint>(NameConstraint("get.*"), ClassConstraint("get.*"))
+    }
+
+    @Test
+    fun `invalid pattern fails at construction`() {
+        assertFailsWith<PatternSyntaxException> { NameConstraint("(") }
+        assertFailsWith<PatternSyntaxException> { ClassConstraint("[") }
     }
 }
