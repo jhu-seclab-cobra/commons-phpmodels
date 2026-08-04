@@ -1,9 +1,11 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.databind.JsonNode
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.CallableSignature
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.ClassSignature
@@ -91,27 +93,21 @@ public class SubjectModel(
         // ModelBody's propagation-requires-returns rule holds unchanged.
         @JvmStatic
         @JsonCreator
-        @Suppress("LongParameterList")
         internal fun decode(
             @JsonProperty("subject") subject: ModelSubject,
             @JsonProperty("when") guard: WhenGuard?,
             @JsonProperty("signature") signature: JsonNode?,
-            @JsonProperty("returns") returns: ReturnKind?,
-            @JsonProperty("propagation") propagation: List<Propagation>?,
-            @JsonProperty("sources") sources: List<SourceDecl>?,
-            @JsonProperty("sinks") sinks: List<SinkPoint>?,
-            @JsonProperty("sanitizers") sanitizers: List<SanitizerDecl>?,
+            @JsonUnwrapped sections: SectionFields,
         ): SubjectModel {
             val decoded = signature?.let { narrowSignature(subject, it) }
             val callable = decoded as? CallableSignature
-            require(returns == null || callable == null) {
+            require(sections.returns == null || callable == null) {
                 "Entry for $subject declares 'returns' beside a callable signature: one fact, one source"
             }
             val effectiveReturns =
-                returns
-                    ?: callable?.returnType?.toReturnKind()?.takeIf { propagation != null }
-            val body = ModelBody(effectiveReturns, propagation, sources, sinks, sanitizers)
-            return SubjectModel(subject, guard, decoded, body)
+                sections.returns
+                    ?: callable?.returnType?.toReturnKind()?.takeIf { sections.propagation != null }
+            return SubjectModel(subject, guard, decoded, sections.complete(effectiveReturns))
         }
 
         private fun narrowSignature(
@@ -138,4 +134,30 @@ public class SubjectModel(
                 is VariableSubject -> null
             }
     }
+}
+
+/**
+ * The five section fields as they decode flat beside `subject`, gathered into
+ * the creator through one `@JsonUnwrapped` parameter — before the
+ * signature-derived returns completion, so [ModelBody]'s
+ * propagation-requires-returns rule stays out of the raw decode.
+ */
+internal data class SectionFields(
+    val returns: ReturnKind? = null,
+    val propagation: List<Propagation>? = null,
+    val sources: List<SourceDecl>? = null,
+    val sinks: List<SinkPoint>? = null,
+    val sanitizers: List<SanitizerDecl>? = null,
+) {
+    /** The entry's body, with [returns] completed by the enclosing creator. */
+    fun complete(returns: ReturnKind?): ModelBody = ModelBody(returns, propagation, sources, sinks, sanitizers)
+
+    // The unwrapped path funnels every key the creator does not name into this
+    // holder and would ignore the unknown ones; this rejector restores the
+    // strict unknown-key failure the format states (impl.md).
+    @JsonAnySetter
+    fun rejectUnknown(
+        key: String,
+        @Suppress("UNUSED_PARAMETER") value: JsonNode?,
+    ): Unit = throw IllegalArgumentException("Unknown key '$key' in a model entry")
 }

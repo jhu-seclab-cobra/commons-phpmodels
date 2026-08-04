@@ -1,10 +1,14 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonMappingException
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.exc.InvalidTypeIdException
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
@@ -128,6 +132,34 @@ internal class JacksonSubjectProbeTest {
             decode<ProbeSigEntry>("kind: typed\nsignature:\n  type: int\n  stray: 1\n")
         }
     }
+
+    @Test
+    fun `unwrapped creator parameter gathers flat sibling fields`() {
+        val entry = decode<ProbeUnwrappedEntry>("id: e\na: 1\nb: two\n")
+        assertEquals(ProbeFlatFields(a = 1, b = "two"), entry.fields)
+        assertEquals(ProbeFlatFields(), decode<ProbeUnwrappedEntry>("id: bare\n").fields)
+    }
+
+    @Test
+    fun `unwrapped holder needs its own any-setter to reject a stray key`() {
+        // The unwrapped path funnels every unmatched key into the holder and
+        // ignores what the holder does not declare — FAIL_ON_UNKNOWN_PROPERTIES
+        // does not fire there. The holder's throwing @JsonAnySetter restores
+        // the rejection; the failure surfaces as a plain JsonMappingException,
+        // still inside the one-catch load boundary.
+        val failure =
+            assertFailsWith<JsonMappingException> {
+                decode<ProbeUnwrappedEntry>("id: e\nstray: 1\n")
+            }
+        assertIs<IllegalArgumentException>(failure.cause)
+    }
+
+    @Test
+    fun `deduction routes an entry whose fields decode through an unwrapped creator parameter`() {
+        val flat = decode<ProbeDeducedEntry>("id: e\nb: two\n")
+        assertEquals("two", assertIs<ProbeUnwrappedEntry>(flat).fields.b)
+        assertIs<ProbeOtherEntry>(decode<ProbeDeducedEntry>("tag: t\n"))
+    }
 }
 
 @JvmInline
@@ -152,6 +184,48 @@ internal sealed interface ProbeSig {
         val type: String,
     ) : ProbeSig
 }
+
+internal data class ProbeFlatFields(
+    val a: Int? = null,
+    val b: String? = null,
+) {
+    @JsonAnySetter
+    fun rejectUnknown(
+        key: String,
+        @Suppress("UNUSED_PARAMETER") value: JsonNode?,
+    ): Unit = throw IllegalArgumentException("Unknown key '$key'")
+}
+
+/**
+ * Replica of the entry-level section gathering: the creator receives the flat
+ * sibling fields through one `@JsonUnwrapped` holder parameter
+ * (jackson-databind 2.19 creator support).
+ */
+internal class ProbeUnwrappedEntry private constructor(
+    val id: String,
+    val fields: ProbeFlatFields,
+) : ProbeDeducedEntry {
+    companion object {
+        @JvmStatic
+        @JsonCreator
+        fun decode(
+            @JsonProperty("id") id: String,
+            @JsonUnwrapped fields: ProbeFlatFields,
+        ): ProbeUnwrappedEntry = ProbeUnwrappedEntry(id, fields)
+    }
+}
+
+internal data class ProbeOtherEntry(
+    val tag: String,
+) : ProbeDeducedEntry
+
+/** Replica of the entry deduction over disjoint required fields. */
+@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
+@JsonSubTypes(
+    JsonSubTypes.Type(value = ProbeUnwrappedEntry::class),
+    JsonSubTypes.Type(value = ProbeOtherEntry::class),
+)
+internal sealed interface ProbeDeducedEntry
 
 /**
  * Replica of the entry-level signature narrowing: the creator receives the
