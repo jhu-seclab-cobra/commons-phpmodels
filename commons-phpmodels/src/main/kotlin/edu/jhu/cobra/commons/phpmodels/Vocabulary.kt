@@ -1,27 +1,46 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import com.fasterxml.jackson.annotation.JsonCreator
+
 /**
  * Interned reference token for a declared danger category. Replaces raw
  * strings past the load boundary, so a name mismatch cannot occur downstream.
+ * Construction folds any spelling to lowercase, so a mixed-case reference
+ * cannot miss a vocabulary lookup.
  *
  * @property id Lowercased category name, as declared in the vocabulary.
  */
 @JvmInline
-public value class VulnClassId(
+public value class VulnClassId private constructor(
     public val id: String,
-)
+) {
+    public companion object {
+        /** Interns [raw], folding it to its lowercased declared form. */
+        @JvmStatic
+        @JsonCreator
+        public operator fun invoke(raw: String): VulnClassId = VulnClassId(raw.lowercase())
+    }
+}
 
 /**
  * Interned reference token for a declared origin color (provenance). Travels
  * with a tainted value from its source; validated against the vocabulary at
- * load time.
+ * load time. Construction folds any spelling to lowercase, so a mixed-case
+ * reference cannot miss a vocabulary lookup.
  *
  * @property id Lowercased origin-color name, as declared in the vocabulary.
  */
 @JvmInline
-public value class ProvenanceId(
+public value class ProvenanceId private constructor(
     public val id: String,
-)
+) {
+    public companion object {
+        /** Interns [raw], folding it to its lowercased declared form. */
+        @JvmStatic
+        @JsonCreator
+        public operator fun invoke(raw: String): ProvenanceId = ProvenanceId(raw.lowercase())
+    }
+}
 
 /**
  * One declared danger-category entry.
@@ -76,7 +95,7 @@ public data class Vocabulary(
      * @throws VocabularyException If [raw] names no declared category.
      */
     public fun requireVulnClass(raw: String): VulnClassId {
-        val id = VulnClassId(raw.lowercase())
+        val id = VulnClassId(raw)
         if (id in vulnClasses) return id
         throw undeclared("vulnerability class", raw, vulnClasses.keys.map { it.id })
     }
@@ -89,7 +108,7 @@ public data class Vocabulary(
      * @throws VocabularyException If [raw] names no declared origin color.
      */
     public fun requireProvenance(raw: String): ProvenanceId {
-        val id = ProvenanceId(raw.lowercase())
+        val id = ProvenanceId(raw)
         if (id in provenances) return id
         throw undeclared("provenance", raw, provenances.keys.map { it.id })
     }

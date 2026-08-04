@@ -15,6 +15,8 @@ import kotlin.test.assertNull
  *   spellings route to their subtypes.
  * - `generator entry decodes beside flat models` — deduction routes the
  *   name/find/where/model form.
+ * - `mixed-case category and color references intern lowercased` — the
+ *   Jackson decode path folds identity tokens like the interning path does.
  * - `signature narrows per subject kind` — callable, class, typed (with its
  *   literal value), and property signatures selected by the entry's subject.
  * - `signature-only entry asserts existence` — an empty body beside a
@@ -140,6 +142,32 @@ internal class ModelLoaderTest {
         assertEquals(SubjectKind.VARIABLE, generator.find)
         assertEquals(true, generator.matches(VariableSubject("_get")))
         assertEquals(false, generator.matches(VariableSubject("_server")))
+    }
+
+    @Test
+    fun `mixed-case category and color references intern lowercased`() {
+        val entries =
+            load(
+                """
+                - subject:
+                    method: mysqli::query
+                  sinks:
+                    - port: argument(0)
+                      category: SQLI
+                - subject:
+                    variable: ${'$'}_GET
+                  sources:
+                    - provenance: [Remote]
+                """.trimIndent(),
+            )
+        assertEquals(
+            listOf(SinkPoint(Port.Argument(0), VulnClassId("sqli"))),
+            assertIs<SubjectModel>(entries[0]).body.sinks,
+        )
+        assertEquals(
+            listOf(SourceDecl(setOf(ProvenanceId("remote")))),
+            assertIs<SubjectModel>(entries[1]).body.sources,
+        )
     }
 
     @Test

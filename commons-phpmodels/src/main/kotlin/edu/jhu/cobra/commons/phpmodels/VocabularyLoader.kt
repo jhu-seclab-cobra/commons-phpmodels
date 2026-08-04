@@ -31,8 +31,8 @@ public object VocabularyLoader {
      */
     public fun load(input: InputStream): Vocabulary {
         val file = ModelYaml.decode(input, jacksonTypeRef<VocabularyFile>())
-        val vulnClasses = file.vulnClasses.declaredBy("vulnClasses") { VulnClassId(it.name.lowercase()) }
-        val provenances = file.provenances.declaredBy("provenances") { ProvenanceId(it.name.lowercase()) }
+        val vulnClasses = file.vulnClasses.declaredBy("vulnClasses") { VulnClassId(it.name) }
+        val provenances = file.provenances.declaredBy("provenances") { ProvenanceId(it.name) }
         return Vocabulary(
             vulnClasses = vulnClasses.mapValues { (id, entry) -> VulnClassDecl(id, entry.description) },
             provenances = provenances.mapValues { (id, entry) -> ProvenanceDecl(id, entry.description) },
