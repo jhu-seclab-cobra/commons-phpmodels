@@ -24,7 +24,7 @@ import kotlin.test.assertIs
  * delegating string creator. Throwaway replica types; production types must
  * not leak in.
  */
-class JacksonSubjectProbeTest {
+internal class JacksonSubjectProbeTest {
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
     @JsonSubTypes(
         JsonSubTypes.Type(value = ProbeFunction::class, name = "function"),
@@ -131,7 +131,7 @@ class JacksonSubjectProbeTest {
 }
 
 @JvmInline
-value class ProbeType(
+internal value class ProbeType(
     val raw: String,
 ) {
     init {
@@ -139,11 +139,11 @@ value class ProbeType(
     }
 }
 
-data class ProbeTyped(
+internal data class ProbeTyped(
     val type: ProbeType,
 )
 
-sealed interface ProbeSig {
+internal sealed interface ProbeSig {
     data class Callable(
         val returnType: String,
     ) : ProbeSig
@@ -158,7 +158,7 @@ sealed interface ProbeSig {
  * signature as a raw tree and converts it to the subtype the sibling `kind`
  * field selects, through the same strict mapper.
  */
-class ProbeSigEntry private constructor(
+internal class ProbeSigEntry private constructor(
     val kind: String,
     val signature: ProbeSig,
 ) {
