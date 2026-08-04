@@ -112,38 +112,36 @@ public value class DeclaredType(
     public val raw: String,
 ) {
     init {
-        require(raw.lowercase() in KEYWORD_TYPES || CLASS_NAME_SPELLING.matches(raw)) {
+        require(raw.lowercase() in KEYWORD_RETURN_KINDS || CLASS_NAME_SPELLING.matches(raw)) {
             "Declared type is neither a keyword type nor a class name: '$raw'"
         }
     }
 
     /** The returns classification this declared type derives to. */
     public fun toReturnKind(): ReturnKind =
-        when (raw.lowercase()) {
-            "string" -> ReturnKind.STR
-            "int", "float" -> ReturnKind.NUM
-            "bool" -> ReturnKind.BOOL
-            else -> ReturnKind.ANY
-        }
+        // A class name is not in the keyword map; it derives to ANY by design.
+        KEYWORD_RETURN_KINDS[raw.lowercase()] ?: ReturnKind.ANY
 
     override fun toString(): String = raw
 
     private companion object {
-        // Fixed by the PHP type system, not configuration.
-        private val KEYWORD_TYPES: Set<String> =
-            setOf(
-                "string",
-                "int",
-                "float",
-                "bool",
-                "array",
-                "object",
-                "callable",
-                "resource",
-                "mixed",
-                "void",
-                "null",
-                "iterable",
+        // The keyword-type vocabulary is fixed by the PHP type system, not
+        // configuration. Each keyword carries the returns classification it
+        // derives to; non-scalar keywords derive to ANY.
+        private val KEYWORD_RETURN_KINDS: Map<String, ReturnKind> =
+            mapOf(
+                "string" to ReturnKind.STR,
+                "int" to ReturnKind.NUM,
+                "float" to ReturnKind.NUM,
+                "bool" to ReturnKind.BOOL,
+                "array" to ReturnKind.ANY,
+                "object" to ReturnKind.ANY,
+                "callable" to ReturnKind.ANY,
+                "resource" to ReturnKind.ANY,
+                "mixed" to ReturnKind.ANY,
+                "void" to ReturnKind.ANY,
+                "null" to ReturnKind.ANY,
+                "iterable" to ReturnKind.ANY,
             )
         private val CLASS_NAME_SPELLING = Regex("""\\?[A-Za-z_][A-Za-z0-9_]*(\\[A-Za-z_][A-Za-z0-9_]*)*""")
     }
