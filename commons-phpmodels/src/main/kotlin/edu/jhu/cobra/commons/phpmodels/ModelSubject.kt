@@ -181,8 +181,8 @@ public class PropertySubject(
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): PropertySubject {
-            val (owner, dollarName) = memberPieces(KIND, raw, dollarName = true)
-            return PropertySubject(owner, dollarName)
+            val (owner, name) = propertyPieces(KIND, raw)
+            return PropertySubject(owner, name)
         }
     }
 }
@@ -240,7 +240,26 @@ private fun simpleName(
 private fun memberPieces(
     kind: String,
     raw: String,
-    dollarName: Boolean = false,
+): Pair<String, String> {
+    val (owner, member) = ownerAndMember(kind, raw)
+    require('$' !in member) { "A $kind subject member must not contain '\$': '$raw'" }
+    return owner to member
+}
+
+private fun propertyPieces(
+    kind: String,
+    raw: String,
+): Pair<String, String> {
+    val (owner, member) = ownerAndMember(kind, raw)
+    require(member.startsWith('$')) { "A $kind subject member must be spelled '\$name', got '$raw'" }
+    val name = member.drop(1)
+    require('$' !in name) { "A $kind subject member declares a malformed name: '$raw'" }
+    return owner to name
+}
+
+private fun ownerAndMember(
+    kind: String,
+    raw: String,
 ): Pair<String, String> {
     val spelling = raw.removePrefix("\\")
     val separator = spelling.indexOf("::")
@@ -249,14 +268,5 @@ private fun memberPieces(
     val member = spelling.substring(separator + 2)
     require("::" !in member) { "A $kind subject spelling has more than one '::': '$raw'" }
     require('$' !in owner) { "A $kind subject class must not contain '\$': '$raw'" }
-    val name =
-        if (dollarName) {
-            require(member.startsWith('$')) { "A $kind subject member must be spelled '\$name', got '$raw'" }
-            member.drop(1)
-        } else {
-            require('$' !in member) { "A $kind subject member must not contain '\$': '$raw'" }
-            member
-        }
-    require('$' !in name) { "A $kind subject member declares a malformed name: '$raw'" }
-    return owner to name
+    return owner to member
 }
