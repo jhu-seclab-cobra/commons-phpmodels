@@ -113,8 +113,8 @@ for (entry in entries) {
 - `propagation` without `returns` is rejected; the value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
 - Explicit `returns:` beside a callable `signature:` is rejected — one fact, one source.
 - A `when:` guard on a non-callable subject is rejected.
-- Section admissibility follows subject kind: `variable` entries declare sources only; `class` entries declare nothing besides their signature.
-- Multiple entries per subject act as guard clauses in declaration order; an unguarded entry is the default branch. Branch selection is the consumer's job.
+- Section admissibility follows subject kind: `returns`/`propagation` and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
+- Multiple entries per subject are branches in declaration order; an unguarded entry is the default branch. Branch selection is the consumer's job.
 
 ---
 

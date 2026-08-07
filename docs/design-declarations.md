@@ -17,8 +17,8 @@ the declared-type vocabulary. Subject spellings and creators:
   contains `ParameterInfo`s; `ParameterInfo`, `TypedSignature`, and
   `PropertySignature` contain one `DeclaredType` each. All arrows one-way
   into the data types.
-- **Exceptions:** none new — a malformed spelling or an unknown declared
-  type is the existing `IllegalArgumentException` at decode.
+- **Exceptions:** `IllegalArgumentException` at decode — a malformed
+  spelling or an unknown declared type ([design.md](design.md)).
 - **Dependency roles:** Data holders: the signature types, `ParameterInfo`,
   `DeclaredType`. Validation: `init` blocks and the entry-level
   kind-matching rule in `SubjectModel`.
@@ -77,10 +77,10 @@ vocabulary ([impl.md](impl.md)).
 
 ## Exception / Error Types
 
-None new. Malformed spellings, unknown type names, kind-mismatched
-signatures, and `returns` beside a callable signature are all
-`IllegalArgumentException` at decode, consistent with every other
-malformed-entry failure.
+- `IllegalArgumentException` — malformed spelling, unknown type name,
+  kind-mismatched signature, `returns` beside a callable signature. Raised
+  at decode through the shared load-boundary contract
+  ([design.md](design.md)).
 
 ## Validation Rules
 

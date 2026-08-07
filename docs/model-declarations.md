@@ -90,8 +90,8 @@ comes from:
 - Signature present, explicit `returns` → load failure: one fact, one
   source. A purity assertion (returns with an empty flow set) is a
   hand-written statement and belongs in a higher layer without a signature.
-- No signature (hand-written form) → unchanged: explicit returns asserts the
-  unit exhaustively.
+- No signature (hand-written form) → explicit returns asserts the unit
+  exhaustively.
 
 ## Invariants
 
@@ -112,7 +112,7 @@ comes from:
   callability allows — returns/propagation only for function and method;
   sources for any kind that produces a value.
 - Completeness boundary: the format stores exactly the fields the six stub
-  record kinds of the upstream extraction carry today. Additional upstream
+  record kinds of the upstream extraction carry. Additional upstream
   information (attributes, deprecations, conditional types) enters by
   extending the extraction and regenerating — never as a hand-maintained
   addition to generated files.

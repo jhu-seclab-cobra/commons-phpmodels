@@ -1,11 +1,5 @@
 # commons-phpmodels — the declarative model format for PHP declarations
 
-Sectioned models — one entry per PHP declaration asserting value semantics,
-taint effects, and signatures — the subjects they name, the two-axis color
-vocabulary and policy they validate against, and the strict YAML decoding
-that rejects malformed configuration. Consumers (analyzers, compilers) own
-layer ordering, branch selection, subject resolution, and every query.
-
 | File | Content |
 |------|---------|
 | concept.md | Problem, scope, terminology, data flow, scenarios. |

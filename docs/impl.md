@@ -1,21 +1,5 @@
 # PHP Models — Verified Jackson YAML APIs
 
-Every finding below is pinned by the probe tests in
-`commons-phpmodels/src/test/kotlin/edu/jhu/cobra/commons/phpmodels/`, which
-decode throwaway replicas of the [design.md](design.md) hierarchies. The
-probes are the contract: a Jackson upgrade that changes any of these
-behaviors fails them.
-
-## Libraries
-
-- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
-  `YAMLFactory`, the YAML backend. Catalog alias `jackson-dataformat-yaml`.
-- com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0 — constructor
-  binding, non-nullable enforcement, `value class` unwrapping. Catalog alias
-  `jackson-module-kotlin`.
-- `jackson-databind` and `jackson-annotations` arrive transitively; neither
-  is declared, so one version property governs the whole set.
-
 ## APIs
 
 **[jackson]** `ObjectMapper(YAMLFactory()).registerKotlinModule().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)`
@@ -31,7 +15,30 @@ files keep the lowercase vocabulary (`str`, `bool`, `any`). An unrecognized
 constant still fails (`InvalidFormatException`) — case insensitivity widens
 spelling only.
 
-## Decoding Contracts
+## Libraries
+
+- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
+  `YAMLFactory`, the YAML backend. Catalog alias `jackson-dataformat-yaml`.
+- com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0 — constructor
+  binding, non-nullable enforcement, `value class` unwrapping. Catalog alias
+  `jackson-module-kotlin`.
+- `jackson-databind` and `jackson-annotations` arrive transitively; neither
+  is declared, so one version property governs the whole set.
+
+## Developer instructions
+
+- Findings established against Jackson 2.19.0. Re-verify after any Jackson
+  version bump by running the module's test suite — a behavior change fails
+  the pinning tests.
+- `JacksonSubjectProbeTest` pins the one-key subject mapping, the
+  entry-level signature narrowing, and the `@JsonUnwrapped` section
+  gathering, decoding throwaway replicas of the [design.md](design.md)
+  hierarchies.
+- The production loader tests pin the `invoke`-as-creator row:
+  `ModelLoaderTest` decodes class signatures and propagations through the
+  factories.
+
+## Design-specific
 
 | Contract | Behavior | Failure type |
 |----------|----------|--------------|
@@ -52,7 +59,7 @@ spelling only.
 | `@JsonAlias` for the synonym pair | Unusable: a mapping naming both spellings decodes silently, later key overwriting the earlier | — (silent) |
 | `@JsonCreator` companion factory with `@JsonProperty("is")` | The keyword config key binds through the creator-parameter rename | — |
 | Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the guard scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
-| Optional `when` field (`@param:JsonProperty("when")`, nullable, defaulted) on the flat model form | Decodes when present, stays null when absent; deduction routing unchanged | — |
+| Optional `when` field (`@param:JsonProperty("when")`, nullable, defaulted) on the flat model form | Decodes when present, stays null when absent; deduction routing unaffected | — |
 | `when` key on the generator form | Rejected — the field belongs to the flat form only | `UnrecognizedPropertyException` |
 | Sealed interface + `@JsonTypeInfo(Id.NAME, As.WRAPPER_OBJECT)` + `@JsonSubTypes` | One-key mapping (`function: strlen`) routes the wrapper key to the named subtype's delegating string creator | — |
 | Unknown wrapper key (`trait: foo`) | Rejected | `InvalidTypeIdException` |
@@ -60,29 +67,16 @@ spelling only.
 | `init { require(...) }` in a `@JvmInline value class` | Rejected at decode — the value-class unwrapping path wraps the `IllegalArgumentException` in a plain `JsonMappingException`, **not** `ValueInstantiationException` | `JsonMappingException` |
 | Creator parameters `(kind: String, signature: JsonNode)` + `treeToValue(node, subtype)` inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |
 | Stray key inside a `treeToValue`-narrowed node | Rejected — the inner failure propagates unwrapped, not re-wrapped as `ValueInstantiationException` | `UnrecognizedPropertyException` |
-| `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters; unwrapped properties count in a `Id.DEDUCTION` fingerprint, so routing is unchanged | — |
+| `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters; unwrapped properties count in a `Id.DEDUCTION` fingerprint, so routing is unaffected | — |
 | Stray key on a form with an `@JsonUnwrapped` creator parameter | Silently absorbed — the unwrapped path funnels unknown keys past `FAIL_ON_UNKNOWN_PROPERTIES`; a throwing `@JsonAnySetter` on the holder restores rejection | `JsonMappingException` (plain, wrapping the setter's `IllegalArgumentException` — not `UnrecognizedPropertyException`) |
 | Companion `operator fun invoke` as `@JsonCreator` on a private-constructor `data class` (`@ConsistentCopyVisibility`) | Property-based binding through the factory with defaulted parameters; call sites keep constructor syntax while normalization lives in the factory | — |
 
-All failure types extend `JsonMappingException`, itself a
-`JsonProcessingException`. One catch in `ModelYaml.decode` therefore covers
-every decode failure, which is what lets a caller present a single
-`IllegalArgumentException` for "malformed entry".
-
-## Developer instructions
-
-- Findings above were established against Jackson 2.19.0 by the probe tests
-  originally written in the CobraPHP core module; the probes migrate here
-  with the types in the implementation phase. Re-verify by running the probe
-  tests after any Jackson version bump.
-- The one-key subject mapping (`function: strlen`), the entry-level
-  signature narrowing, and the `@JsonUnwrapped` section gathering are pinned
-  by `JacksonSubjectProbeTest`; their verified rows are in the table above.
-  Three failure types differ from the general pattern — a value-class `init`
-  failure, a stray key under `treeToValue`, and a stray key rejected by the
-  unwrapped holder's any-setter — but all still extend
-  `JsonProcessingException`, so the single-catch contract in `ModelYaml` is
-  unaffected.
-- The `invoke`-as-creator row is pinned by the production loader tests
-  (`ModelLoaderTest` decodes class signatures and propagations through the
-  factories), not by a throwaway probe.
+- All failure types extend `JsonMappingException`, itself a
+  `JsonProcessingException`. One catch in `ModelYaml.decode` covers every
+  decode failure, which lets a caller present a single
+  `IllegalArgumentException` for "malformed entry".
+- Three failure types differ from the `ValueInstantiationException` pattern
+  — a value-class `init` failure, a stray key under `treeToValue`, and a
+  stray key rejected by the unwrapped holder's any-setter — but all extend
+  `JsonProcessingException`, so the single-catch contract in `ModelYaml`
+  holds.

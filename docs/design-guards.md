@@ -63,8 +63,8 @@ domain at its boundary.
 ## Validation Rules
 
 - The guard field is optional on `SubjectModel` and absent from
-  `ModelGenerator`: a `when:` on a generator fails as an unknown field under
-  the strict decode — no dedicated rule needed.
+  `ModelGenerator`: the strict decode rejects a `when:` key on a generator
+  as an unknown field.
 - A guard beside a non-callable subject fails in `SubjectModel` validation,
   the same place the section-admissibility rules live
   ([design-generators.md](design-generators.md)).
