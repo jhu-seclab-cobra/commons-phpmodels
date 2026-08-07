@@ -18,9 +18,10 @@ Subject, Port, Override Unit: [model.md](model.md).
   statically a different value, or the call does not supply the port), or
   *undecided* (the argument's value or the call's arity is not statically
   known).
-- **Candidate Set** — The branches that may govern one call after evaluating
-  every guard: the branches whose verdicts were undecided, plus the first
-  branch whose guard held — or the default branch when none held.
+- **Candidate Set** — The branches that may govern one call: the branches
+  undecided before the first held guard, plus that held branch — or, when
+  no guard holds, every undecided branch plus the default branch when one
+  exists.
 - **Guard Context** — What a consumer knows about one call's arguments: the
   argument count when known, and per position the scalar value when every
   interpretation of that argument is one concrete scalar. The *unknown
@@ -48,15 +49,8 @@ Subject, Port, Override Unit: [model.md](model.md).
 
 ### Branch Selection at One Call
 
-```
-guarded branches in declaration order:
-  holds     ──► stop: candidates = undecided-so-far ∪ {this branch}
-  fails     ──► skip
-  undecided ──► collect, continue
-no guard held ──► candidates = undecided-so-far ∪ {default branch, if any}
-```
-
-One candidate → its model applies exactly. Several candidates → the units
+The Candidate Set entity fixes which branches may govern; the verdicts above
+drive it. One candidate → its model applies exactly. Several candidates → the units
 combine per direction:
 
 | Unit | Combination over candidates | Direction |
@@ -72,14 +66,14 @@ branches identically.
 
 ## Invariants
 
-- The guard is optional. An unguarded entry keeps unguarded semantics
-  unchanged: a subject with only a default branch behaves exactly as before
-  guards existed.
+- The guard is optional. A subject with only a default branch has that
+  branch's model in force at every call.
 - A When Guard is declared only on a callable subject (function, method) and
   only on the model entry form. A guard on a non-callable subject, and a
   guard on a generator, are load failures.
-- The guard's port is an argument port. The return port, and any malformed
-  port, are load failures. The compared value is exactly one scalar:
+- The guard's port is an argument port. The return port, the receiver
+  port, and any malformed port, are load failures. The compared value is
+  exactly one scalar:
   boolean, integer, or string; any other value shape is a load failure.
 - Every branch satisfies every model invariant of [model.md](model.md)
   independently; no branch is validated against another.

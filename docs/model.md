@@ -21,22 +21,27 @@ Guarded branches: [model-guards.md](model-guards.md).
   [model-declarations.md](model-declarations.md). Callable kinds are
   *function* and *method*; only they admit calls, ports, and guards.
 - **Port** — An explicitly named location in a call to a callable subject:
-  *argument(n)* with n ≥ 0, or *return*. The closed set of positional
-  references; no other location exists.
+  *argument(n)* with n ≥ 0, *this* — the receiver of a call to a method —
+  or *return*. The closed set of positional references; no other location
+  exists. The *input ports* — arguments and the receiver — are the ports a
+  call supplies values through; *return* is never an input port.
 - **Model** — The single declarative statement attached to one Matching
   Subject. Composed of sections; existence condition: at least one section
   present. An entry may carry a When Guard, making it one branch of the
   subject's model ([model-guards.md](model-guards.md)). Section kinds:
   - *returns* — the classification of the call result.
-  - *propagation* — a set of declared flows, each from one argument port to
-    the return port or to another argument port. Together with *returns* it
+  - *propagation* — a set of declared flows, each from one input port to a
+    different port of the same call. Together with *returns* it
     forms the **value-semantics unit**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
     without *returns* does not exist.
-  - *sources* — the subject's value produces a non-empty set of Origin
-    Colors. The production site is fixed by the subject kind: the call
-    result for a callable, the variable's value for a predefined variable.
-    No port field.
+  - *sources* — each element produces a non-empty set of Origin Colors at
+    one production site. The site defaults per subject kind — the call
+    result for a callable, the variable's value for a predefined variable —
+    and a callable's element may instead name one argument port as its site
+    (a by-reference out-parameter). An element may restrict production to
+    the array elements whose key satisfies one of its Key Patterns; absent
+    key patterns mean the whole value.
   - *sinks* — each element names one argument port consumed under one Danger
     Category.
   - *sanitizers* — the subject neutralizes one or more Danger Categories; it
@@ -46,6 +51,10 @@ Guarded branches: [model-guards.md](model-guards.md).
 - **Name Constraint** — A regular expression over one identity field of a
   subject kind. Satisfied only when the entire case-folded field matches; a
   partial match does not satisfy.
+- **Key Pattern** — A regular expression over one array key at a source's
+  production site. Satisfied only when the entire key matches,
+  case-sensitively — array keys are runtime data, not identifiers, so no
+  case folding applies.
 - **Model Generator** — One declaration denoting one model per satisfying
   subject: a generator name, the subject kind to find, a constraint set every
   generated subject satisfies, and one model body. The name is the
@@ -103,19 +112,31 @@ model, driven by the declarations defined here.
   ignored key.
 - Each model declares exactly one subject kind. The subject kind fixes the
   identity fields exactly.
-- The port set is closed: *argument(n)* with n ≥ 0, or *return*. Any other
-  port name, and any bare integer position, is a load failure.
-- A propagation's from-port is an argument port; its to-port is the return
-  port or a different argument port. From equals to is a load failure.
+- The port set is closed: *argument(n)* with n ≥ 0, *this*, or *return*.
+  Any other port name, and any bare integer position, is a load failure.
+- The receiver port *this* exists only in a call to a method subject: a
+  model for any other subject naming it, in any section, is a load failure.
+- A propagation's from-port is an input port; its to-port is any different
+  port. *return* as a from-port, and from equals to, are load failures.
+- A sink element and a When Guard name argument ports only; neither admits
+  the receiver or the return port.
 - A propagation section requires a returns section in the same declaration.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return
   type ([model-declarations.md](model-declarations.md)).
 - The *returns* and *propagation* sections are declared only for callable
-  subjects. A predefined-variable subject admits only the *sources* section.
+  subjects. A class subject declares no assertion section. Every other
+  non-callable kind — constant, class constant, property, predefined
+  variable — admits only the *sources* section.
 - A sources section produces a non-empty color set. A sinks section is
   non-empty and each element names one argument port and one category. A
   sanitizers section neutralizes a non-empty category set.
+- A source element's explicit production site is an argument port of a
+  callable subject: explicit *return* is a load failure (the default
+  already states it), and a non-callable subject admits no explicit site.
+- A declared key-pattern set is non-empty and each pattern is a valid
+  regular expression. No rule ties key patterns to a declared type — the
+  format does not require the production site to be a declared array.
 - No model declares an anchor. Where a query starts is a property of the
   consuming analysis, never of a model.
 - Every closed-vocabulary field admits only its declared members. An

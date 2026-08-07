@@ -9,7 +9,7 @@ Guards: [design-guards.md](design-guards.md). Signatures:
 ## Design Overview
 
 - **Classes:** `VulnClassId`, `ProvenanceId` (value classes), `VulnClassDecl`,
-  `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`,
+  `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `KeyPattern`,
   `SourceDecl`, `SinkPoint`, `SanitizerDecl`, `ModelBody`, `ValueSemantics`,
   `ModelYaml` (internal object), `VocabularyLoader` (object), `PolicyLoader`
   (object), `ModelLoader` (object)
@@ -18,8 +18,10 @@ Guards: [design-guards.md](design-guards.md). Signatures:
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
   `SinkPoint` contains one `Port.Argument` and one `VulnClassId`;
-  `TaintPolicy` is built from `PolicyRow`s; the three loaders decode
-  through `ModelYaml`. All arrows one-way into the data types.
+  `SourceDecl` contains an optional `Port.Argument` site override and
+  optional `KeyPattern`s; `TaintPolicy` is built from `PolicyRow`s; the
+  three loaders decode through `ModelYaml`. All arrows one-way into the
+  data types.
 - **Exceptions:** `VocabularyException` extends `IllegalArgumentException`,
   raised on undeclared or duplicate vocabulary references;
   `IllegalArgumentException` from `init` blocks and creators on every other
@@ -71,11 +73,35 @@ matrix; rows sharing an origin accumulate by union.
 
 **Methods:** `TaintPolicy.isDangerous(color, category): Boolean`.
 
-### SourceDecl, SinkPoint, SanitizerDecl
+### SourceDecl
 
-**Responsibility:** One element of the sources / sinks / sanitizers
-sections: a non-empty produced color set; one dangerously consumed argument
-port under one category; a non-empty neutralized category set.
+**Responsibility:** One element of the sources section: a non-empty
+produced color set, an optional explicit production site, and optional key
+patterns restricting production to matching array keys.
+
+**State/Fields:** `provenance: Set<ProvenanceId>`, `at: Port.Argument?`
+(null = the kind-fixed default site, [model.md](model.md)),
+`keys: List<KeyPattern>?`.
+
+**Validation (`init`):** `provenance` non-empty; a declared `keys` list
+non-empty. Whether the subject admits an explicit site is entry-level
+validation ([design-generators.md](design-generators.md)).
+
+### KeyPattern
+
+**Responsibility:** One key pattern of a source element: the declared
+pattern with its regex, compiled at construction so no uncompiled pattern
+survives the load; equality over the pattern text (`Regex` carries no value
+equality). Decoded from the bare pattern scalar.
+
+**Methods:** `fun matches(key: String): Boolean` — entire-key,
+case-sensitive match, never a substring match.
+
+### SinkPoint, SanitizerDecl
+
+**Responsibility:** One element of the sinks / sanitizers sections: one
+dangerously consumed argument port under one category; a non-empty
+neutralized category set.
 
 ### ModelBody
 

@@ -12,10 +12,10 @@ third-party fragments — and several consumers read it. Without one shared
 format and one shared validation implementation, each producer/consumer pair
 re-invents both.
 
-**System Role.** commons-phpmodels is the format library: it owns the model
-types, the YAML decoding, and the load-time validation. It contains no
-analysis — no lookups over graphs, no taint query, no layer mounting. Those
-belong to consumers.
+**System Role.** commons-phpmodels is the format library — it owns the
+model types, the YAML decoding, and the load-time validation, while every
+analysis (graph lookups, taint queries, layer mounting) belongs to
+consumers.
 
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
@@ -51,52 +51,76 @@ declaration looks like. Composed of sections, at least one present.
   decode.
 
 **Section** — One aspect of a model: *returns*, *propagation*, *sources*,
-*sinks*, *sanitizers*, or *signature*. An absent section asserts nothing about
-that aspect, with one coupling: *returns* and *propagation* together form the
-value-semantics statement — declaring *returns* asserts the flow set
-exhaustively, so an absent propagation section then means no flow.
+*sinks*, *sanitizers*, or *signature*.
+- Scope: an absent section asserts nothing about that aspect; *returns* and
+  *propagation* form one coupled value-semantics statement
+  ([model.md](model.md)).
+- Relationships: composes a Model; its positional references are Ports.
 
 **Port** — An explicitly named location in a call: one argument position
-(`argument(n)`) or the call result (`return`). Every positional reference in a
-model is a port; the meaning is in the port name, never in a surrounding field
-name.
+(`argument(n)`), the receiver of a method call (`this`), or the call result
+(`return`).
+- Scope: every positional reference in a model; the meaning is in the port
+  name, never in a surrounding field name.
+- Relationships: named by Propagations, source elements, sink elements, and
+  When Guards.
 
-**Propagation** — One declared flow from one port to another: an argument to
-the result, or an argument to another argument. Written as a `from`/`to` port
-pair; the Mariana Trench spellings `input`/`output` are accepted synonyms.
+**Propagation** — One declared flow from one input port — an argument or the
+method receiver — to another port of the same call.
+- Scope: written as a `from`/`to` port pair; the Mariana Trench spellings
+  `input`/`output` are accepted synonyms.
+- Relationships: an element of a Model's propagation section; connects two
+  Ports.
 
-**Matching Subject** — The PHP declaration a model identifies. Seven kinds —
-function, class, method, class constant, property, constant, predefined
-variable — spelled with PHP's own static-reference grammar
-(`mysqli::query`, `mysqli::$insert_id`). The kind is named by the entry key;
-the spelling encodes identity only.
+**Matching Subject** — The PHP declaration a model identifies.
+- Scope: seven kinds — function, class, method, class constant, property,
+  constant, predefined variable — spelled with PHP's own static-reference
+  grammar (`mysqli::query`, `mysqli::$insert_id`); the entry key names the
+  kind, the spelling encodes identity only.
+- Relationships: identified by exactly one Model; found by Model Generators.
 
 **Signature** — The descriptive section: what the declaration looks like,
-never what an analysis believes about it. A signature-only entry is a complete
-entry — it states "this declaration exists".
+never what an analysis believes about it.
+- Scope: a signature-only entry is a complete entry — it states "this
+  declaration exists".
+- Relationships: one Section of a Model; describes the Matching Subject.
 
 **Model Generator** — One entry declaring one model body over every subject
-satisfying its constraints: a unique name, the subject kind to find, name
-constraints, and the model to attach. The only entry form with a wrapper
-level, separating what is matched from what is asserted.
+satisfying its constraints.
+- Scope: a unique name, the subject kind to find, name constraints, and the
+  model to attach; the only entry form with a wrapper level, separating what
+  is matched from what is asserted.
+- Relationships: denotes one Model per satisfying Matching Subject.
 
 **When Guard** — An optional condition on a model entry: an argument port
-equals one scalar value. Entries for one subject form branches; the unguarded
-entry is the default. Selection at a call is consumer behavior; the guard's
-meaning is fixed here.
+equals one scalar value.
+- Scope: entries for one subject form branches, the unguarded entry being
+  the default; the guard's meaning is fixed here, selection at a call is
+  consumer behavior.
+- Relationships: attaches to a Model entry; names one Port.
 
-**Origin Color** — A named category of untrusted provenance. Travels with a
-value along data flow.
+**Origin Color** — A named category of untrusted provenance.
+- Scope: travels with a value along data flow.
+- Relationships: declared in the Vocabulary; produced by sources; mapped by
+  the Policy.
 
 **Danger Category** — A named category of vulnerability a sink is sensitive
-to. Sink-side only.
+to.
+- Scope: sink-side only.
+- Relationships: declared in the Vocabulary; named by sinks and sanitizers;
+  enabled by the Policy.
 
 **Vocabulary** — The closed, declared sets of origin colors and danger
-categories. Any color or category named anywhere else must be declared here
-first.
+categories.
+- Scope: any color or category named anywhere else must be declared here
+  first.
+- Relationships: referenced by every Model and by the Policy.
 
 **Policy** — The global mapping from an origin color to the danger categories
-it can trigger. One matrix per analysis.
+it can trigger.
+- Scope: one matrix per analysis.
+- Relationships: relates Origin Colors to Danger Categories; validated
+  against the Vocabulary.
 
 ## Contracts & Flow
 
@@ -104,9 +128,10 @@ it can trigger. One matrix per analysis.
 - **With producers:** producers emit YAML in this format; a malformed entry is
   a decode failure at the producer's build or the consumer's load — never a
   silent miss. One validation implementation serves every caller.
-- **With consumers:** consumers receive only validated typed values. Interned
-  identifiers (`VulnClassId`, `ProvenanceId`) replace raw strings past the
-  load boundary, so a name mismatch cannot occur downstream.
+- **With consumers:** consumers receive only validated typed values.
+  Interned identifiers replace raw color and category names past the load
+  boundary, so a name mismatch cannot occur downstream
+  ([design.md](design.md)).
 
 **Internal Processing Flow**
 1. Decode — strict YAML decoding: unknown keys, unknown discriminators,

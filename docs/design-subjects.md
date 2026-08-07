@@ -10,11 +10,13 @@ and generators: [design-generators.md](design-generators.md).
   and `MemberSubject`, carrying the shared identity mechanics; seven
   concrete subtypes: `FunctionSubject`, `ClassSubject`, `MethodSubject`,
   `ClassConstantSubject`, `PropertySubject`, `ConstantSubject`,
-  `VariableSubject`); `Port` (`Argument`, `Return`)
+  `VariableSubject`); `Port` (`Argument`, `Receiver`, `Return`, with the
+  sealed sub-interface `Port.Input` marking the ports a call supplies
+  values through: `Argument` and `Receiver`)
 - **Classes:** `Propagation` (data class, private constructor, companion
   factory)
-- **Relationships:** `Propagation` contains two `Port`s. All arrows one-way
-  into the data types.
+- **Relationships:** `Propagation` contains one `Port.Input` and one
+  `Port`. All arrows one-way into the data types.
 - **Exceptions:** `IllegalArgumentException` from `init` blocks and creators
   on every format violation ([design.md](design.md)).
 - **Dependency roles:** Data holders: all types in this file.
@@ -69,26 +71,37 @@ forbidden elsewhere, leading namespace slashes stripped). Violations throw
 ### Port (sealed)
 
 **Responsibility:** One explicitly named location in a call, decoded from
-the string spellings `argument(n)` and `return`. No bare integer and no
-sentinel value exists anywhere in the port vocabulary.
+the string spellings `argument(n)`, `this`, and `return`. No bare integer
+and no sentinel value exists anywhere in the port vocabulary.
 
-**Subtypes:** `Argument(position: Int)` — `position >= 0`, with its own
-narrowing creator (a field typed as the subtype does not consult the
-supertype's creator, [impl.md](impl.md)); `Return` (object).
+**Subtypes:** `Argument(position: Int)` — `position >= 0`; `Receiver`
+(object, spelling `this`); `Return` (object). The sealed sub-interface
+`Port.Input` marks the ports a call supplies values through (`Argument`,
+`Receiver`), so a from-side field is input-typed instead of
+runtime-checked. `Argument` and `Input` each carry their own narrowing
+creator (a field typed as a subtype does not consult the supertype's
+creator, [impl.md](impl.md)).
 
 **Methods:** companion `parse(raw: String): Port` — the decode entry point;
 `IllegalArgumentException` on any other spelling.
 
 ### Propagation
 
-**Responsibility:** One declared flow between two ports: a `data class`
-over the resolved pair with a private constructor. The companion `invoke`
-factory — also the Jackson creator — takes the synonym spellings
-`from`/`input` and `to`/`output` as four nullable parameters and resolves
-each side; a Jackson alias would let a pair naming both spellings decode
-silently ([impl.md](impl.md)).
+**Responsibility:** One declared flow between two ports — `from:
+Port.Input`, `to: Port`: a `data class` over the resolved pair with a
+private constructor. The companion `invoke` factory — also the Jackson
+creator — takes the synonym spellings `from`/`input` and `to`/`output` as
+four nullable parameters and resolves each side; a Jackson alias would let
+a pair naming both spellings decode silently ([impl.md](impl.md)).
 
 **Validation:** exactly one spelling per side (factory); `to != from`
 (`init`).
+
+## Exception / Error Types
+
+- `IllegalArgumentException` — blank identity field, malformed `::` or port
+  spelling, a propagation whose sides are equal or double-spelled. Raised
+  in `init` blocks and creators at decode through the shared load-boundary
+  contract ([design.md](design.md)).
 
 Domain semantics: [model-declarations.md](model-declarations.md).

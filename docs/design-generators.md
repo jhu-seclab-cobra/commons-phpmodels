@@ -24,8 +24,9 @@ Signatures: [design-declarations.md](design-declarations.md).
 - **Exceptions:** `IllegalArgumentException` from `init` blocks — a pattern
   that does not compile, a class constraint on a non-method find, a missing
   name constraint, a blank generator name, a variable subject declaring a
-  non-source section, a kind-mismatched signature, or explicit `returns`
-  beside a callable signature.
+  non-source section, a kind-mismatched signature, explicit `returns`
+  beside a callable signature, a receiver port on a non-method subject, or
+  an explicit source site on a non-callable subject.
 - **Dependency roles:** Data holders: `SubjectModel`, `ModelGenerator`, the
   constraint subtypes. Consumers: analyzers and compilers outside this
   library.
@@ -67,16 +68,19 @@ signature-derived returns completion and rejects any unknown key
 ([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
-- `subject` admits only the sections its kind allows: a non-callable subject
-  rejects returns/propagation, guard, and a callable signature; a variable
-  subject declares only sources.
+- `subject` admits only the sections its kind allows: a non-callable
+  subject rejects returns/propagation and the guard; a class subject
+  declares nothing besides its signature; every other non-callable kind
+  declares only sources.
+- Port admissibility follows the subject kind: a receiver port anywhere in
+  the body requires a method subject; a source element's explicit
+  production site requires a callable subject.
 - `signature` subtype matches the subject kind
   ([design-declarations.md](design-declarations.md)).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
   source); a propagation section beside a callable signature is completed
   into the value-semantics unit with the derived classification before body
-  construction, so `ModelBody`'s propagation-requires-returns rule holds
-  unchanged.
+  construction, so `ModelBody`'s propagation-requires-returns rule holds.
 - At least one section present: a signature or a non-empty body — an entry
   asserting nothing is a load failure.
 - Body-internal validation lives in `ModelBody` ([design.md](design.md)).
@@ -120,10 +124,11 @@ every generated declaration traces back to.
 **Validation (`init`):** `name` is non-blank; `where` contains at least one
 `NameConstraint`; a `ClassConstraint` requires `find == METHOD`; the body
 is non-empty (a generator attaches no signature, so an empty body asserts
-nothing); `find == VARIABLE` ⟹ the body declares only sources. Name
-uniqueness spans
-one whole load across layers, so it is the loading consumer's check, not
-this class's.
+nothing); `find == VARIABLE` ⟹ the body declares only sources; a body
+naming the receiver port requires `find == METHOD`; a source element with
+an explicit production site requires a callable find kind. Name uniqueness
+spans one whole load across layers, so it is the loading consumer's check,
+not this class's.
 
 **Methods:**
 - `fun matches(subject: ModelSubject): Boolean` — the subject is of the
@@ -143,10 +148,13 @@ this class's.
 - The variable-subjects-only-sources rule is enforced in both forms — on the
   subject in `SubjectModel`, on the find kind in `ModelGenerator` — so no
   entry form is the loophole for the other.
+- Kind admissibility — which sections, ports, explicit source sites, and
+  signature subtype each subject kind admits — is one declared authority
+  read by both entry forms, never two hand-maintained rule sets.
 - Patterns are matched with entire-field semantics (`Regex.matches`), never
-  `containsMatchIn`: `get_.*` must not silently match `widget_getter`. This
-  is the one deliberate departure from Mariana Trench, whose patterns match
-  partially.
+  `containsMatchIn`: `get_.*` must not silently match `widget_getter`.
+  Mariana Trench patterns match partially; this format matches the entire
+  field.
 - Patterns are matched against case-folded identities; explicit subject
   spellings undergo the same folding, so both paths compare in one case.
 
