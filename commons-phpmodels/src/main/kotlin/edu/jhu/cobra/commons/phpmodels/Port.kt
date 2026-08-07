@@ -52,7 +52,10 @@ public sealed interface Port {
             val match =
                 ARGUMENT_SPELLING.matchEntire(raw)
                     ?: throw IllegalArgumentException("Port must be 'return' or 'argument(n)', got '$raw'")
-            return Argument(match.groupValues[1].toInt())
+            val position =
+                match.groupValues[1].toIntOrNull()
+                    ?: throw IllegalArgumentException("Argument position out of range: '$raw'")
+            return Argument(position)
         }
     }
 }
