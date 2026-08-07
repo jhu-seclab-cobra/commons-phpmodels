@@ -46,7 +46,7 @@ public sealed interface ModelEntry
  *   admits neither the guard, the signature subtype, nor a declared section,
  *   or the body validation fails.
  */
-public class SubjectModel(
+public data class SubjectModel(
     public val subject: ModelSubject,
     public val guard: WhenGuard? = null,
     public val signature: SignatureInfo? = null,
@@ -72,18 +72,6 @@ public class SubjectModel(
         val admitted = if (subject is ClassSubject) body.isEmpty else body.isEmpty || body.declaresOnlySources
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
     }
-
-    override fun equals(other: Any?): Boolean =
-        other is SubjectModel &&
-            other.subject == subject &&
-            other.guard == guard &&
-            other.signature == signature &&
-            other.body == body
-
-    override fun hashCode(): Int =
-        31 * (31 * (31 * subject.hashCode() + guard.hashCode()) + signature.hashCode()) + body.hashCode()
-
-    override fun toString(): String = "SubjectModel(subject=$subject, guard=$guard, signature=$signature, body=$body)"
 
     public companion object {
         // The signature mapping carries no discriminator: its subtype is
