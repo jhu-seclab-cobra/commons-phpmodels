@@ -39,6 +39,8 @@ import kotlin.test.assertNull
  * - `propagation without returns is rejected` — the unit is asserted whole.
  * - `duplicate key in one mapping is rejected` — a doubled key never decodes
  *   last-wins, at the entry level and inside a propagation pair.
+ * - `second document in one stream is rejected` — entries after a `---`
+ *   separator never drop silently.
  */
 internal class ModelLoaderTest {
     private fun load(yaml: String): List<ModelEntry> = ModelLoader.load(yaml.byteInputStream())
@@ -378,6 +380,23 @@ internal class ModelLoaderTest {
                   signature:
                     type: string
                     stray: 1
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `second document in one stream is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: strlen
+                  returns: num
+                ---
+                - subject:
+                    function: substr
+                  returns: str
                 """.trimIndent(),
             )
         }

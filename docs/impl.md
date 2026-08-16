@@ -20,6 +20,16 @@ default; without it a doubled YAML key decodes last-wins, silently dropping
 the earlier value. Enabled on the mapper builder; a doubled key throws
 `JsonParseException` at parse.
 
+**[jackson]** `DeserializationFeature.FAIL_ON_TRAILING_TOKENS` is unusable
+with this format: the check also runs after buffered inner binds (deduction,
+`@JsonUnwrapped`, `treeToValue`), failing valid single-document loads with
+"Trailing token … after value (bound as `java.lang.String`)".
+
+**[jackson]** `mapper.createParser(input).use { readValue(parser, shape); parser.nextToken() }`
+— the root-level trailing check that works: `nextToken()` is non-null when a
+second `---` document follows; without the check `readValue(InputStream, …)`
+silently drops every document after the first.
+
 ## Libraries
 
 - com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
@@ -76,6 +86,7 @@ the earlier value. Enabled on the mapper builder; a doubled key throws
 | Stray key on a form with an `@JsonUnwrapped` creator parameter | Silently absorbed — the unwrapped path funnels unknown keys past `FAIL_ON_UNKNOWN_PROPERTIES`; a throwing `@JsonAnySetter` on the holder restores rejection | `JsonMappingException` (plain, wrapping the setter's `IllegalArgumentException` — not `UnrecognizedPropertyException`) |
 | Companion `operator fun invoke` as `@JsonCreator` on a private-constructor `data class` (`@ConsistentCopyVisibility`) | Property-based binding through the factory with defaulted parameters; call sites keep constructor syntax while normalization lives in the factory | — |
 | Doubled key in one mapping (`STRICT_DUPLICATE_DETECTION`) | Rejected at parse — never decodes last-wins, including a doubled synonym spelling (`from:` twice) the `exactlyOne` check cannot see | `JsonParseException` |
+| Second `---` document in one stream | Rejected by the root-level parser-exhaustion check in `ModelYaml.decode` — entries after the first document never drop silently | `IllegalArgumentException` (direct, not wrapped) |
 
 - All binding failure types extend `JsonMappingException`; the parse-level
   `JsonParseException` sits beside them. Both extend

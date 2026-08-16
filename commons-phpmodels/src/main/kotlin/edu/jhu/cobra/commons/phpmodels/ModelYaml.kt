@@ -37,14 +37,24 @@ internal object ModelYaml {
      * Decodes [input] into [shape].
      *
      * @throws IllegalArgumentException If the content does not decode into [shape]
-     *   — unknown key, unknown discriminator, missing field, rejected value.
+     *   — unknown key, unknown discriminator, missing field, rejected value — or
+     *   the stream carries content after the document root.
      */
     fun <T> decode(
         input: InputStream,
         shape: TypeReference<T>,
     ): T =
         try {
-            mapper.readValue(input, shape)
+            mapper.createParser(input).use { parser ->
+                val value = mapper.readValue(parser, shape)
+                // The root-level exhaustion check: a second `---` document would
+                // otherwise drop silently. FAIL_ON_TRAILING_TOKENS is unusable
+                // here — it misfires on the buffered inner binds (impl.md).
+                require(parser.nextToken() == null) {
+                    "Malformed model document: content after the document root is not decoded; one document per stream"
+                }
+                value
+            }
         } catch (cause: JsonProcessingException) {
             throw IllegalArgumentException("Malformed model document: ${cause.originalMessage}", cause)
         }
