@@ -37,6 +37,8 @@ import kotlin.test.assertNull
  * - `stray key inside a signature is rejected` — strictness survives the
  *   narrowing.
  * - `propagation without returns is rejected` — the unit is asserted whole.
+ * - `duplicate key in one mapping is rejected` — a doubled key never decodes
+ *   last-wins, at the entry level and inside a propagation pair.
  */
 internal class ModelLoaderTest {
     private fun load(yaml: String): List<ModelEntry> = ModelLoader.load(yaml.byteInputStream())
@@ -376,6 +378,33 @@ internal class ModelLoaderTest {
                   signature:
                     type: string
                     stray: 1
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `duplicate key in one mapping is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: strlen
+                  returns: str
+                  returns: num
+                """.trimIndent(),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: substr
+                  returns: str
+                  propagation:
+                    - from: argument(0)
+                      from: argument(1)
+                      to: return
                 """.trimIndent(),
             )
         }

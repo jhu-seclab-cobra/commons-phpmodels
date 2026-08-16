@@ -143,8 +143,9 @@ extension; this library owns no lattice type.
 ### ModelYaml (internal)
 
 **Responsibility:** The one YAML decoder every document of the format passes
-through, so the strictness is declared once: `FAIL_ON_UNKNOWN_PROPERTIES`
-and `ACCEPT_CASE_INSENSITIVE_ENUMS` on a Kotlin-module mapper
+through, so the strictness is declared once: `FAIL_ON_UNKNOWN_PROPERTIES`,
+`ACCEPT_CASE_INSENSITIVE_ENUMS`, and `STRICT_DUPLICATE_DETECTION` (a doubled
+key never decodes last-wins) on a Kotlin-module mapper
 ([impl.md](impl.md)). Wraps every `JsonProcessingException` in
 `IllegalArgumentException` with the underlying reason. Internal — the three
 loaders are the public surface, so no Jackson type crosses the API.

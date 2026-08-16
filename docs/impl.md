@@ -2,7 +2,7 @@
 
 ## APIs
 
-**[jackson]** `ObjectMapper(YAMLFactory()).registerKotlinModule().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES).enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)`
+**[jackson]** `YAMLMapper.builder().enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS).enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build().registerKotlinModule().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)`
 — `jacksonObjectMapper(...)` takes a `KotlinModule.Builder.() -> Unit` in
 2.19, not a `JsonFactory`; passing `YAMLFactory()` to it does not compile.
 
@@ -14,6 +14,11 @@ inherited default a future release may flip.
 files keep the lowercase vocabulary (`str`, `bool`, `any`). An unrecognized
 constant still fails (`InvalidFormatException`) — case insensitivity widens
 spelling only.
+
+**[jackson]** `StreamReadFeature.STRICT_DUPLICATE_DETECTION` is off by
+default; without it a doubled YAML key decodes last-wins, silently dropping
+the earlier value. Enabled on the mapper builder; a doubled key throws
+`JsonParseException` at parse.
 
 ## Libraries
 
@@ -70,9 +75,11 @@ spelling only.
 | `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters; unwrapped properties count in a `Id.DEDUCTION` fingerprint, so routing is unaffected | — |
 | Stray key on a form with an `@JsonUnwrapped` creator parameter | Silently absorbed — the unwrapped path funnels unknown keys past `FAIL_ON_UNKNOWN_PROPERTIES`; a throwing `@JsonAnySetter` on the holder restores rejection | `JsonMappingException` (plain, wrapping the setter's `IllegalArgumentException` — not `UnrecognizedPropertyException`) |
 | Companion `operator fun invoke` as `@JsonCreator` on a private-constructor `data class` (`@ConsistentCopyVisibility`) | Property-based binding through the factory with defaulted parameters; call sites keep constructor syntax while normalization lives in the factory | — |
+| Doubled key in one mapping (`STRICT_DUPLICATE_DETECTION`) | Rejected at parse — never decodes last-wins, including a doubled synonym spelling (`from:` twice) the `exactlyOne` check cannot see | `JsonParseException` |
 
-- All failure types extend `JsonMappingException`, itself a
-  `JsonProcessingException`. One catch in `ModelYaml.decode` covers every
+- All binding failure types extend `JsonMappingException`; the parse-level
+  `JsonParseException` sits beside them. Both extend
+  `JsonProcessingException`, so one catch in `ModelYaml.decode` covers every
   decode failure, which lets a caller present a single
   `IllegalArgumentException` for "malformed entry".
 - Three failure types differ from the `ValueInstantiationException` pattern

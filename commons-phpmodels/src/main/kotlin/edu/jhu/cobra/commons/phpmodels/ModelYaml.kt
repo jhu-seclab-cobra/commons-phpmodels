@@ -1,6 +1,7 @@
 package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.core.StreamReadFeature
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
@@ -20,11 +21,14 @@ internal object ModelYaml {
     // FAIL_ON_UNKNOWN_PROPERTIES is a stated design rule, not an inherited default:
     // a stray key is a configuration mistake and fails the load. Case-insensitive
     // enums let the files keep the lowercase vocabulary used by the identifiers
-    // beside them; an unrecognized constant still fails.
+    // beside them; an unrecognized constant still fails. Duplicate-key detection
+    // closes the stream-level gap: without it a doubled key decodes last-wins,
+    // silently dropping the earlier declaration.
     private val mapper: ObjectMapper =
         YAMLMapper
             .builder()
             .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
             .build()
             .registerKotlinModule()
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
