@@ -101,13 +101,19 @@ comes from:
   `$` mandatory for property names and forbidden elsewhere. Violation is a
   load failure, never a guess.
 - Case folding is fixed per kind by the table above, applied once at the
-  load boundary; PHP's own case rules are the authority.
+  load boundary; PHP's own case rules are the authority. Exception:
+  predefined variable names are case-sensitive in PHP but fold here — the
+  superglobal set is closed and collision-free under folding, so lookups
+  tolerate spelling variance without merging two distinct variables.
 - The signature section is one override unit: a higher layer replacing a
   subject's signature replaces it whole.
 - A signature never produces a taint statement. Sources, sinks, and
   sanitizers are hand-declared assertions in every layer.
 - The type vocabulary for declared types is closed; an unknown type name is
-  a load failure, never a widening default.
+  a load failure, never a widening default. It covers plain type names
+  only — a nullable (`?type`) or union (`a|b`) spelling is a load failure;
+  the extraction producer simplifies such upstream declarations before they
+  enter a file.
 - Assertions attach uniformly: every subject kind admits the sections its
   callability allows — returns/propagation only for function and method;
   sources for any kind that produces a value.

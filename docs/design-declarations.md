@@ -69,6 +69,13 @@ STR; int, float → NUM; bool → BOOL; else ANY). Decodes from the bare scalar
 The closed keyword-type set is a constant in this file — fixed by the PHP
 type system, not configuration.
 
+The vocabulary covers plain type names only: a nullable (`?type`) or union
+(`a|b`) spelling is a load failure, never a widening default — an upstream
+declaration carrying one is simplified by the extraction producer before it
+enters a file. A standalone keyword outside the closed set (`never`,
+`false`, `self`, `static`) matches the class-name spelling and derives to
+`ANY`, which is the correct classification for each.
+
 ### Classifier, Visibility
 
 **Responsibility:** Closed enums for the class-like declaration kinds and

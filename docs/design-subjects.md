@@ -70,6 +70,12 @@ spelling-grammar character in an identity field (`::`, `$`, a leading `\`).
 The base-class invariant covers both construction paths, so a directly
 constructed subject and a parsed spelling always agree on one identity.
 
+**Folding:** identity fields fold with Kotlin `String.lowercase()` — Unicode
+full case mapping — while PHP folds identifiers ASCII-only. The divergence
+is confined to non-ASCII identifiers, which the PHP builtin namespace does
+not contain; an entry naming one folds more aggressively than PHP would,
+never less.
+
 ### Port (sealed)
 
 **Responsibility:** One explicitly named location in a call, decoded from
