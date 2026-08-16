@@ -41,6 +41,8 @@ import kotlin.test.assertNull
  *   last-wins, at the entry level and inside a propagation pair.
  * - `second document in one stream is rejected` — entries after a `---`
  *   separator never drop silently.
+ * - `guard integer beyond Long range is rejected` — the compared value never
+ *   truncates silently.
  */
 internal class ModelLoaderTest {
     private fun load(yaml: String): List<ModelEntry> = ModelLoader.load(yaml.byteInputStream())
@@ -380,6 +382,22 @@ internal class ModelLoaderTest {
                   signature:
                     type: string
                     stray: 1
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `guard integer beyond Long range is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: strlen
+                  when:
+                    port: argument(0)
+                    is: 99999999999999999999999999
+                  returns: num
                 """.trimIndent(),
             )
         }

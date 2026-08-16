@@ -57,7 +57,12 @@ public data class WhenGuard(
         private fun scalarOf(node: JsonNode): GuardValue =
             when {
                 node.isBoolean -> GuardValue.BoolValue(node.booleanValue())
-                node.isIntegralNumber -> GuardValue.IntValue(node.longValue())
+                // canConvertToLong guards the width: longValue() on a wider
+                // integral silently wraps instead of failing.
+                node.isIntegralNumber -> {
+                    require(node.canConvertToLong()) { "Guard 'is' integer is out of Long range: $node" }
+                    GuardValue.IntValue(node.longValue())
+                }
                 node.isTextual -> GuardValue.StrValue(node.textValue())
                 else -> throw IllegalArgumentException(
                     "Guard 'is' must be a boolean, integer, or string scalar, got: $node",

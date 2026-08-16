@@ -51,7 +51,8 @@ domain at its boundary.
 `StrValue(value: String)` — value classes with equality by content.
 
 **Decoding:** the `is` field arrives as a raw tree node and narrows by shape
-(boolean / integral / textual); any other shape throws in the creator
+(boolean / integral / textual); any other shape throws in the creator, and an
+integral outside `Long` range fails decode instead of wrapping
 ([impl.md](impl.md)).
 
 ## Exception / Error Types
