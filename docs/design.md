@@ -71,6 +71,9 @@ category and color names exist.
 danger categories it enables. `TaintPolicy` — the folded origin→categories
 matrix; rows sharing an origin accumulate by union.
 
+**Validation (`init`):** `enables` non-empty — a row enabling no category
+asserts nothing, like every other empty declared section.
+
 **Methods:** `TaintPolicy.isDangerous(color, category): Boolean`.
 
 ### SourceDecl

@@ -13,6 +13,8 @@ import kotlin.test.assertFailsWith
  *   [VocabularyException].
  * - `policy folds rows sharing an origin` — [TaintPolicy] unions enabled
  *   categories.
+ * - `row enabling no category is rejected` — an empty enables set asserts
+ *   nothing, like every other empty declared section.
  */
 internal class PolicyLoaderTest {
     private val vocabulary =
@@ -60,6 +62,18 @@ internal class PolicyLoaderTest {
                 """
                 - origin: remote
                   enables: [rce]
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `row enabling no category is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - origin: remote
+                  enables: []
                 """.trimIndent(),
             )
         }

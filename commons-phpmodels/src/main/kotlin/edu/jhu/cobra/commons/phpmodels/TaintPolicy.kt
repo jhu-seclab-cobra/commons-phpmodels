@@ -7,11 +7,16 @@ package edu.jhu.cobra.commons.phpmodels
  *
  * @property origin Interned origin color the row governs.
  * @property enables Danger categories this origin makes dangerous.
+ * @throws IllegalArgumentException If no category is enabled.
  */
 public data class PolicyRow(
     val origin: ProvenanceId,
     val enables: Set<VulnClassId>,
-)
+) {
+    init {
+        require(enables.isNotEmpty()) { "Policy row for '${origin.id}' enables no category" }
+    }
+}
 
 /**
  * The global origin→categories matrix. Answers whether a value of a given
