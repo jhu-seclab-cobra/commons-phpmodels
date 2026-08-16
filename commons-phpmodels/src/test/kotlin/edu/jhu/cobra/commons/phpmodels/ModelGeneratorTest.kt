@@ -73,7 +73,8 @@ internal class ModelGeneratorTest {
 
     @Test
     fun `patterns match case-insensitively`() {
-        val generator = ModelGenerator("g", SubjectKind.METHOD, listOf(NameConstraint("Query"), ClassConstraint("MySQLi.*")), sources)
+        val where = listOf(NameConstraint("Query"), ClassConstraint("MySQLi.*"))
+        val generator = ModelGenerator("g", SubjectKind.METHOD, where, sources)
         assertEquals(true, generator.matches(MethodSubject("mysqli_stmt", "query")))
     }
 
