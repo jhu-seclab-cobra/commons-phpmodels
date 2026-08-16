@@ -38,7 +38,9 @@ public sealed interface SubjectConstraint {
 public sealed class PatternConstraint(
     public val pattern: String,
 ) : SubjectConstraint {
-    final override val regex: Regex = Regex(pattern)
+    // Identities are case-folded at the load boundary; matching the pattern
+    // case-insensitively keeps an uppercase literal from never matching.
+    final override val regex: Regex = Regex(pattern, RegexOption.IGNORE_CASE)
 
     final override fun equals(other: Any?): Boolean =
         other is PatternConstraint && other::class == this::class && other.pattern == pattern

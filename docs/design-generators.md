@@ -104,8 +104,9 @@ compilation, per-concrete-kind equality over the pattern, and the spelling.
   `ModelSubject.name` every kind exposes, [design-subjects.md](design-subjects.md)).
 - `ClassConstraint(pattern: String)` — over a method subject's owning class.
 
-**State:** the base holds `val regex: Regex`, compiled at construction; an
-invalid pattern throws there, so no uncompiled pattern survives the load.
+**State:** the base holds `val regex: Regex`, compiled at construction with
+`IGNORE_CASE`; an invalid pattern throws there, so no uncompiled pattern
+survives the load.
 
 **Methods:** `fun matches(field: String): Boolean` — entire-field match
 against the case-folded identity, never a substring match.
@@ -155,7 +156,9 @@ not this class's.
   `containsMatchIn`: `get_.*` must not silently match `widget_getter`.
   Mariana Trench patterns match partially; this format matches the entire
   field.
-- Patterns are matched against case-folded identities; explicit subject
-  spellings undergo the same folding, so both paths compare in one case.
+- Patterns are matched against case-folded identities and compile with
+  `IGNORE_CASE`, so an uppercase pattern literal matches instead of silently
+  never matching; explicit subject spellings undergo the same folding, so
+  both paths compare in one case.
 
 Concept: [concept.md](concept.md). Domain semantics: [model.md](model.md).

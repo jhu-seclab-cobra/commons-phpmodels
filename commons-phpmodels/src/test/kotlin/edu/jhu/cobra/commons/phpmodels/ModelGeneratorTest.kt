@@ -18,6 +18,8 @@ import kotlin.test.assertNotEquals
  *   find fails.
  * - `matches requires kind and every constraint` — entire-field match over
  *   the folded identity; declaration-only kinds never match.
+ * - `patterns match case-insensitively` — an uppercase pattern literal
+ *   matches the folded identity instead of silently never matching.
  * - `constraints compare by pattern within their kind` — equality, hash-code
  *   agreement, and cross-kind distinctness of the two constraint types.
  * - `invalid pattern fails at construction` — no uncompiled pattern survives
@@ -67,6 +69,12 @@ internal class ModelGeneratorTest {
         assertEquals(false, generator.matches(MethodSubject("pdo", "query")))
         assertEquals(false, generator.matches(FunctionSubject("query")))
         assertEquals(false, generator.matches(MethodSubject("mysqli", "multi_query")))
+    }
+
+    @Test
+    fun `patterns match case-insensitively`() {
+        val generator = ModelGenerator("g", SubjectKind.METHOD, listOf(NameConstraint("Query"), ClassConstraint("MySQLi.*")), sources)
+        assertEquals(true, generator.matches(MethodSubject("mysqli_stmt", "query")))
     }
 
     @Test
