@@ -40,7 +40,8 @@ public sealed interface ModelSubject {
  * their kind is case-insensitive.
  *
  * @property name The declared name, exactly as the subtype passed it.
- * @throws IllegalArgumentException If the declared name is blank.
+ * @throws IllegalArgumentException If the declared name is blank or carries a
+ *   spelling-grammar character.
  */
 public sealed class NamedSubject(
     private val kind: String,
@@ -48,7 +49,9 @@ public sealed class NamedSubject(
     private val spelledPrefix: String = "",
 ) : ModelSubject {
     init {
-        require(name.isNotBlank()) { "${kind.replaceFirstChar(Char::uppercaseChar)} subject declares a blank name" }
+        val label = kind.replaceFirstChar(Char::uppercaseChar)
+        require(name.isNotBlank()) { "$label subject declares a blank name" }
+        requirePlainIdentity(label, "name", name)
     }
 
     final override fun equals(other: Any?): Boolean =
@@ -68,7 +71,8 @@ public sealed class NamedSubject(
  *
  * @property owner Case-folded name of the owning class.
  * @property name The declared member name, exactly as the subtype passed it.
- * @throws IllegalArgumentException If either declared name is blank.
+ * @throws IllegalArgumentException If either declared name is blank or
+ *   carries a spelling-grammar character.
  */
 public sealed class MemberSubject(
     private val kind: String,
@@ -82,6 +86,8 @@ public sealed class MemberSubject(
         val label = kind.replaceFirstChar(Char::uppercaseChar)
         require(this.owner.isNotBlank()) { "$label subject declares a blank class" }
         require(name.isNotBlank()) { "$label subject '${this.owner}' declares a blank name" }
+        requirePlainIdentity(label, "class", this.owner)
+        requirePlainIdentity(label, "name", name)
     }
 
     final override fun equals(other: Any?): Boolean =
@@ -102,7 +108,7 @@ public class FunctionSubject(
         /** @throws IllegalArgumentException If [raw] is not a plain function name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): FunctionSubject = FunctionSubject(simpleName(KIND, raw))
+        public fun parse(raw: String): FunctionSubject = FunctionSubject(simpleName(raw))
     }
 }
 
@@ -119,7 +125,7 @@ public class ClassSubject(
         /** @throws IllegalArgumentException If [raw] is not a plain class name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): ClassSubject = ClassSubject(simpleName(KIND, raw))
+        public fun parse(raw: String): ClassSubject = ClassSubject(simpleName(raw))
     }
 }
 
@@ -138,7 +144,7 @@ public class MethodSubject(
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): MethodSubject {
-            val (owner, name) = memberPieces(KIND, raw)
+            val (owner, name) = ownerAndMember(KIND, raw)
             return MethodSubject(owner, name)
         }
     }
@@ -159,7 +165,7 @@ public class ClassConstantSubject(
         @JvmStatic
         @JsonCreator
         public fun parse(raw: String): ClassConstantSubject {
-            val (owner, name) = memberPieces(KIND, raw)
+            val (owner, name) = ownerAndMember(KIND, raw)
             return ClassConstantSubject(owner, name)
         }
     }
@@ -197,7 +203,7 @@ public class ConstantSubject(
         /** @throws IllegalArgumentException If [raw] is not a plain constant name. */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): ConstantSubject = ConstantSubject(simpleName(KIND, raw))
+        public fun parse(raw: String): ConstantSubject = ConstantSubject(simpleName(raw))
     }
 }
 
@@ -216,35 +222,28 @@ public class VariableSubject(
         @JsonCreator
         public fun parse(raw: String): VariableSubject {
             require(raw.startsWith('$')) { "Variable subject must be spelled '\$name', got '$raw'" }
-            val name = raw.drop(1)
-            require('$' !in name && "::" !in name) { "Variable subject declares a malformed name: '$raw'" }
-            return VariableSubject(name)
+            return VariableSubject(raw.drop(1))
         }
     }
 }
 
-// The single authority for the subject spelling grammar: a leading namespace
-// slash is stripped; `$` is mandatory for property names and forbidden
-// elsewhere; a member spelling has exactly one `::` with both sides non-empty.
+// The subject spelling grammar: a leading namespace slash is stripped, `$` is
+// mandatory for property and variable names, and a member spelling splits at
+// the first `::`. Residual grammar characters inside the split pieces are
+// rejected by the base-class identity invariant, so the spelling creators and
+// direct construction yield one identity.
 
-private fun simpleName(
-    kind: String,
-    raw: String,
-): String {
-    val name = raw.removePrefix("\\")
-    require("::" !in name) { "A $kind subject takes a plain name, got member spelling '$raw'" }
-    require('$' !in name) { "A $kind subject name must not contain '\$': '$raw'" }
-    return name
+private fun requirePlainIdentity(
+    label: String,
+    field: String,
+    value: String,
+) {
+    require("::" !in value) { "$label subject $field contains '::': '$value'" }
+    require('$' !in value) { "$label subject $field contains '\$': '$value'" }
+    require(!value.startsWith('\\')) { "$label subject $field starts with '\\': '$value'" }
 }
 
-private fun memberPieces(
-    kind: String,
-    raw: String,
-): Pair<String, String> {
-    val (owner, member) = ownerAndMember(kind, raw)
-    require('$' !in member) { "A $kind subject member must not contain '\$': '$raw'" }
-    return owner to member
-}
+private fun simpleName(raw: String): String = raw.removePrefix("\\")
 
 private fun propertyPieces(
     kind: String,
@@ -252,9 +251,7 @@ private fun propertyPieces(
 ): Pair<String, String> {
     val (owner, member) = ownerAndMember(kind, raw)
     require(member.startsWith('$')) { "A $kind subject member must be spelled '\$name', got '$raw'" }
-    val name = member.drop(1)
-    require('$' !in name) { "A $kind subject member declares a malformed name: '$raw'" }
-    return owner to name
+    return owner to member.drop(1)
 }
 
 private fun ownerAndMember(
@@ -264,9 +261,5 @@ private fun ownerAndMember(
     val spelling = raw.removePrefix("\\")
     val separator = spelling.indexOf("::")
     require(separator >= 0) { "A $kind subject must be spelled 'class::member', got '$raw'" }
-    val owner = spelling.substring(0, separator)
-    val member = spelling.substring(separator + 2)
-    require("::" !in member) { "A $kind subject spelling has more than one '::': '$raw'" }
-    require('$' !in owner) { "A $kind subject class must not contain '\$': '$raw'" }
-    return owner to member
+    return spelling.substring(0, separator) to spelling.substring(separator + 2)
 }

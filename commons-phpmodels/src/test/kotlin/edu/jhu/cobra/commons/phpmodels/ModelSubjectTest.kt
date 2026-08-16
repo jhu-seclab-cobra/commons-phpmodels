@@ -25,6 +25,9 @@ import kotlin.test.assertNotEquals
  * - `blank identity is rejected` — a blank name fails construction.
  * - `constructors fold like the creators` — direct construction folds the
  *   same identity fields the spelling creators fold.
+ * - `direct construction rejects spelling characters` — `::`, `$`, or a
+ *   leading `\` in an identity field fails, so construction and the spelling
+ *   creators yield one identity.
  * - `subjects of different kinds never compare equal` — same identity under
  *   two kinds stays distinct.
  * - `equal subjects agree on hash code` — a subject is usable as a lookup
@@ -108,6 +111,17 @@ internal class ModelSubjectTest {
         assertEquals(MethodSubject.parse("mysqli::query"), MethodSubject("MySQLi", "Query"))
         assertEquals(ClassConstantSubject.parse("mysqli::REPORT_ERROR"), ClassConstantSubject("MYSQLI", "REPORT_ERROR"))
         assertEquals(VariableSubject.parse("\$_get"), VariableSubject("_GET"))
+    }
+
+    @Test
+    fun `direct construction rejects spelling characters`() {
+        assertFailsWith<IllegalArgumentException> { FunctionSubject("a::b") }
+        assertFailsWith<IllegalArgumentException> { FunctionSubject("\\strlen") }
+        assertFailsWith<IllegalArgumentException> { ConstantSubject("\$FOO") }
+        assertFailsWith<IllegalArgumentException> { MethodSubject("my\$qli", "query") }
+        assertFailsWith<IllegalArgumentException> { MethodSubject("mysqli", "b::c") }
+        assertFailsWith<IllegalArgumentException> { PropertySubject("mysqli", "\$insert_id") }
+        assertFailsWith<IllegalArgumentException> { VariableSubject("\$_get") }
     }
 
     @Test

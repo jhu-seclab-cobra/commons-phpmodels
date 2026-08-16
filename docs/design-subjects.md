@@ -47,11 +47,10 @@ passes `name` folded or as-spelled per its sensitivity.
 **Decoding:** the YAML form is a one-key mapping — the key names the kind,
 the value is the PHP-native spelling string (`function: strlen`,
 `method: mysqli::query`). Each subtype's companion carries a creator taking
-the raw spelling; one private splitter owns the `::` grammar (exactly one
-separator, both sides non-empty, `$` mandatory for property names and
-forbidden elsewhere, leading namespace slashes stripped). Violations throw
-`IllegalArgumentException` inside the creator. Jackson mechanism verified in
-[impl.md](impl.md).
+the raw spelling; the private splitters strip the leading namespace slash,
+split at the first `::`, and require the `$` prefix where the kind's
+spelling mandates it. Violations throw `IllegalArgumentException` inside
+the creator. Jackson mechanism verified in [impl.md](impl.md).
 
 **Subtypes, YAML kind keys, and identity:**
 - `FunctionSubject(name)` — `function:`, folded.
@@ -66,7 +65,10 @@ forbidden elsewhere, leading namespace slashes stripped). Violations throw
 - `VariableSubject(name)` — `variable:`, folded; spelled `$name`, stored
   without the `$`.
 
-**Validation:** blank identity fields are rejected in `init`.
+**Validation:** blank identity fields are rejected in `init`, and so is any
+spelling-grammar character in an identity field (`::`, `$`, a leading `\`).
+The base-class invariant covers both construction paths, so a directly
+constructed subject and a parsed spelling always agree on one identity.
 
 ### Port (sealed)
 
