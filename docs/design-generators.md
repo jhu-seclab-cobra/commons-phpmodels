@@ -77,6 +77,10 @@ signature-derived returns completion and rejects any unknown key
   production site requires a callable subject.
 - `signature` subtype matches the subject kind
   ([design-declarations.md](design-declarations.md)).
+- A declared `CallableSignature` fixes the arity: every argument port the
+  entry names (guard, propagation sides, sinks) lies inside the parameter
+  list, unless the last parameter is variadic
+  ([design-declarations.md](design-declarations.md)).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
   source); a propagation section beside a callable signature is completed
   into the value-semantics unit with the derived classification before body

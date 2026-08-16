@@ -37,6 +37,10 @@ import kotlin.test.assertNull
  * - `stray key inside a signature is rejected` — strictness survives the
  *   narrowing.
  * - `propagation without returns is rejected` — the unit is asserted whole.
+ * - `port beyond the declared parameter list is rejected` — a guard,
+ *   propagation, or sink argument port outside a callable signature's arity.
+ * - `variadic signature admits ports beyond the declared list` — the
+ *   variadic tail collects every remaining position.
  * - `duplicate key in one mapping is rejected` — a doubled key never decodes
  *   last-wins, at the entry level and inside a propagation pair.
  * - `second document in one stream is rejected` — entries after a `---`
@@ -245,6 +249,9 @@ internal class ModelLoaderTest {
                 - subject:
                     function: substr
                   signature:
+                    params:
+                      - name: string
+                        type: string
                     returnType: string
                   propagation:
                     - from: argument(0)
@@ -445,6 +452,84 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         }
+    }
+
+    @Test
+    fun `port beyond the declared parameter list is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: foo
+                  signature:
+                    params:
+                      - name: query
+                        type: string
+                    returnType: bool
+                  sinks:
+                    - port: argument(1)
+                      category: sqli
+                """.trimIndent(),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: foo
+                  signature:
+                    params:
+                      - name: value
+                        type: string
+                    returnType: string
+                  propagation:
+                    - from: argument(1)
+                      to: return
+                """.trimIndent(),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: foo
+                  signature:
+                    params:
+                      - name: value
+                        type: string
+                    returnType: bool
+                  when:
+                    port: argument(1)
+                    is: true
+                  sinks:
+                    - port: argument(0)
+                      category: sqli
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `variadic signature admits ports beyond the declared list`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    function: sprintf
+                  signature:
+                    params:
+                      - name: format
+                        type: string
+                      - name: values
+                        type: mixed
+                        variadic: true
+                    returnType: string
+                  sinks:
+                    - port: argument(5)
+                      category: sqli
+                """.trimIndent(),
+            )
+        assertEquals(listOf(SinkPoint(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
     }
 
     @Test

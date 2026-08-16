@@ -57,6 +57,7 @@ public data class SubjectModel(
             "Entry for $subject asserts nothing: no signature and no section"
         }
         validateAdmissibility()
+        validatePortBounds()
     }
 
     // The subject admits only the sections its kind allows: assertion sections
@@ -72,6 +73,29 @@ public data class SubjectModel(
         val admitted = if (subject is ClassSubject) body.isEmpty else body.isEmpty || body.declaresOnlySources
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
     }
+
+    // A declared callable signature fixes the arity: every argument port the
+    // entry names lies inside the parameter list, unless the last parameter
+    // collects the variadic tail.
+    private fun validatePortBounds() {
+        val callable = signature as? CallableSignature ?: return
+        if (callable.params.lastOrNull()?.variadic == true) return
+        val limit = callable.params.size
+        val beyond = namedArgumentPorts().firstOrNull { it.position >= limit }
+        require(beyond == null) {
+            "Entry for $subject names $beyond beyond its $limit-parameter signature"
+        }
+    }
+
+    private fun namedArgumentPorts(): List<Port.Argument> =
+        buildList {
+            guard?.let { add(it.port) }
+            body.propagation?.forEach { pair ->
+                add(pair.from)
+                (pair.to as? Port.Argument)?.let(::add)
+            }
+            body.sinks?.forEach { add(it.port) }
+        }
 
     public companion object {
         // The signature mapping carries no discriminator: its subtype is
