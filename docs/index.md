@@ -12,4 +12,4 @@
 | design-guards.md | Guard types and the guard scalar. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
 | impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
-| llms.txt | Agent-consumable documentation index (llmstxt.org format). |
+| llms.txt | Agent-consumable documentation index (llmstxt.org format); routes to the llms/ module docs. |

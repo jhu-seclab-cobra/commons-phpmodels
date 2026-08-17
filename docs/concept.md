@@ -20,8 +20,8 @@ consumers.
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
   entries (explicit models and generators).
-- **Outputs:** validated typed values — `Vocabulary`, `TaintPolicy`, decoded
-  model entries.
+- **Outputs:** validated typed values — the vocabulary, the taint policy,
+  decoded model entries.
 - **Connections:** producers (stub extraction, rule authors, third-party
   fragments) → this library (decode + validate) → consumers (analyzers,
   compilers).
