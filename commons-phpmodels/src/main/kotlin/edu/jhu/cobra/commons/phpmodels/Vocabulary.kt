@@ -85,7 +85,7 @@ public class VocabularyException(
  */
 public data class Vocabulary(
     val vulnClasses: Map<VulnClassId, VulnClassDecl>,
-    val provenances: Map<ProvenanceId, ProvenanceDecl> = emptyMap(),
+    val provenances: Map<ProvenanceId, ProvenanceDecl>,
 ) {
     /**
      * Interns [raw] to its [VulnClassId], validating it is declared.
