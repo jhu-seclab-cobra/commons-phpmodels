@@ -24,9 +24,10 @@ public value class VulnClassId private constructor(
 
 /**
  * Interned reference token for a declared origin color (provenance). Travels
- * with a tainted value from its source; validated against the vocabulary at
- * load time. Construction folds any spelling to lowercase, so a mixed-case
- * reference cannot miss a vocabulary lookup.
+ * with a tainted value from its source. Construction folds any spelling to
+ * lowercase, so a mixed-case reference cannot miss a vocabulary lookup;
+ * membership in the declared set is checked by [Vocabulary.requireProvenance],
+ * never by construction.
  *
  * @property id Lowercased origin-color name, as declared in the vocabulary.
  */
@@ -77,8 +78,9 @@ public class VocabularyException(
 
 /**
  * The two closed declared sets — danger categories and origin colors. Sole
- * authority for what category and color names exist; every reference by a
- * policy row or model entry is validated against it.
+ * authority for what category and color names exist. Policy rows are
+ * validated against it at load ([PolicyLoader]); model-entry references are
+ * validated by the caller, which owns the cross-document load order.
  *
  * @property vulnClasses Declared danger categories, keyed by interned identity.
  * @property provenances Declared origin colors, keyed by interned identity.
