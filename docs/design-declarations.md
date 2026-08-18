@@ -63,8 +63,9 @@ and rejects `returns:` beside a `CallableSignature` (one fact, one source;
 validated against the closed type vocabulary plus class names
 ([model-declarations.md](model-declarations.md)); owns
 `fun toReturnKind(): ReturnKind` — the classification derivation (string →
-STR; int, float → NUM; bool → BOOL; else ANY). Decodes from the bare scalar
-([impl.md](impl.md)).
+STR; int, float → NUM; bool → BOOL; else ANY) — and `val isVoid: Boolean` —
+true when the declared type is the `void` keyword. Decodes from the bare
+scalar ([impl.md](impl.md)).
 
 The closed keyword-type set is a constant in this file — fixed by the PHP
 type system, not configuration.
@@ -104,6 +105,13 @@ vocabulary ([impl.md](impl.md)).
   entry names — the guard port, both propagation sides, sink ports,
   explicit source sites — lies inside the parameter list. Exception: a variadic last parameter admits
   every position. An entry without a signature is not arity-checked.
+- A declared callable signature fixes the write direction: every written-into
+  argument port — a propagation `to:` side, a source element's explicit site —
+  names a by-reference parameter. A position beyond the parameter list is
+  reachable only through a variadic tail and resolves to the variadic
+  parameter's by-reference flag.
+- A `void` return type declares there is no result: a propagation into
+  `return` beside it is a load failure.
 - Derivation, not storage: `DeclaredType.toReturnKind()` runs where the
   consumer materializes the value-semantics unit; the classification is
   never written into a file that carries a signature.

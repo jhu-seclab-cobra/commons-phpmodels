@@ -122,6 +122,10 @@ public value class DeclaredType(
         // A class name is not in the keyword map; it derives to ANY by design.
         KEYWORD_RETURN_KINDS[raw.lowercase()] ?: ReturnKind.ANY
 
+    /** True when the declared type is `void`: the callable produces no result. */
+    public val isVoid: Boolean
+        get() = raw.equals("void", ignoreCase = true)
+
     override fun toString(): String = raw
 
     private companion object {

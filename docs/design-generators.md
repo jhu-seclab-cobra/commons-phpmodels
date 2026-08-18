@@ -81,6 +81,11 @@ signature-derived returns completion and rejects any unknown key
   entry names (guard, propagation sides, sinks, explicit source sites) lies
   inside the parameter list, unless the last parameter is variadic
   ([design-declarations.md](design-declarations.md)).
+- A declared `CallableSignature` fixes the write direction: a written-into
+  argument port (a propagation `to:` side, a source element's explicit site)
+  names a by-reference parameter, with a variadic-tail position resolving to
+  the variadic parameter's flag; a `void` return type rejects propagation
+  into `return` ([design-declarations.md](design-declarations.md)).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
   source); a propagation section beside a callable signature is completed
   into the value-semantics unit with the derived classification before body

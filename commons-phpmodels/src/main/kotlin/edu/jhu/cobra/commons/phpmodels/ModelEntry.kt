@@ -82,11 +82,20 @@ public data class SubjectModel(
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
     }
 
-    // A declared callable signature fixes the arity: every argument port the
-    // entry names lies inside the parameter list, unless the last parameter
-    // collects the variadic tail.
+    // A declared callable signature fixes the port semantics: every argument
+    // port lies inside the parameter list (a variadic last parameter admits
+    // every position), a written-into port names a by-reference parameter,
+    // and a void callable admits no flow into its result.
     private fun validatePortBounds() {
         val callable = signature as? CallableSignature ?: return
+        validateArity(callable)
+        validateWrittenPorts(callable)
+        require(!callable.returnType.isVoid || body.propagation.orEmpty().none { it.to == Port.Return }) {
+            "Entry for $subject declares a flow into the result of a void callable"
+        }
+    }
+
+    private fun validateArity(callable: CallableSignature) {
         if (callable.params.lastOrNull()?.variadic == true) return
         val limit = callable.params.size
         val beyond = namedArgumentPorts().firstOrNull { it.position >= limit }
@@ -94,6 +103,26 @@ public data class SubjectModel(
             "Entry for $subject names $beyond beyond its $limit-parameter signature"
         }
     }
+
+    // The entry stores into the caller's argument through these ports, so
+    // each must name a by-reference parameter. Runs after the arity check:
+    // a position beyond the list is only reachable through a variadic tail
+    // and resolves to the variadic parameter.
+    private fun validateWrittenPorts(callable: CallableSignature) {
+        val byValue = writtenArgumentPorts().firstOrNull { !callable.parameterAt(it.position).byRef }
+        require(byValue == null) {
+            "Entry for $subject writes into $byValue, which is not declared by-reference"
+        }
+    }
+
+    private fun CallableSignature.parameterAt(position: Int): ParameterInfo =
+        params.getOrNull(position) ?: params.last()
+
+    private fun writtenArgumentPorts(): List<Port.Argument> =
+        buildList {
+            body.propagation?.forEach { pair -> (pair.to as? Port.Argument)?.let(::add) }
+            body.sources?.forEach { source -> source.at?.let(::add) }
+        }
 
     private fun namedArgumentPorts(): List<Port.Argument> =
         buildList {

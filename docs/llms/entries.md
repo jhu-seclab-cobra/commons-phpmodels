@@ -41,6 +41,8 @@ for (entry in entries) {
 - `propagation` without `returns` is rejected; the value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
 - Explicit `returns:` beside a callable `signature:` is rejected — one fact, one source.
 - A callable `signature:` fixes the arity: an argument port (guard, propagation side, sink, source `at:` site) at a position outside the declared parameter list is rejected, unless the last parameter is variadic. An entry without a signature is not arity-checked.
+- With a callable `signature:`, a written-into argument port — a propagation `to:` side or a source `at:` site — must name a `byRef: true` parameter; a variadic-tail position resolves to the variadic parameter's flag.
+- With a callable `signature:` whose `returnType` is `void`, a propagation into `return` is rejected.
 - A `when:` guard on a non-callable subject is rejected.
 - The receiver port `this` anywhere in the body requires a `method` subject (or a generator with `find: method`).
 - A source `at:` site requires a callable subject; a variable entry or `find: variable` generator declaring one is rejected.

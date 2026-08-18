@@ -30,7 +30,7 @@ model.subject == subject
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
 - **`ParameterInfo(name: String, type: DeclaredType, optional: Boolean, byRef: Boolean, variadic: Boolean)`** — one declared parameter; position is list order.
-- **`DeclaredType(raw: String)`** — Value class over a keyword type or class name; `toReturnKind(): ReturnKind` derives the classification (string → STR; int, float → NUM; bool → BOOL; else ANY).
+- **`DeclaredType(raw: String)`** — Value class over a keyword type or class name; `toReturnKind(): ReturnKind` derives the classification (string → STR; int, float → NUM; bool → BOOL; else ANY); `isVoid: Boolean` is true for the `void` keyword.
 - **`Classifier`** — Enum `CLASS`, `INTERFACE`, `TRAIT`, `ENUM`.
 - **`Visibility`** — Enum `PUBLIC`, `PROTECTED`, `PRIVATE`.
 

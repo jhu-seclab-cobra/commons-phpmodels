@@ -4,10 +4,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 
 /**
- * End-to-end decode of model documents through [ModelLoader].
+ * End-to-end decode of model documents through [ModelLoader]: the entry forms
+ * and the document strictness. Signature handling:
+ * [ModelLoaderSignatureTest]; subject-kind admissibility:
+ * [ModelLoaderAdmissibilityTest]; signature-fixed port semantics:
+ * [ModelLoaderPortBoundsTest].
  *
  * - `flat model decodes subject sections and guard` — subject, returns,
  *   propagation, sinks, and when-guard of one callable entry.
@@ -17,51 +20,16 @@ import kotlin.test.assertNull
  *   name/find/where/model form.
  * - `mixed-case category and color references intern lowercased` — the
  *   Jackson decode path folds identity tokens like the interning path does.
- * - `signature narrows per subject kind` — callable, class, typed (with its
- *   literal value), and property signatures selected by the entry's subject.
- * - `signature-only entry asserts existence` — an empty body beside a
- *   signature loads.
- * - `propagation beside a callable signature derives returns` — the
- *   value-semantics unit completes from the declared return type.
- * - `signature without propagation derives no returns` — absence of a flow
- *   annotation is not purity.
- * - `explicit returns beside a callable signature is rejected` — one fact,
- *   one source.
  * - `entry asserting nothing is rejected` — no signature and no section.
- * - `variable entry declaring a sink is rejected` — sources-only kinds.
- * - `class entry declaring sources is rejected` — a class asserts nothing
- *   besides its signature.
- * - `guard on a non-callable subject is rejected` — guards are callable-only.
- * - `receiver port decodes on a method entry` — `this` as a propagation side.
- * - `receiver port on a non-method subject is rejected` — `this` exists only
- *   in a call to a method.
- * - `explicit source site and key patterns decode` — `at:` names the
- *   out-parameter port, `keys:` restricts production to matching array keys.
- * - `explicit source site on a non-callable subject is rejected` — sites
- *   apply to callable subjects only.
- * - `variable signature is rejected` — superglobals are hand-declared.
  * - `unknown subject kind is rejected` — closed wrapper-key set.
- * - `stray key inside a signature is rejected` — strictness survives the
- *   narrowing.
- * - `propagation without returns is rejected` — the unit is asserted whole.
- * - `port beyond the declared parameter list is rejected` — a guard,
- *   propagation, or sink argument port outside a callable signature's arity.
- * - `source site beyond the declared parameter list is rejected` — the
- *   arity bound covers the source `at` port too.
- * - `variadic signature admits ports beyond the declared list` — the
- *   variadic tail collects every remaining position.
- * - `duplicate key in one mapping is rejected` — a doubled key never decodes
- *   last-wins, at the entry level and inside a propagation pair.
- * - `second document in one stream is rejected` — entries after a `---`
- *   separator never drop silently.
  * - `guard integer beyond Long range is rejected` — the compared value never
  *   truncates silently.
+ * - `second document in one stream is rejected` — entries after a `---`
+ *   separator never drop silently.
+ * - `duplicate key in one mapping is rejected` — a doubled key never decodes
+ *   last-wins, at the entry level and inside a propagation pair.
  */
 internal class ModelLoaderTest {
-    private fun load(yaml: String): List<ModelEntry> = ModelLoader.load(yaml.byteInputStream())
-
-    private fun loadModel(yaml: String): SubjectModel = assertIs<SubjectModel>(load(yaml).single())
-
     @Test
     fun `flat model decodes subject sections and guard`() {
         val model =
@@ -190,254 +158,12 @@ internal class ModelLoaderTest {
     }
 
     @Test
-    fun `signature narrows per subject kind`() {
-        val entries =
-            load(
-                """
-                - subject:
-                    function: substr
-                  signature:
-                    params:
-                      - name: string
-                        type: string
-                      - name: offset
-                        type: int
-                    returnType: string
-                - subject:
-                    class: mysqli
-                  signature:
-                    classifier: class
-                    parent: Base
-                    interfaces: [Traversable]
-                - subject:
-                    constant: PHP_EOL
-                  signature:
-                    type: string
-                    value: "\n"
-                - subject:
-                    property: mysqli::${'$'}insert_id
-                  signature:
-                    type: string
-                    visibility: public
-                    static: false
-                """.trimIndent(),
-            )
-        val callable = assertIs<SignatureInfo.CallableSignature>(assertIs<SubjectModel>(entries[0]).signature)
-        assertEquals(2, callable.params.size)
-        assertEquals(DeclaredType("string"), callable.returnType)
-        val classSig = assertIs<SignatureInfo.ClassSignature>(assertIs<SubjectModel>(entries[1]).signature)
-        assertEquals(Classifier.CLASS, classSig.classifier)
-        assertEquals("base", classSig.parent)
-        assertEquals(listOf("traversable"), classSig.interfaces)
-        val typed = assertIs<SignatureInfo.TypedSignature>(assertIs<SubjectModel>(entries[2]).signature)
-        assertEquals("\n", typed.value)
-        val property = assertIs<SignatureInfo.PropertySignature>(assertIs<SubjectModel>(entries[3]).signature)
-        assertEquals(Visibility.PUBLIC, property.visibility)
-    }
-
-    @Test
-    fun `signature-only entry asserts existence`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: strlen
-                  signature:
-                    returnType: int
-                """.trimIndent(),
-            )
-        assertEquals(true, model.body.isEmpty)
-        assertNull(model.body.valueSemantics())
-    }
-
-    @Test
-    fun `propagation beside a callable signature derives returns`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: substr
-                  signature:
-                    params:
-                      - name: string
-                        type: string
-                    returnType: string
-                  propagation:
-                    - from: argument(0)
-                      to: return
-                """.trimIndent(),
-            )
-        assertEquals(ReturnKind.STR, model.body.returns)
-    }
-
-    @Test
-    fun `signature without propagation derives no returns`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: substr
-                  signature:
-                    returnType: string
-                """.trimIndent(),
-            )
-        assertNull(model.body.returns)
-    }
-
-    @Test
-    fun `explicit returns beside a callable signature is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: substr
-                  signature:
-                    returnType: string
-                  returns: str
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
     fun `entry asserting nothing is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load(
                 """
                 - subject:
                     function: strlen
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `variable entry declaring a sink is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    variable: ${'$'}_GET
-                  sinks:
-                    - port: argument(0)
-                      category: sqli
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `class entry declaring sources is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    class: mysqli
-                  signature:
-                    classifier: class
-                  sources:
-                    - provenance: [remote]
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `guard on a non-callable subject is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    constant: PHP_EOL
-                  when:
-                    port: argument(0)
-                    is: true
-                  signature:
-                    type: string
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `receiver port decodes on a method entry`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    method: mysqli_stmt::bind_param
-                  returns: bool
-                  propagation:
-                    - from: argument(1)
-                      to: this
-                """.trimIndent(),
-            )
-        assertEquals(
-            listOf(Propagation(from = Port.Argument(1), to = Port.Receiver)),
-            model.body.propagation,
-        )
-    }
-
-    @Test
-    fun `receiver port on a non-method subject is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: strtolower
-                  returns: str
-                  propagation:
-                    - from: this
-                      to: return
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `explicit source site and key patterns decode`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: parse_str
-                  sources:
-                    - provenance: [remote]
-                      at: argument(1)
-                      keys: ["user_.*"]
-                """.trimIndent(),
-            )
-        val source = model.body.sources!!.single()
-        assertEquals(Port.Argument(1), source.at)
-        assertEquals(listOf(KeyPattern("user_.*")), source.keys)
-    }
-
-    @Test
-    fun `explicit source site on a non-callable subject is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    variable: ${'$'}_GET
-                  sources:
-                    - provenance: [remote]
-                      at: argument(0)
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `variable signature is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    variable: ${'$'}_GET
-                  signature:
-                    type: array
-                  sources:
-                    - provenance: [remote]
                 """.trimIndent(),
             )
         }
@@ -451,21 +177,6 @@ internal class ModelLoaderTest {
                 - subject:
                     trait: foo
                   returns: any
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `stray key inside a signature is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    constant: PHP_EOL
-                  signature:
-                    type: string
-                    stray: 1
                 """.trimIndent(),
             )
         }
@@ -525,119 +236,6 @@ internal class ModelLoaderTest {
                   propagation:
                     - from: argument(0)
                       from: argument(1)
-                      to: return
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `port beyond the declared parameter list is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: query
-                        type: string
-                    returnType: bool
-                  sinks:
-                    - port: argument(1)
-                      category: sqli
-                """.trimIndent(),
-            )
-        }
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: string
-                  propagation:
-                    - from: argument(1)
-                      to: return
-                """.trimIndent(),
-            )
-        }
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: bool
-                  when:
-                    port: argument(1)
-                    is: true
-                  sinks:
-                    - port: argument(0)
-                      category: sqli
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `source site beyond the declared parameter list is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: bool
-                  sources:
-                    - provenance: [remote]
-                      at: argument(1)
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `variadic signature admits ports beyond the declared list`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: sprintf
-                  signature:
-                    params:
-                      - name: format
-                        type: string
-                      - name: values
-                        type: mixed
-                        variadic: true
-                    returnType: string
-                  sinks:
-                    - port: argument(5)
-                      category: sqli
-                """.trimIndent(),
-            )
-        assertEquals(listOf(SinkPoint(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
-    }
-
-    @Test
-    fun `propagation without returns is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: strlen
-                  propagation:
-                    - from: argument(0)
                       to: return
                 """.trimIndent(),
             )
