@@ -54,12 +54,13 @@ private fun <T : Any> exactlyOne(
  * One key pattern of a source element: restricts production to the array
  * elements whose entire key matches. Array keys are runtime data, not
  * identifiers, so the match is case-sensitive. Equality is over the pattern
- * text — a compiled [Regex] carries no value equality.
+ * text: the compiled [Regex] carries no value equality, so it stays out of
+ * the primary constructor.
  *
  * @property pattern The declared pattern source.
  * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
  */
-public class KeyPattern(
+public data class KeyPattern(
     public val pattern: String,
 ) {
     /** The compiled pattern; construction fails on an invalid pattern. */
@@ -67,12 +68,6 @@ public class KeyPattern(
 
     /** True when the entire [key] matches the pattern. */
     public fun matches(key: String): Boolean = regex.matches(key)
-
-    override fun equals(other: Any?): Boolean = other is KeyPattern && other.pattern == pattern
-
-    override fun hashCode(): Int = pattern.hashCode()
-
-    override fun toString(): String = "KeyPattern($pattern)"
 
     public companion object {
         /** Decodes the bare pattern scalar. */
