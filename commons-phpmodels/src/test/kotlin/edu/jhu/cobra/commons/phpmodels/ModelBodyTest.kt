@@ -1,5 +1,6 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import java.util.regex.PatternSyntaxException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,11 +13,20 @@ import kotlin.test.assertNull
  *   to/output decode to one pair.
  * - `propagation rejects a doubled or missing side` — synonym pairs are
  *   exclusive and one side is required.
- * - `propagation rejects a self-targeting flow` — to must differ from from.
+ * - `propagation rejects a self-targeting flow` — to must differ from from,
+ *   for the receiver port as for an argument.
+ * - `propagation carries the receiver port on either side` — `this` is an
+ *   input port and an admissible target.
  * - `empty body is constructible` — a signature-only entry carries one.
  * - `propagation requires returns` — the value-semantics unit is whole.
  * - `declared empty section is rejected` — an empty list is a mistake, not
  *   an absent section.
+ * - `source element rejects an empty key-pattern set` — declared keys are
+ *   non-empty.
+ * - `key pattern matches the entire key case-sensitively` — array keys are
+ *   runtime data, not identifiers.
+ * - `key patterns compare by pattern text` — equality and hash-code
+ *   agreement; an invalid pattern fails at construction.
  * - `declaresOnlySources reflects the section set` — true for sources alone.
  * - `valueSemantics completes absent propagation to the empty list` — no
  *   flow, not unknown flow; null when returns is undeclared.
@@ -44,6 +54,15 @@ internal class ModelBodyTest {
         assertFailsWith<IllegalArgumentException> {
             Propagation(from = Port.Argument(0), to = Port.Argument(0))
         }
+        assertFailsWith<IllegalArgumentException> {
+            Propagation(from = Port.Receiver, to = Port.Receiver)
+        }
+    }
+
+    @Test
+    fun `propagation carries the receiver port on either side`() {
+        assertEquals(Port.Receiver, Propagation(from = Port.Receiver, to = Port.Return).from)
+        assertEquals(Port.Receiver, Propagation(from = Port.Argument(0), to = Port.Receiver).to)
     }
 
     @Test
@@ -70,6 +89,28 @@ internal class ModelBodyTest {
     fun `declared empty section is rejected`() {
         assertFailsWith<IllegalArgumentException> { ModelBody(sources = emptyList()) }
         assertFailsWith<IllegalArgumentException> { ModelBody(returns = ReturnKind.ANY, propagation = emptyList()) }
+    }
+
+    @Test
+    fun `source element rejects an empty key-pattern set`() {
+        assertFailsWith<IllegalArgumentException> {
+            SourceDecl(setOf(ProvenanceId("remote")), keys = emptyList())
+        }
+    }
+
+    @Test
+    fun `key pattern matches the entire key case-sensitively`() {
+        val pattern = KeyPattern("user_.*")
+        assertEquals(true, pattern.matches("user_name"))
+        assertEquals(false, pattern.matches("USER_NAME"))
+        assertEquals(false, pattern.matches("a_user_name"))
+    }
+
+    @Test
+    fun `key patterns compare by pattern text`() {
+        assertEquals(KeyPattern("user_.*"), KeyPattern("user_.*"))
+        assertEquals(KeyPattern("user_.*").hashCode(), KeyPattern("user_.*").hashCode())
+        assertFailsWith<PatternSyntaxException> { KeyPattern("(") }
     }
 
     @Test

@@ -62,14 +62,22 @@ public data class SubjectModel(
 
     // The subject admits only the sections its kind allows: assertion sections
     // and guards belong to callable kinds; value-producing kinds declare
-    // sources; a class declares nothing besides its signature.
+    // sources; a class declares nothing besides its signature. Port
+    // admissibility follows the same kind: the receiver port requires a
+    // method, an explicit source site requires a callable.
     private fun validateAdmissibility() {
         val expected = signatureTypeFor(subject)
         require(signature == null || (expected != null && expected.isInstance(signature))) {
             "Entry for $subject carries a signature its kind does not admit: $signature"
         }
+        require(subject is MethodSubject || !body.namesReceiverPort) {
+            "Entry for $subject names the receiver port; 'this' exists only in a call to a method"
+        }
         if (subject is FunctionSubject || subject is MethodSubject) return
         require(guard == null) { "Entry for $subject carries a when guard; guards apply to callable subjects only" }
+        require(!body.declaresExplicitSourceSite) {
+            "Entry for $subject declares an explicit source site; sites apply to callable subjects only"
+        }
         val admitted = if (subject is ClassSubject) body.isEmpty else body.isEmpty || body.declaresOnlySources
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
     }
@@ -91,10 +99,11 @@ public data class SubjectModel(
         buildList {
             guard?.let { add(it.port) }
             body.propagation?.forEach { pair ->
-                add(pair.from)
+                (pair.from as? Port.Argument)?.let(::add)
                 (pair.to as? Port.Argument)?.let(::add)
             }
             body.sinks?.forEach { add(it.port) }
+            body.sources?.forEach { source -> source.at?.let(::add) }
         }
 
     public companion object {

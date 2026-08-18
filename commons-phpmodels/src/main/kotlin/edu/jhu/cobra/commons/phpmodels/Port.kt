@@ -4,10 +4,27 @@ import com.fasterxml.jackson.annotation.JsonCreator
 
 /**
  * One explicitly named location in a call. Decoded from the string spellings
- * `argument(n)` and `return` — no bare integer and no sentinel value exists
- * anywhere in the port vocabulary.
+ * `argument(n)`, `this`, and `return` — no bare integer and no sentinel value
+ * exists anywhere in the port vocabulary.
  */
 public sealed interface Port {
+    /**
+     * The ports a call supplies values through: the arguments and the
+     * receiver. A from-side field typed as this interface is input-typed
+     * instead of runtime-checked.
+     */
+    public sealed interface Input : Port {
+        public companion object {
+            // A field typed as this sub-interface does not consult the
+            // supertype's creator (impl.md), so the narrowing creator lives
+            // here.
+            @JvmStatic
+            @JsonCreator
+            public fun parseInput(raw: String): Input =
+                requireNotNull(parse(raw) as? Input) { "Expected an input port, got '$raw'" }
+        }
+    }
+
     /**
      * The argument at zero-based [position].
      *
@@ -15,7 +32,7 @@ public sealed interface Port {
      */
     public data class Argument(
         val position: Int,
-    ) : Port {
+    ) : Input {
         init {
             require(position >= 0) { "Argument position must be non-negative: $position" }
         }
@@ -32,6 +49,11 @@ public sealed interface Port {
         }
     }
 
+    /** The receiver of a call to a method, spelled `this`. */
+    public object Receiver : Input {
+        override fun toString(): String = "this"
+    }
+
     /** The call result. */
     public object Return : Port {
         override fun toString(): String = "return"
@@ -43,15 +65,22 @@ public sealed interface Port {
         /**
          * The port the spelling [raw] names.
          *
-         * @throws IllegalArgumentException If [raw] is neither `return` nor `argument(n)` with n >= 0.
+         * @throws IllegalArgumentException If [raw] is none of `return`, `this`,
+         *   and `argument(n)` with n >= 0.
          */
         @JvmStatic
         @JsonCreator
-        public fun parse(raw: String): Port {
-            if (raw == "return") return Return
+        public fun parse(raw: String): Port =
+            when (raw) {
+                "return" -> Return
+                "this" -> Receiver
+                else -> parseArgumentSpelling(raw)
+            }
+
+        private fun parseArgumentSpelling(raw: String): Argument {
             val match =
                 ARGUMENT_SPELLING.matchEntire(raw)
-                    ?: throw IllegalArgumentException("Port must be 'return' or 'argument(n)', got '$raw'")
+                    ?: throw IllegalArgumentException("Port must be 'return', 'this', or 'argument(n)', got '$raw'")
             val position =
                 match.groupValues[1].toIntOrNull()
                     ?: throw IllegalArgumentException("Argument position out of range: '$raw'")

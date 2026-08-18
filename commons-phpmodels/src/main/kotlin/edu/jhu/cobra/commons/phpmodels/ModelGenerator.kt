@@ -96,6 +96,12 @@ public data class ModelGenerator(
         require(find != SubjectKind.VARIABLE || model.declaresOnlySources) {
             "Model generator '$name' finds variables but declares a section besides sources"
         }
+        require(find == SubjectKind.METHOD || !model.namesReceiverPort) {
+            "Model generator '$name' names the receiver port but finds $find subjects"
+        }
+        require(find != SubjectKind.VARIABLE || !model.declaresExplicitSourceSite) {
+            "Model generator '$name' declares an explicit source site but finds $find subjects"
+        }
     }
 
     /** True when [subject] is of the [find] kind and satisfies every constraint. */

@@ -32,6 +32,13 @@ import kotlin.test.assertNull
  * - `class entry declaring sources is rejected` — a class asserts nothing
  *   besides its signature.
  * - `guard on a non-callable subject is rejected` — guards are callable-only.
+ * - `receiver port decodes on a method entry` — `this` as a propagation side.
+ * - `receiver port on a non-method subject is rejected` — `this` exists only
+ *   in a call to a method.
+ * - `explicit source site and key patterns decode` — `at:` names the
+ *   out-parameter port, `keys:` restricts production to matching array keys.
+ * - `explicit source site on a non-callable subject is rejected` — sites
+ *   apply to callable subjects only.
  * - `variable signature is rejected` — superglobals are hand-declared.
  * - `unknown subject kind is rejected` — closed wrapper-key set.
  * - `stray key inside a signature is rejected` — strictness survives the
@@ -39,6 +46,8 @@ import kotlin.test.assertNull
  * - `propagation without returns is rejected` — the unit is asserted whole.
  * - `port beyond the declared parameter list is rejected` — a guard,
  *   propagation, or sink argument port outside a callable signature's arity.
+ * - `source site beyond the declared parameter list is rejected` — the
+ *   arity bound covers the source `at` port too.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
  * - `duplicate key in one mapping is rejected` — a doubled key never decodes
@@ -351,6 +360,74 @@ internal class ModelLoaderTest {
     }
 
     @Test
+    fun `receiver port decodes on a method entry`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    method: mysqli_stmt::bind_param
+                  returns: bool
+                  propagation:
+                    - from: argument(1)
+                      to: this
+                """.trimIndent(),
+            )
+        assertEquals(
+            listOf(Propagation(from = Port.Argument(1), to = Port.Receiver)),
+            model.body.propagation,
+        )
+    }
+
+    @Test
+    fun `receiver port on a non-method subject is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: strtolower
+                  returns: str
+                  propagation:
+                    - from: this
+                      to: return
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `explicit source site and key patterns decode`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    function: parse_str
+                  sources:
+                    - provenance: [remote]
+                      at: argument(1)
+                      keys: ["user_.*"]
+                """.trimIndent(),
+            )
+        val source = model.body.sources!!.single()
+        assertEquals(Port.Argument(1), source.at)
+        assertEquals(listOf(KeyPattern("user_.*")), source.keys)
+    }
+
+    @Test
+    fun `explicit source site on a non-callable subject is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    variable: ${'$'}_GET
+                  sources:
+                    - provenance: [remote]
+                      at: argument(0)
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
     fun `variable signature is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load(
@@ -504,6 +581,26 @@ internal class ModelLoaderTest {
                   sinks:
                     - port: argument(0)
                       category: sqli
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `source site beyond the declared parameter list is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: foo
+                  signature:
+                    params:
+                      - name: value
+                        type: string
+                    returnType: bool
+                  sources:
+                    - provenance: [remote]
+                      at: argument(1)
                 """.trimIndent(),
             )
         }

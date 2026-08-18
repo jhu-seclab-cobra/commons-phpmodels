@@ -16,6 +16,10 @@ import kotlin.test.assertNotEquals
  *   signature, so an empty body asserts nothing.
  * - `variable find admits sources only` — a sink section beside a variable
  *   find fails.
+ * - `receiver port requires a method find` — a body naming `this` beside a
+ *   function find fails.
+ * - `explicit source site requires a callable find` — an at-site beside a
+ *   variable find fails.
  * - `matches requires kind and every constraint` — entire-field match over
  *   the folded identity; declaration-only kinds never match.
  * - `patterns match case-insensitively` — an uppercase pattern literal
@@ -53,6 +57,26 @@ internal class ModelGeneratorTest {
     fun `variable find admits sources only`() {
         assertFailsWith<IllegalArgumentException> {
             ModelGenerator("g", SubjectKind.VARIABLE, listOf(NameConstraint("_get")), ModelBody(ReturnKind.ANY))
+        }
+    }
+
+    @Test
+    fun `receiver port requires a method find`() {
+        val body =
+            ModelBody(
+                returns = ReturnKind.ANY,
+                propagation = listOf(Propagation(from = Port.Receiver, to = Port.Return)),
+            )
+        assertFailsWith<IllegalArgumentException> {
+            ModelGenerator("g", SubjectKind.FUNCTION, listOf(NameConstraint("get.*")), body)
+        }
+    }
+
+    @Test
+    fun `explicit source site requires a callable find`() {
+        val sited = ModelBody(sources = listOf(SourceDecl(setOf(ProvenanceId("remote")), at = Port.Argument(0))))
+        assertFailsWith<IllegalArgumentException> {
+            ModelGenerator("g", SubjectKind.VARIABLE, listOf(NameConstraint("_get")), sited)
         }
     }
 

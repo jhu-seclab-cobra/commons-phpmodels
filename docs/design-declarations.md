@@ -101,8 +101,8 @@ vocabulary ([impl.md](impl.md)).
   running with the section-admissibility validations before any vocabulary
   interning by the caller.
 - A declared callable signature fixes the arity: every argument port the
-  entry names — the guard port, both propagation sides, sink ports — lies
-  inside the parameter list. Exception: a variadic last parameter admits
+  entry names — the guard port, both propagation sides, sink ports,
+  explicit source sites — lies inside the parameter list. Exception: a variadic last parameter admits
   every position. An entry without a signature is not arity-checked.
 - Derivation, not storage: `DeclaredType.toReturnKind()` runs where the
   consumer materializes the value-semantics unit; the classification is

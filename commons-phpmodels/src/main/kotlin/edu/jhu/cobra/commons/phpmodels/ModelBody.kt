@@ -9,14 +9,14 @@ import com.fasterxml.jackson.annotation.JsonCreator
  * all four arrive as nullable creator parameters because a Jackson alias would
  * let a pair naming both spellings of one side decode silently (impl.md).
  *
- * @property from The argument port the data leaves.
- * @property to The port the data reaches: the result, or a different argument.
+ * @property from The input port the data leaves: an argument or the receiver.
+ * @property to The port the data reaches: the result, or a different port.
  * @throws IllegalArgumentException If a side is missing or doubled, or the flow
  *   targets its own source port.
  */
 @ConsistentCopyVisibility
 public data class Propagation private constructor(
-    val from: Port.Argument,
+    val from: Port.Input,
     val to: Port,
 ) {
     init {
@@ -28,8 +28,8 @@ public data class Propagation private constructor(
         @JvmStatic
         @JsonCreator
         public operator fun invoke(
-            from: Port.Argument? = null,
-            input: Port.Argument? = null,
+            from: Port.Input? = null,
+            input: Port.Input? = null,
             to: Port? = null,
             output: Port? = null,
         ): Propagation =
@@ -51,16 +51,56 @@ private fun <T : Any> exactlyOne(
 }
 
 /**
+ * One key pattern of a source element: restricts production to the array
+ * elements whose entire key matches. Array keys are runtime data, not
+ * identifiers, so the match is case-sensitive. Equality is over the pattern
+ * text — a compiled [Regex] carries no value equality.
+ *
+ * @property pattern The declared pattern source.
+ * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
+ */
+public class KeyPattern(
+    public val pattern: String,
+) {
+    /** The compiled pattern; construction fails on an invalid pattern. */
+    public val regex: Regex = Regex(pattern)
+
+    /** True when the entire [key] matches the pattern. */
+    public fun matches(key: String): Boolean = regex.matches(key)
+
+    override fun equals(other: Any?): Boolean = other is KeyPattern && other.pattern == pattern
+
+    override fun hashCode(): Int = pattern.hashCode()
+
+    override fun toString(): String = "KeyPattern($pattern)"
+
+    public companion object {
+        /** Decodes the bare pattern scalar. */
+        @JvmStatic
+        @JsonCreator
+        public fun parse(raw: String): KeyPattern = KeyPattern(raw)
+    }
+}
+
+/**
  * One produced color set of a sources section.
  *
  * @property provenance Origin colors the produced value carries.
- * @throws IllegalArgumentException If no color is declared.
+ * @property at The argument port produced into (a by-reference out-parameter),
+ *   or null for the subject kind's default production site.
+ * @property keys Key patterns restricting production to matching array keys,
+ *   or null when the whole value is produced.
+ * @throws IllegalArgumentException If no color is declared, or a declared
+ *   key-pattern set is empty.
  */
 public data class SourceDecl(
     val provenance: Set<ProvenanceId>,
+    val at: Port.Argument? = null,
+    val keys: List<KeyPattern>? = null,
 ) {
     init {
         require(provenance.isNotEmpty()) { "Sources element declares no origin color" }
+        require(keys == null || keys.isNotEmpty()) { "Sources element declares an empty key-pattern set" }
     }
 }
 
@@ -131,6 +171,18 @@ public data class ModelBody(
     /** True when the body declares nothing besides its sources section. */
     public val declaresOnlySources: Boolean
         get() = sources != null && returns == null && propagation == null && sinks == null && sanitizers == null
+
+    // The two port-admissibility predicates below are the one authority both
+    // entry forms read; the subject-kind (or find-kind) requirement lives in
+    // the entry validations.
+
+    /** True when a propagation side names the receiver port. */
+    public val namesReceiverPort: Boolean
+        get() = propagation.orEmpty().any { it.from == Port.Receiver || it.to == Port.Receiver }
+
+    /** True when a source element declares an explicit production site. */
+    public val declaresExplicitSourceSite: Boolean
+        get() = sources.orEmpty().any { it.at != null }
 
     /** The value-semantics unit this body asserts, or null when returns is undeclared. */
     public fun valueSemantics(): ValueSemantics? = returns?.let { ValueSemantics(it, propagation.orEmpty()) }
