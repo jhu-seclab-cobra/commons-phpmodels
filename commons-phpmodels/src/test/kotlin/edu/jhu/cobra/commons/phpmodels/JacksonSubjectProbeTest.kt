@@ -246,7 +246,7 @@ internal class ProbeSigEntry private constructor(
         @JsonCreator
         fun decode(
             kind: String,
-            signature: com.fasterxml.jackson.databind.JsonNode,
+            signature: JsonNode,
         ): ProbeSigEntry {
             val decoded: ProbeSig =
                 when (kind) {
