@@ -67,8 +67,7 @@ declaration looks like. Composed of sections, at least one present.
 
 **Propagation** — One declared flow from one input port — an argument or the
 method receiver — to another port of the same call.
-- Scope: written as a `from`/`to` port pair; the Mariana Trench spellings
-  `input`/`output` are accepted synonyms.
+- Scope: written as a `from`/`to` port pair.
 - Relationships: an element of a Model's propagation section; connects two
   Ports.
 

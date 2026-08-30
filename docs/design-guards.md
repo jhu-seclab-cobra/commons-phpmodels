@@ -38,7 +38,12 @@ Jackson shape; `is` is a Kotlin keyword, so the config key binds through an
 annotated name).
 
 **Validation (decode):** the port is an argument port — a return port fails
-decode; a non-scalar `is` value fails decode.
+decode; a non-scalar `is` value fails decode. The guard field is optional
+on `SubjectModel` and absent from `ModelGenerator`: the strict decode
+rejects a `when:` key on a generator as an unknown field. A guard beside a
+non-callable subject fails in `SubjectModel` validation, the same place the
+section-admissibility rules live
+([design-generators.md](design-generators.md)).
 
 ### GuardValue (sealed)
 
@@ -60,14 +65,5 @@ integral outside `Long` range fails decode instead of wrapping
 - `IllegalArgumentException` — guard validation failures listed above,
   raised while Jackson instantiates, surfacing at the caller's load boundary
   with every other malformed-entry failure.
-
-## Validation Rules
-
-- The guard field is optional on `SubjectModel` and absent from
-  `ModelGenerator`: the strict decode rejects a `when:` key on a generator
-  as an unknown field.
-- A guard beside a non-callable subject fails in `SubjectModel` validation,
-  the same place the section-admissibility rules live
-  ([design-generators.md](design-generators.md)).
 
 Domain semantics: [model-guards.md](model-guards.md).

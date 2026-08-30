@@ -52,6 +52,13 @@ per entry. Carries no discriminator field — the forms are deduced from their
 disjoint required fields, and an entry matching neither or both fails the
 decode.
 
+Cross-form rules bind both subtypes: the variable-subjects-only-sources
+rule is enforced on the subject in `SubjectModel` and on the find kind in
+`ModelGenerator`, so no entry form is the loophole for the other; kind
+admissibility — which sections, ports, explicit source sites, and signature
+subtype each subject kind admits — is one declared authority read by both
+forms, never two hand-maintained rule sets.
+
 ### SubjectModel
 
 **Responsibility:** One explicit model: the subject it identifies and the
@@ -77,15 +84,9 @@ signature-derived returns completion and rejects any unknown key
   production site requires a callable subject.
 - `signature` subtype matches the subject kind
   ([design-declarations.md](design-declarations.md)).
-- A declared `CallableSignature` fixes the arity: every argument port the
-  entry names (guard, propagation sides, sinks, explicit source sites) lies
-  inside the parameter list, unless the last parameter is variadic
-  ([design-declarations.md](design-declarations.md)).
-- A declared `CallableSignature` fixes the write direction: a written-into
-  argument port (a propagation `to:` side, a source element's explicit site)
-  names a by-reference parameter, with a variadic-tail position resolving to
-  the variadic parameter's flag; a `void` return type rejects propagation
-  into `return` ([design-declarations.md](design-declarations.md)).
+- A declared `CallableSignature` constrains every argument port the entry
+  names — arity, write direction, and the `void` return rule:
+  [design-declarations.md](design-declarations.md).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
   source); a propagation section beside a callable signature is completed
   into the value-semantics unit with the derived classification before body
@@ -118,7 +119,12 @@ compilation, per-concrete-kind equality over the pattern, and the spelling.
 survives the load.
 
 **Methods:** `fun matches(field: String): Boolean` — entire-field match
-against the case-folded identity, never a substring match.
+(`Regex.matches`, never `containsMatchIn`) against the case-folded
+identity: `get_.*` must not silently match `widget_getter` — Mariana
+Trench patterns match partially, this format matches the entire field.
+`IGNORE_CASE` compilation keeps an uppercase pattern literal matching the
+folded identity; explicit subject spellings undergo the same folding, so
+both paths compare in one case.
 
 ### ModelGenerator
 
@@ -149,25 +155,5 @@ not this class's.
 - `IllegalArgumentException` from the `init` blocks above. Raised while
   Jackson instantiates the entry, so a caller's load boundary reports it
   through the same malformed-entry path as every other decode failure.
-
-## Validation Rules
-
-- Both forms carry the same `ModelBody`: a body written flat in a model and
-  a body written under a generator's `model:` are one type with one
-  validation. No generator-specific body kind exists.
-- The variable-subjects-only-sources rule is enforced in both forms — on the
-  subject in `SubjectModel`, on the find kind in `ModelGenerator` — so no
-  entry form is the loophole for the other.
-- Kind admissibility — which sections, ports, explicit source sites, and
-  signature subtype each subject kind admits — is one declared authority
-  read by both entry forms, never two hand-maintained rule sets.
-- Patterns are matched with entire-field semantics (`Regex.matches`), never
-  `containsMatchIn`: `get_.*` must not silently match `widget_getter`.
-  Mariana Trench patterns match partially; this format matches the entire
-  field.
-- Patterns are matched against case-folded identities and compile with
-  `IGNORE_CASE`, so an uppercase pattern literal matches instead of silently
-  never matching; explicit subject spellings undergo the same folding, so
-  both paths compare in one case.
 
 Concept: [concept.md](concept.md). Domain semantics: [model.md](model.md).

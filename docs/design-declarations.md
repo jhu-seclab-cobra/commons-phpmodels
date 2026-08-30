@@ -49,7 +49,23 @@ The subtype is deduced from the subject kind at the entry level — the
 signature key carries no discriminator of its own; entry-level validation
 rejects a signature subtype that does not match the entry's subject kind,
 and rejects `returns:` beside a `CallableSignature` (one fact, one source;
-[design-generators.md](design-generators.md)).
+[design-generators.md](design-generators.md)). It runs with the
+section-admissibility validations, before any vocabulary interning by the
+caller.
+
+**Entry-level constraints of a declared `CallableSignature`** (enforced in
+`SubjectModel`, [design-generators.md](design-generators.md)):
+
+- Arity: every argument port the entry names — the guard port, both
+  propagation sides, sink ports, explicit source sites — lies inside the
+  parameter list. Exception: a variadic last parameter admits every
+  position. An entry without a signature is not arity-checked.
+- Write direction: every written-into argument port — a propagation `to:`
+  side, a source element's explicit site — names a by-reference parameter.
+  A position beyond the parameter list is reachable only through a variadic
+  tail and resolves to the variadic parameter's by-reference flag.
+- A `void` return type declares there is no result: a propagation into
+  `return` beside it is a load failure.
 
 ### ParameterInfo
 
@@ -62,9 +78,11 @@ and rejects `returns:` beside a `CallableSignature` (one fact, one source;
 **Responsibility:** `@JvmInline value class` over the declared type name,
 validated against the closed type vocabulary plus class names
 ([model-declarations.md](model-declarations.md)); owns
-`fun toReturnKind(): ReturnKind` — the classification derivation (string →
-STR; int, float → NUM; bool → BOOL; else ANY) — and `val isVoid: Boolean` —
-true when the declared type is the `void` keyword. Decodes from the bare
+`fun toReturnKind(): ReturnKind` — the classification derivation, per the
+table in [model-declarations.md](model-declarations.md), running where the
+consumer materializes the value-semantics unit and never written into a
+file that carries a signature — and `val isVoid: Boolean` — true when the
+declared type is the `void` keyword. Decodes from the bare
 scalar ([impl.md](impl.md)).
 
 The closed keyword-type set is a constant in this file — fixed by the PHP
@@ -89,32 +107,6 @@ vocabulary ([impl.md](impl.md)).
   kind-mismatched signature, `returns` beside a callable signature. Raised
   at decode through the shared load-boundary contract
   ([design.md](design.md)).
-
-## Validation Rules
-
-- The `::` splitter in the subject creators ([design-subjects.md](design-subjects.md)) is the
-  single authority for member spellings; no other code inspects subject
-  strings.
-- Case folding happens inside the subject creators, once; every consumer
-  downstream compares folded identities for folded kinds and exact
-  identities for sensitive kinds.
-- Signature validation is entry-level (subject kind ⟺ signature subtype),
-  running with the section-admissibility validations before any vocabulary
-  interning by the caller.
-- A declared callable signature fixes the arity: every argument port the
-  entry names — the guard port, both propagation sides, sink ports,
-  explicit source sites — lies inside the parameter list. Exception: a variadic last parameter admits
-  every position. An entry without a signature is not arity-checked.
-- A declared callable signature fixes the write direction: every written-into
-  argument port — a propagation `to:` side, a source element's explicit site —
-  names a by-reference parameter. A position beyond the parameter list is
-  reachable only through a variadic tail and resolves to the variadic
-  parameter's by-reference flag.
-- A `void` return type declares there is no result: a propagation into
-  `return` beside it is a load failure.
-- Derivation, not storage: `DeclaredType.toReturnKind()` runs where the
-  consumer materializes the value-semantics unit; the classification is
-  never written into a file that carries a signature.
 
 Semantics: [model-declarations.md](model-declarations.md). Entry forms:
 [design-generators.md](design-generators.md).

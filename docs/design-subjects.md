@@ -49,8 +49,10 @@ the value is the PHP-native spelling string (`function: strlen`,
 `method: mysqli::query`). Each subtype's companion carries a creator taking
 the raw spelling; the private splitters strip the leading namespace slash,
 split at the first `::`, and require the `$` prefix where the kind's
-spelling mandates it. Violations throw `IllegalArgumentException` inside
-the creator. Jackson mechanism verified in [impl.md](impl.md).
+spelling mandates it. The splitters are the single authority for member
+spellings; no other code inspects subject strings. Violations throw
+`IllegalArgumentException` inside the creator. Jackson mechanism verified
+in [impl.md](impl.md).
 
 **Subtypes, YAML kind keys, and identity:**
 - `FunctionSubject(name)` — `function:`, folded.
@@ -70,8 +72,11 @@ spelling-grammar character in an identity field (`::`, `$`, a leading `\`).
 The base-class invariant covers both construction paths, so a directly
 constructed subject and a parsed spelling always agree on one identity.
 
-**Folding:** identity fields fold with Kotlin `String.lowercase()` — Unicode
-full case mapping — while PHP folds identifiers ASCII-only. The divergence
+**Folding:** case folding happens inside the subject creators, once; every
+consumer downstream compares folded identities for folded kinds and exact
+identities for sensitive kinds. Identity fields fold with Kotlin
+`String.lowercase()` — Unicode full case mapping — while PHP folds
+identifiers ASCII-only. The divergence
 is confined to non-ASCII identifiers, which the PHP builtin namespace does
 not contain; an entry naming one folds more aggressively than PHP would,
 never less.

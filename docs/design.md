@@ -27,8 +27,8 @@ Guards: [design-guards.md](design-guards.md). Signatures:
   `IllegalArgumentException` from `init` blocks and creators on every other
   format violation.
 - **Dependency roles:** Data holders: all model types. Decoder: `ModelYaml`.
-  Loaders: `VocabularyLoader`, `PolicyLoader`. Consumers live outside this
-  library.
+  Loaders: `VocabularyLoader`, `PolicyLoader`, `ModelLoader`. Consumers live
+  outside this library.
 
 Package `edu.jhu.cobra.commons.phpmodels`, single module, `explicitApi()`.
 Every model type is public — exposing them is the library's purpose.

@@ -106,7 +106,7 @@ for (entry in entries) {
 ## Configuration
 
 - Entry form is deduced from keys: `subject:` starts a flat model; `name:`/`find:`/`where:`/`model:` starts a generator. No `type:` discriminator.
-- Generator `name` is load-unique per document.
+- Generator `name` uniqueness spans one whole load across layers; `ModelLoader` does not enforce it — check it in the caller.
 
 ## Gotchas
 
