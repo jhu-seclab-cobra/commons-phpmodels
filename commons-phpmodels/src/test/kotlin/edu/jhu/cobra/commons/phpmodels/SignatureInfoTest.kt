@@ -14,7 +14,9 @@ import kotlin.test.assertNotEquals
  *   namespaced class names construct.
  * - `declared type rejects other spellings` — punctuation and blanks fail.
  * - `declared type derives its return classification` — the four-kind
- *   derivation table.
+ *   derivation table, including void and off-keyword standalone spellings.
+ * - `isVoid is true exactly for the void keyword` — the no-result marker the
+ *   propagation-into-return rule reads.
  * - `class signature folds parent and interfaces` — inheritance edges compare
  *   case-insensitively.
  * - `class signature rejects blank inheritance names` — a blank parent or
@@ -40,12 +42,29 @@ internal class SignatureInfoTest {
     }
 
     @ParameterizedTest
-    @CsvSource("string, STR", "int, NUM", "float, NUM", "bool, BOOL", "array, ANY", "mysqli, ANY")
+    @CsvSource(
+        "string, STR",
+        "int, NUM",
+        "float, NUM",
+        "bool, BOOL",
+        "array, ANY",
+        "mysqli, ANY",
+        "void, ANY",
+        "never, ANY",
+        "self, ANY",
+    )
     fun `declared type derives its return classification`(
         raw: String,
         expected: ReturnKind,
     ) {
         assertEquals(expected, DeclaredType(raw).toReturnKind())
+    }
+
+    @Test
+    fun `isVoid is true exactly for the void keyword`() {
+        assertEquals(true, DeclaredType("void").isVoid)
+        assertEquals(false, DeclaredType("string").isVoid)
+        assertEquals(false, DeclaredType("never").isVoid)
     }
 
     @Test

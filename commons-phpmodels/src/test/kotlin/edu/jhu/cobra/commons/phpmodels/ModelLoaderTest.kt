@@ -18,6 +18,10 @@ import kotlin.test.assertIs
  *   spellings route to their subtypes.
  * - `generator entry decodes beside flat models` — deduction routes the
  *   name/find/where/model form.
+ * - `sanitizers section decodes to its category sets` — the fifth assertion
+ *   section round-trips through the loader.
+ * - `entry mixing both forms is rejected` — deduction picks one form and the
+ *   other form's fields fail as unknown keys.
  * - `mixed-case category and color references intern lowercased` — the
  *   Jackson decode path folds identity tokens like the interning path does.
  * - `entry asserting nothing is rejected` — no signature and no section.
@@ -129,6 +133,42 @@ internal class ModelLoaderTest {
         assertEquals(SubjectKind.VARIABLE, generator.find)
         assertEquals(true, generator.matches(VariableSubject("_get")))
         assertEquals(false, generator.matches(VariableSubject("_server")))
+    }
+
+    @Test
+    fun `sanitizers section decodes to its category sets`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    function: mysqli_real_escape_string
+                  sanitizers:
+                    - categories: [sqli, xss]
+                """.trimIndent(),
+            )
+        assertEquals(
+            listOf(SanitizerDecl(setOf(VulnClassId("sqli"), VulnClassId("xss")))),
+            model.body.sanitizers,
+        )
+    }
+
+    @Test
+    fun `entry mixing both forms is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: strlen
+                  name: string-length
+                  find: function
+                  where:
+                    - constraint: name
+                      pattern: strlen
+                  model:
+                    returns: num
+                """.trimIndent(),
+            )
+        }
     }
 
     @Test

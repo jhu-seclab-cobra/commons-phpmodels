@@ -23,6 +23,10 @@ import kotlin.test.assertNull
  *   an absent section.
  * - `source element rejects an empty key-pattern set` — declared keys are
  *   non-empty.
+ * - `source element rejects an empty provenance set` — a source produces at
+ *   least one origin color.
+ * - `sanitizer element rejects an empty category set` — a sanitizer
+ *   neutralizes at least one category.
  * - `key pattern matches the entire key case-sensitively` — array keys are
  *   runtime data, not identifiers.
  * - `key patterns compare by pattern text` — equality and hash-code
@@ -96,6 +100,16 @@ internal class ModelBodyTest {
         assertFailsWith<IllegalArgumentException> {
             SourceDecl(setOf(ProvenanceId("remote")), keys = emptyList())
         }
+    }
+
+    @Test
+    fun `source element rejects an empty provenance set`() {
+        assertFailsWith<IllegalArgumentException> { SourceDecl(emptySet()) }
+    }
+
+    @Test
+    fun `sanitizer element rejects an empty category set`() {
+        assertFailsWith<IllegalArgumentException> { SanitizerDecl(emptySet()) }
     }
 
     @Test
