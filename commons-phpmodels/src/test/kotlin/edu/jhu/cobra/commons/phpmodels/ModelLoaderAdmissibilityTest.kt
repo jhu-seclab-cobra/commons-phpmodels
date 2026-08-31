@@ -19,6 +19,13 @@ import kotlin.test.assertFailsWith
  *   out-parameter port, `keys:` restricts production to matching array keys.
  * - `explicit source site on a non-callable subject is rejected` — sites
  *   apply to callable subjects only.
+ * - `sink naming the return port is rejected` — a sink element names an
+ *   argument port only.
+ * - `sink naming the receiver port is rejected` — the receiver is no sink
+ *   port either.
+ * - `explicit source site naming the return port is rejected` — an explicit
+ *   `return` site is a load failure; the return site is the implicit
+ *   default.
  */
 internal class ModelLoaderAdmissibilityTest {
     @Test
@@ -132,6 +139,51 @@ internal class ModelLoaderAdmissibilityTest {
                   sources:
                     - provenance: [remote]
                       at: argument(0)
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `sink naming the return port is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: shell_exec
+                  sinks:
+                    - port: return
+                      category: sqli
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `sink naming the receiver port is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    method: mysqli::query
+                  sinks:
+                    - port: this
+                      category: sqli
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `explicit source site naming the return port is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: getenv
+                  sources:
+                    - provenance: [environment]
+                      at: return
                 """.trimIndent(),
             )
         }

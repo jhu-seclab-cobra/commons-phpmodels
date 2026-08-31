@@ -11,6 +11,8 @@ import kotlin.test.assertFailsWith
  *   interned lowercase identity.
  * - `duplicate entry within a section is rejected` — one of the two
  *   declarations would be lost.
+ * - `one name may appear in both sections` — uniqueness is per section, not
+ *   per document.
  * - `stray key is rejected` — strict decode.
  * - `require methods validate references` — declared names intern
  *   case-insensitively; undeclared names fail.
@@ -49,6 +51,23 @@ internal class VocabularyLoaderTest {
                 """.trimIndent(),
             )
         }
+    }
+
+    @Test
+    fun `one name may appear in both sections`() {
+        val vocabulary =
+            load(
+                """
+                vulnClasses:
+                  - name: header
+                    description: Header injection
+                provenances:
+                  - name: header
+                    description: Header-borne input
+                """.trimIndent(),
+            )
+        assertEquals(setOf(VulnClassId("header")), vocabulary.vulnClasses.keys)
+        assertEquals(setOf(ProvenanceId("header")), vocabulary.provenances.keys)
     }
 
     @Test

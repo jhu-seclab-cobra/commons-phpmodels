@@ -22,7 +22,11 @@ import kotlin.test.assertNotEquals
  *   inside a function or method name fails.
  * - `variable spelling requires the dollar prefix` — a bare name fails; the
  *   stored name drops the `$`.
+ * - `dollar prefix requires a non-empty name` — a bare `$`, alone or after
+ *   an owner, fails.
  * - `blank identity is rejected` — a blank name fails construction.
+ * - `identity containing whitespace is rejected` — no PHP identifier
+ *   contains whitespace; inner spaces and trailing newlines fail.
  * - `constructors fold like the creators` — direct construction folds the
  *   same identity fields the spelling creators fold.
  * - `direct construction rejects spelling characters` — `::`, `$`, or a
@@ -99,10 +103,23 @@ internal class ModelSubjectTest {
     }
 
     @Test
+    fun `dollar prefix requires a non-empty name`() {
+        assertFailsWith<IllegalArgumentException> { PropertySubject.parse("mysqli::\$") }
+        assertFailsWith<IllegalArgumentException> { VariableSubject.parse("\$") }
+    }
+
+    @Test
     fun `blank identity is rejected`() {
         assertFailsWith<IllegalArgumentException> { FunctionSubject(" ") }
         assertFailsWith<IllegalArgumentException> { MethodSubject("mysqli", " ") }
         assertFailsWith<IllegalArgumentException> { ConstantSubject("") }
+    }
+
+    @Test
+    fun `identity containing whitespace is rejected`() {
+        assertFailsWith<IllegalArgumentException> { FunctionSubject("strlen\n") }
+        assertFailsWith<IllegalArgumentException> { MethodSubject("mysqli", "que ry") }
+        assertFailsWith<IllegalArgumentException> { ConstantSubject("PHP EOL") }
     }
 
     @Test

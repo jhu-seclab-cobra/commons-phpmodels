@@ -93,6 +93,8 @@ internal class ModelBodyTest {
     fun `declared empty section is rejected`() {
         assertFailsWith<IllegalArgumentException> { ModelBody(sources = emptyList()) }
         assertFailsWith<IllegalArgumentException> { ModelBody(returns = ReturnKind.ANY, propagation = emptyList()) }
+        assertFailsWith<IllegalArgumentException> { ModelBody(sinks = emptyList()) }
+        assertFailsWith<IllegalArgumentException> { ModelBody(sanitizers = emptyList()) }
     }
 
     @Test

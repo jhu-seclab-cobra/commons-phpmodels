@@ -9,6 +9,7 @@ import kotlin.test.assertNotEquals
 /**
  * Construction rules and subject matching of [ModelGenerator].
  *
+ * - `generator requires a non-blank name` — a blank name fails construction.
  * - `generator requires a name constraint` — a where list without one fails.
  * - `class constraint requires a method find` — a class pattern beside a
  *   function find fails.
@@ -31,6 +32,13 @@ import kotlin.test.assertNotEquals
  */
 internal class ModelGeneratorTest {
     private val sources = ModelBody(sources = listOf(SourceDecl(setOf(ProvenanceId("remote")))))
+
+    @Test
+    fun `generator requires a non-blank name`() {
+        assertFailsWith<IllegalArgumentException> {
+            ModelGenerator(" ", SubjectKind.FUNCTION, listOf(NameConstraint("get.*")), sources)
+        }
+    }
 
     @Test
     fun `generator requires a name constraint`() {
