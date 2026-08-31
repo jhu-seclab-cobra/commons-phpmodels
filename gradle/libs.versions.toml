@@ -5,10 +5,12 @@ ktlint = "14.0.1"
 detekt = "1.23.8"
 jvm = "21"
 jackson = "2.19.0"
+snakeyaml = "2.4"
 junit = "5.10.2"
 
 [libraries]
 jackson-dataformat-yaml = { module = "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 

@@ -9,6 +9,12 @@ import com.fasterxml.jackson.databind.MapperFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.yaml.snakeyaml.LoaderOptions
+import org.yaml.snakeyaml.error.YAMLException
+import org.yaml.snakeyaml.events.AliasEvent
+import org.yaml.snakeyaml.events.StreamEndEvent
+import org.yaml.snakeyaml.parser.ParserImpl
+import org.yaml.snakeyaml.reader.StreamReader
 import java.io.InputStream
 
 /**
@@ -34,18 +40,20 @@ internal object ModelYaml {
             .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
 
     /**
-     * Decodes [input] into [shape].
+     * Decodes [input] into [shape]. The stream is read as UTF-8.
      *
      * @throws IllegalArgumentException If the content does not decode into [shape]
      *   — unknown key, unknown discriminator, missing field, rejected value — or
-     *   the stream carries content after the document root.
+     *   the stream carries an alias or content after the document root.
      */
     fun <T> decode(
         input: InputStream,
         shape: TypeReference<T>,
-    ): T =
-        try {
-            mapper.createParser(input).use { parser ->
+    ): T {
+        val content = input.readBytes().toString(Charsets.UTF_8)
+        requireAliasFree(content)
+        return try {
+            mapper.createParser(content).use { parser ->
                 val value = mapper.readValue(parser, shape)
                 // The root-level exhaustion check: a second `---` document would
                 // otherwise drop silently. FAIL_ON_TRAILING_TOKENS is unusable
@@ -58,6 +66,27 @@ internal object ModelYaml {
         } catch (cause: JsonProcessingException) {
             throw IllegalArgumentException("Malformed model document: ${cause.originalMessage}", cause)
         }
+    }
+
+    // jackson-dataformat-yaml substitutes a scalar alias with its anchor's
+    // name, not the anchored value (impl.md), so the decoded document cannot
+    // reveal the alias; the SnakeYAML event stream is the last layer that
+    // still sees it.
+    private fun requireAliasFree(content: String) {
+        val events = ParserImpl(StreamReader(content), LoaderOptions())
+        try {
+            var event = events.event
+            while (event != null && event !is StreamEndEvent) {
+                val alias = event as? AliasEvent
+                require(alias == null) {
+                    "Malformed model document: alias '*${alias?.anchor}' is never substituted; spell the value out"
+                }
+                event = events.event
+            }
+        } catch (cause: YAMLException) {
+            throw IllegalArgumentException("Malformed model document: ${cause.message}", cause)
+        }
+    }
 
     /**
      * Converts an already-decoded tree [node] into [shape], keeping the

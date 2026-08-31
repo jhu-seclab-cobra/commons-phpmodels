@@ -30,6 +30,20 @@ with this format: the check also runs after buffered inner binds (deduction,
 second `---` document follows; without the check `readValue(InputStream, …)`
 silently drops every document after the first.
 
+**[jackson]** A scalar alias (`key: *a`) decodes to the anchor's *name*
+(`"a"`), not the anchored value — anchor resolution exists only for
+object identity, never for scalars. No mapper feature rejects it;
+`ModelYaml` scans the SnakeYAML event stream and fails on any `AliasEvent`
+before decoding.
+
+**[snakeyaml]** `ParserImpl(StreamReader(content), LoaderOptions())` then
+`getEvent()` until `StreamEndEvent` — the pre-decode event scan.
+`YAMLException` from the scan is wrapped like a decode failure.
+
+**[jackson]** Unquoted guard scalars carry YAML 1.1 semantics: `no`/`off`/
+`on`/`yes` decode as booleans and a zero-prefixed integer (`017`) as octal.
+Quoting forces the string shape; `WhenGuardTest` pins both readings.
+
 ## Libraries
 
 - com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
@@ -39,6 +53,9 @@ silently drops every document after the first.
   `jackson-module-kotlin`.
 - `jackson-databind` and `jackson-annotations` arrive transitively; neither
   is declared, so one version property governs the whole set.
+- org.yaml:snakeyaml:2.4 — the event-stream scan rejecting aliases; already
+  the YAML backend under `jackson-dataformat-yaml`, declared explicitly
+  because `ModelYaml` compiles against it. Catalog alias `snakeyaml`.
 
 ## Developer instructions
 

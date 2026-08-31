@@ -151,7 +151,10 @@ through, so the strictness is declared once: `FAIL_ON_UNKNOWN_PROPERTIES`,
 key never decodes last-wins) on a Kotlin-module mapper
 ([impl.md](impl.md)). Decodes one document per stream: after the root value
 binds, the parser must be exhausted, so a second `---` document is a load
-failure, never a silent drop. Wraps every `JsonProcessingException` in
+failure, never a silent drop. Reads the stream as UTF-8 and rejects any
+YAML alias before decoding — Jackson substitutes a scalar alias with its
+anchor's name, not the anchored value ([impl.md](impl.md)), so an alias
+would corrupt silently. Wraps every `JsonProcessingException` in
 `IllegalArgumentException` with the underlying reason. Internal — the three
 loaders are the public surface, so no Jackson type crosses the API.
 

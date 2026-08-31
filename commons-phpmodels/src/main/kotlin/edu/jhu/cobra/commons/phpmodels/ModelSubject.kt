@@ -40,8 +40,8 @@ public sealed interface ModelSubject {
  * their kind is case-insensitive.
  *
  * @property name The declared name, exactly as the subtype passed it.
- * @throws IllegalArgumentException If the declared name is blank or carries a
- *   spelling-grammar character.
+ * @throws IllegalArgumentException If the declared name is blank, carries a
+ *   spelling-grammar character, or contains whitespace.
  */
 public sealed class NamedSubject(
     private val kind: String,
@@ -71,8 +71,8 @@ public sealed class NamedSubject(
  *
  * @property owner Case-folded name of the owning class.
  * @property name The declared member name, exactly as the subtype passed it.
- * @throws IllegalArgumentException If either declared name is blank or
- *   carries a spelling-grammar character.
+ * @throws IllegalArgumentException If either declared name is blank, carries
+ *   a spelling-grammar character, or contains whitespace.
  */
 public sealed class MemberSubject(
     private val kind: String,
@@ -241,6 +241,9 @@ private fun requirePlainIdentity(
     require("::" !in value) { "$label subject $field contains '::': '$value'" }
     require('$' !in value) { "$label subject $field contains '\$': '$value'" }
     require(!value.startsWith('\\')) { "$label subject $field starts with '\\': '$value'" }
+    // No PHP identifier contains whitespace; a block-scalar spelling would
+    // otherwise smuggle its trailing newline into the identity.
+    require(value.none(Char::isWhitespace)) { "$label subject $field contains whitespace: '$value'" }
 }
 
 private fun simpleName(raw: String): String = raw.removePrefix("\\")

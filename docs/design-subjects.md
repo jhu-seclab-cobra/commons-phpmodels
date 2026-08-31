@@ -68,7 +68,10 @@ in [impl.md](impl.md).
   without the `$`.
 
 **Validation:** blank identity fields are rejected in `init`, and so is any
-spelling-grammar character in an identity field (`::`, `$`, a leading `\`).
+spelling-grammar character in an identity field (`::`, `$`, a leading `\`)
+and any whitespace character — no PHP identifier contains whitespace, and a
+block-scalar spelling would otherwise smuggle its trailing newline into the
+identity.
 The base-class invariant covers both construction paths, so a directly
 constructed subject and a parsed spelling always agree on one identity.
 
