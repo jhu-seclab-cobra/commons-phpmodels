@@ -44,6 +44,24 @@ before decoding.
 `on`/`yes` decode as booleans and a zero-prefixed integer (`017`) as octal.
 Quoting forces the string shape; `WhenGuardTest` pins both readings.
 
+**[jackson]** `Map<String, String>` with a null-valued key (`html:`) decodes
+to a map holding `null` — jackson-module-kotlin enforces non-nullability on
+creator parameters only, never on collection elements or map values
+(`KotlinFeature.StrictNullChecks` is off). `CategoryMappingLoader` decodes
+into `Map<String, String?>` and rejects the null itself.
+
+**[jackson]** A missing or empty-valued top-level section (`categories:` with
+no mapping) fails as a missing non-nullable creator parameter
+(`MismatchedInputException`); an empty section is spelled `categories: {}`.
+
+**[jackson]** Mapping keys keep their scalar text: `no:` and `017:` decode as
+the strings `"no"` and `"017"`, so the YAML 1.1 boolean/octal readings that
+affect guard values never touch a name key.
+
+**[jackson]** `ModelYaml.decode` reads the stream to its end and does not
+close it; `DocumentSetLoader` opens every stream through `use` so the
+opener's resources are released regardless of the decode outcome.
+
 ## Libraries
 
 - com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
@@ -68,7 +86,8 @@ Quoting forces the string shape; `WhenGuardTest` pins both readings.
   hierarchies.
 - The production loader tests pin the `invoke`-as-creator row:
   `ModelLoaderTest` decodes class signatures and propagations through the
-  factories.
+  factories. `CategoryMappingLoaderTest` pins the null-map-value and
+  missing-section rows.
 
 ## Design-specific
 
