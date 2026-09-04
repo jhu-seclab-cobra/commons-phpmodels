@@ -33,10 +33,11 @@ public object DocumentSetLoader {
      * @param context The vocabulary accumulated from earlier sets.
      * @param mapping The translation for a set whose names are not the consumer's.
      * @return The set in the consumer's names.
-     * @throws DocumentSetException If the manifest or a listed document is absent, or a path is listed twice.
+     * @throws DocumentSetException If the manifest or a listed document is absent, a path is listed twice,
+     *   or a listed document is malformed (the decode failure is the cause).
      * @throws VocabularyException If a redeclaration conflicts, a reference or mapping target is undeclared,
-     *   or a mapped name is unlisted.
-     * @throws IllegalArgumentException If a document is malformed.
+     *   or a mapped name is unlisted; a reference failure names the document.
+     * @throws IllegalArgumentException If the vocabulary, the policy, or a mapping document is malformed.
      */
     public fun load(
         open: ResourceOpener,
@@ -55,7 +56,7 @@ public object DocumentSetLoader {
         val declared = open.open(VOCABULARY)?.use(VocabularyLoader::load) ?: Vocabulary.EMPTY
         val merged = context.merge(declared)
         val policy = open.open(POLICY)?.use { PolicyLoader.load(it, merged) }.orEmpty()
-        val documents = paths.map { path -> Document(path, decode(open, path).onEach(merged::verify)) }
+        val documents = paths.map { path -> Document(path, decode(open, path).onEach { verify(merged, it, path) }) }
         return DocumentSet(declared, policy, documents)
     }
 
@@ -73,7 +74,7 @@ public object DocumentSetLoader {
         val policy = open.open(POLICY)?.use { PolicyLoader.load(it, sources) }.orEmpty()
         val documents =
             paths.map { path ->
-                val entries = decode(open, path).mapNotNull(mapping::apply).onEach(context::verify)
+                val entries = decode(open, path).mapNotNull(mapping::apply).onEach { verify(context, it, path) }
                 Document(path, entries)
             }
         return DocumentSet(Vocabulary.EMPTY, mapping.apply(policy), documents)
@@ -101,12 +102,29 @@ public object DocumentSetLoader {
             provenances = provenances.keys.associateWith { ProvenanceDecl(it, "mapped source name") },
         )
 
+    // A set lists many documents; a failure inside one names it.
     private fun decode(
         open: ResourceOpener,
         path: String,
     ): List<ModelEntry> {
         val input = open.open(path) ?: throw DocumentSetException(path, "listed document is absent")
-        return input.use(ModelLoader::load)
+        return try {
+            input.use(ModelLoader::load)
+        } catch (failure: IllegalArgumentException) {
+            throw DocumentSetException(path, "listed document is malformed: ${failure.message}", failure)
+        }
+    }
+
+    private fun verify(
+        vocabulary: Vocabulary,
+        entry: ModelEntry,
+        path: String,
+    ) {
+        try {
+            vocabulary.verify(entry)
+        } catch (failure: VocabularyException) {
+            throw VocabularyException("${failure.message} ('$path')", failure)
+        }
     }
 
     // A manifest line is a path; a blank line or a line starting with '#' is

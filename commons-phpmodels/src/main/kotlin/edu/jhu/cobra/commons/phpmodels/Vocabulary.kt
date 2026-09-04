@@ -74,7 +74,8 @@ public data class ProvenanceDecl(
  */
 public class VocabularyException(
     message: String,
-) : IllegalArgumentException(message)
+    cause: Throwable? = null,
+) : IllegalArgumentException(message, cause)
 
 /**
  * The two closed declared sets — danger categories and origin colors. Sole

@@ -44,12 +44,16 @@ public data class DocumentSet(
 }
 
 /**
- * Raised when a document set's storage does not match its manifest: the
- * manifest is absent, a listed document is absent, or a path is listed twice.
+ * Raised when a document set's storage does not match its manifest — the
+ * manifest is absent, a listed document is absent, or a path is listed
+ * twice — or when a listed document is malformed, so that the failure
+ * names the document among the many a set lists.
  *
  * @property path The manifest or document path the failure names.
+ * @param cause The decode failure of a malformed document; null otherwise.
  */
 public class DocumentSetException(
     public val path: String,
     detail: String,
-) : IllegalArgumentException("Document set: $detail ('$path')")
+    cause: Throwable? = null,
+) : IllegalArgumentException("Document set: $detail ('$path')", cause)

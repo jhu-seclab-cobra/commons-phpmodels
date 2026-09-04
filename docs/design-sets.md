@@ -17,9 +17,11 @@ The types loading one document set and translating its names. Semantics:
   `CategoryMappingLoader` decodes through `ModelYaml`. All arrows one-way
   into the data types; no existing type depends on a new one.
 - **Exceptions:** `DocumentSetException` extends `IllegalArgumentException`
-  (missing manifest or listed document, duplicate manifest line);
-  `VocabularyException` (conflicting redeclaration, unmapped name, mapping
-  target undeclared); `IllegalArgumentException` from decode as before.
+  (missing manifest or listed document, duplicate manifest line, malformed
+  listed document with the decode failure as cause); `VocabularyException`
+  (conflicting redeclaration, undeclared reference naming the document,
+  unmapped name, mapping target undeclared); `IllegalArgumentException`
+  from the vocabulary, policy, and mapping decodes as before.
 - **Dependency roles:** Data holders: `DocumentSet`, `Document`,
   `CategoryMapping`. Orchestrator: `DocumentSetLoader`. Contract:
   `ResourceOpener`. Loaders: `CategoryMappingLoader`.
@@ -125,12 +127,14 @@ consumers currently write by hand into the authority that owns the sets.
 
 ## Exception / Error Types
 
-- `DocumentSetException` extends `IllegalArgumentException` — manifest
-  absent, listed document absent, duplicate manifest line; message names the
-  path.
+- `DocumentSetException(path, detail, cause?)` extends
+  `IllegalArgumentException` — manifest absent, listed document absent,
+  duplicate manifest line, listed document malformed (the format failure
+  is the cause); message and `path` name the document.
 - `VocabularyException` — conflicting redeclaration (names the name and
-  both descriptions), unmapped name (names the name and the set), mapping
-  target undeclared (names the target).
+  both descriptions), undeclared reference in a listed document (names the
+  name and the document), unmapped name (names the name and the set),
+  mapping target undeclared (names the target).
 
 Domain semantics: [model-sets.md](model-sets.md). Entry forms:
 [design-generators.md](design-generators.md).

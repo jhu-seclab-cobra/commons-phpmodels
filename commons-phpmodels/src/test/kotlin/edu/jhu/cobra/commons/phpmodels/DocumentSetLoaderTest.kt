@@ -13,6 +13,8 @@ import kotlin.test.assertTrue
  *
  * - `manifest …` — absent manifest, absent document, and doubled line fail;
  *   comment and blank lines are not entries; order is manifest order.
+ * - `listed document …` — a malformed document and an undeclared reference
+ *   both name the document; the decode failure stays as the cause.
  * - `declared …` — vocabulary merges into the context, policy and entries
  *   decode against the merge, an undeclared reference or a conflicting
  *   redeclaration fails, and the returned vocabulary is the set's own.
@@ -103,6 +105,25 @@ internal class DocumentSetLoaderTest {
                 DocumentSetLoader.load(opener("index.txt" to "missing.yaml\n"), context)
             }
         assertEquals("missing.yaml", failure.path)
+    }
+
+    @Test
+    fun `listed document malformed names the document and keeps the cause`() {
+        val failure =
+            assertFailsWith<DocumentSetException> {
+                DocumentSetLoader.load(opener("index.txt" to "bad.yaml\n", "bad.yaml" to "- subject:\n    trait: x\n"))
+            }
+        assertEquals("bad.yaml", failure.path)
+        assertIs<IllegalArgumentException>(failure.cause)
+    }
+
+    @Test
+    fun `listed document undeclared reference names the document`() {
+        val failure =
+            assertFailsWith<VocabularyException> {
+                DocumentSetLoader.load(opener("index.txt" to "a.yaml\n", "a.yaml" to sink("a", "xss")), context)
+            }
+        assertTrue("'a.yaml'" in failure.message.orEmpty(), "expected the document path, was: ${failure.message}")
     }
 
     @Test
