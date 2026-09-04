@@ -115,9 +115,71 @@ public data class Vocabulary(
         throw undeclared("provenance", raw, provenances.keys.map { it.id })
     }
 
+    /**
+     * Unions this vocabulary with [other]. A name declared in both is one
+     * declaration when the descriptions match; a differing description is a
+     * conflicting redeclaration, never a silent override.
+     *
+     * @param other The vocabulary a later document set contributes.
+     * @return The union, this vocabulary's entries first.
+     * @throws VocabularyException If a name is declared in both with different descriptions.
+     */
+    public fun merge(other: Vocabulary): Vocabulary =
+        Vocabulary(
+            vulnClasses = vulnClasses.merged(other.vulnClasses, "vulnerability class") { it.description },
+            provenances = provenances.merged(other.provenances, "provenance") { it.description },
+        )
+
+    /**
+     * Checks that every category and color [entry] references is declared.
+     *
+     * @param entry A flat model or generator; its sources, sinks, and sanitizers are read.
+     * @throws VocabularyException If a referenced name is undeclared.
+     */
+    public fun verify(entry: ModelEntry) {
+        val body =
+            when (entry) {
+                is SubjectModel -> entry.body
+                is ModelGenerator -> entry.model
+            }
+        body.sources?.forEach { source -> source.provenance.forEach(::requireDeclared) }
+        body.sinks?.forEach { sink -> requireDeclared(sink.category) }
+        body.sanitizers?.forEach { sanitizer -> sanitizer.categories.forEach(::requireDeclared) }
+    }
+
+    private fun requireDeclared(id: VulnClassId) {
+        requireVulnClass(id.id)
+    }
+
+    private fun requireDeclared(id: ProvenanceId) {
+        requireProvenance(id.id)
+    }
+
+    private fun <K, V> Map<K, V>.merged(
+        other: Map<K, V>,
+        kind: String,
+        description: (V) -> String,
+    ): Map<K, V> {
+        val union = LinkedHashMap(this)
+        for ((id, decl) in other) {
+            val existing = union.put(id, decl) ?: continue
+            if (description(existing) != description(decl)) {
+                throw VocabularyException(
+                    "Conflicting $kind redeclaration '$id': '${description(existing)}' vs '${description(decl)}'",
+                )
+            }
+        }
+        return union
+    }
+
     private fun undeclared(
         kind: String,
         raw: String,
         declared: List<String>,
     ): VocabularyException = VocabularyException("Unknown $kind: '$raw' (declared: $declared)")
+
+    public companion object {
+        /** The vocabulary declaring nothing; the starting accumulator of a load. */
+        public val EMPTY: Vocabulary = Vocabulary(emptyMap(), emptyMap())
+    }
 }
