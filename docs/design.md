@@ -4,7 +4,8 @@ The assertion-axis types: vocabulary, policy, and the sectioned model body.
 Subjects, ports, and propagations: [design-subjects.md](design-subjects.md).
 Entry forms and generators: [design-generators.md](design-generators.md).
 Guards: [design-guards.md](design-guards.md). Signatures:
-[design-declarations.md](design-declarations.md).
+[design-declarations.md](design-declarations.md). Document sets and
+category mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
