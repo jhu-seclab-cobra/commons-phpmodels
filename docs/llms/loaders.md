@@ -25,7 +25,7 @@ val entries = ModelLoader.load(modelsYaml.byteInputStream())
 ## Gotchas
 
 - Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
-- The input stream is consumed and closed by the load call.
+- The input stream is consumed by the load call and not closed; close it yourself, or load through `DocumentSetLoader`, which closes every stream it opens.
 - `VocabularyException` extends `IllegalArgumentException`; one catch covers both.
-- `ModelLoader` does not intern the color and category strings inside decoded entries — pass them through `Vocabulary.requireProvenance` / `requireVulnClass` after loading.
+- `ModelLoader` does not check the color and category names inside decoded entries — call `Vocabulary.verify(entry)` after loading, or load the whole set through `DocumentSetLoader` ([sets.md](sets.md)).
 - Load order: vocabulary first, then policy; model documents load independently.

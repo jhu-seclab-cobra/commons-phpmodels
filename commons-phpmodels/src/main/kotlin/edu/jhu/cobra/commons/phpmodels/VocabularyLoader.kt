@@ -24,7 +24,7 @@ public object VocabularyLoader {
     /**
      * Parses a vocabulary document into a [Vocabulary].
      *
-     * @param input The document content; consumed and closed by the decode.
+     * @param input The document content; consumed by the decode, not closed.
      * @return The declared danger categories and origin colors, keyed by interned identity.
      * @throws IllegalArgumentException If an entry is malformed or carries a stray key.
      * @throws VocabularyException If a name repeats within a section.

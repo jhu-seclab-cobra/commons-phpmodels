@@ -13,7 +13,7 @@ public object ModelLoader {
     /**
      * Parses a model document into its [ModelEntry] list.
      *
-     * @param input The document content; consumed and closed by the decode.
+     * @param input The document content; consumed by the decode, not closed.
      * @return The decoded entries in file order.
      * @throws IllegalArgumentException If an entry is malformed: unknown key,
      *   unknown subject kind, malformed spelling, inadmissible section, or a

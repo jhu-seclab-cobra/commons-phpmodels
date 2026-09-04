@@ -80,7 +80,8 @@ public class VocabularyException(
  * The two closed declared sets — danger categories and origin colors. Sole
  * authority for what category and color names exist. Policy rows are
  * validated against it at load ([PolicyLoader]); model-entry references are
- * validated by the caller, which owns the cross-document load order.
+ * validated by [verify], called by [DocumentSetLoader] or by a caller that
+ * decodes single documents.
  *
  * @property vulnClasses Declared danger categories, keyed by interned identity.
  * @property provenances Declared origin colors, keyed by interned identity.

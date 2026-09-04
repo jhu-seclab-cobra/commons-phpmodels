@@ -18,7 +18,7 @@ public object PolicyLoader {
     /**
      * Parses a policy document into a list of [PolicyRow].
      *
-     * @param input The document content; consumed and closed by the decode.
+     * @param input The document content; consumed by the decode, not closed.
      * @param vocabulary Declared colors and categories; every row tag is validated against it.
      * @return The policy rows in file order.
      * @throws IllegalArgumentException If a row is malformed or carries a stray key.

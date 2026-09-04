@@ -49,15 +49,17 @@ model.body.propagation // [Propagation(from=argument(0), to=return)]
 
 ## API
 
-Three loaders form the public decode surface. Every format violation raises `IllegalArgumentException` at load; nothing malformed crosses the boundary.
+Three loaders decode one document each; `DocumentSetLoader` composes them over a whole set. Every format violation raises `IllegalArgumentException` at load; nothing malformed crosses the boundary.
 
 | Loader | Signature | Decodes |
 |--------|-----------|---------|
 | `ModelLoader` | `load(input: InputStream): List<ModelEntry>` | Model documents: flat entries and generators |
 | `VocabularyLoader` | `load(input: InputStream): Vocabulary` | The two-axis vocabulary: danger categories, origin colors |
 | `PolicyLoader` | `load(input: InputStream, vocabulary: Vocabulary): List<PolicyRow>` | The origin → categories taint policy |
+| `DocumentSetLoader` | `load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet` | One document set: `index.txt`, optional `vocabulary.yaml` and `policy.yaml`, listed documents; optionally translated through a mapping |
+| `CategoryMappingLoader` | `load(input: InputStream): CategoryMapping` | A consumer's translation of another set's category and color names |
 
-Decoded types: `ModelEntry` (`SubjectModel`, `ModelGenerator`), `ModelSubject` (seven PHP declaration kinds), `ModelBody` (returns, propagation, sources, sinks, sanitizers), `SignatureInfo` (callable, class, typed, property), `WhenGuard`, `Port`, `ReturnKind`, `Vocabulary`, `TaintPolicy`. Full type specifications: [docs/design.md](docs/design.md).
+Decoded types: `ModelEntry` (`SubjectModel`, `ModelGenerator`), `ModelSubject` (seven PHP declaration kinds), `ModelBody` (returns, propagation, sources, sinks, sanitizers), `SignatureInfo` (callable, class, typed, property), `WhenGuard`, `Port`, `ReturnKind`, `Vocabulary`, `TaintPolicy`, `DocumentSet`, `CategoryMapping`. Full type specifications: [docs/design.md](docs/design.md), [docs/design-sets.md](docs/design-sets.md).
 
 ## Background
 

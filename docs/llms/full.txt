@@ -2,20 +2,23 @@
 
 > Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries, and `DocumentSetLoader` composes them over one document set (manifest, optional vocabulary and policy, listed documents), optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
 
 ## Instructions for Agents
 
 - Call `ModelLoader.load(input)` to decode a model document into `List<ModelEntry>`.
 - Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
+- Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
+- Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
-- Intern color and category strings of decoded model entries through `Vocabulary.requireProvenance` / `Vocabulary.requireVulnClass` — `ModelLoader` does not.
+- Call `Vocabulary.verify(entry)` on entries decoded by `ModelLoader` alone — `DocumentSetLoader` verifies every entry it returns.
 - Never write `returns:` beside a callable `signature:` in a model file — load failure.
 - Never hand-build subject instances from split strings — pass the PHP-native spelling to the subtype creator.
 
 ## Loading
 
 - [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
+- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, accumulation across sets.
 
 ## Decoded Types
 
@@ -62,10 +65,56 @@ val entries = ModelLoader.load(modelsYaml.byteInputStream())
 ## Gotchas
 
 - Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
-- The input stream is consumed and closed by the load call.
+- The input stream is consumed by the load call and not closed; close it yourself, or load through `DocumentSetLoader`, which closes every stream it opens.
 - `VocabularyException` extends `IllegalArgumentException`; one catch covers both.
-- `ModelLoader` does not intern the color and category strings inside decoded entries — pass them through `Vocabulary.requireProvenance` / `requireVulnClass` after loading.
+- `ModelLoader` does not check the color and category names inside decoded entries — call `Vocabulary.verify(entry)` after loading, or load the whole set through `DocumentSetLoader` ([sets.md](sets.md)).
 - Load order: vocabulary first, then policy; model documents load independently.
+
+---
+
+## Source: llms/sets.md
+
+# Document Sets
+
+> One stored source of models — manifest, optional vocabulary and policy, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a category mapping.
+
+## Quick Start
+
+```kotlin
+val opener = ResourceOpener { path -> javaClass.getResourceAsStream("/models/$path") }
+var vocabulary = Vocabulary.EMPTY
+val stubs = DocumentSetLoader.load(opener, vocabulary)
+vocabulary = vocabulary.merge(stubs.vocabulary)
+
+val mapping = CategoryMappingLoader.load(mappingYaml.byteInputStream())
+val upstream = DocumentSetLoader.load(upstreamOpener, vocabulary, mapping)
+val entries = stubs.entries + upstream.entries
+```
+
+## API
+
+- **`ResourceOpener.open(path: String): InputStream?`** — `fun interface`; the caller's storage. Path is relative to the set root; null when absent.
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice), `VocabularyException` (conflicting redeclaration, undeclared reference or mapping target, unlisted mapped name), `IllegalArgumentException` (malformed document).
+- **`DocumentSetLoader.MANIFEST`**, **`VOCABULARY`**, **`POLICY`** — The three fixed file names, directly under the root.
+- **`DocumentSet(vocabulary: Vocabulary, policy: List<PolicyRow>, documents: List<Document>)`** — `vocabulary` is what this set contributed (empty for a mapped set); `entries` flattens the documents in order.
+- **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
+- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes two maps, `categories:` and `provenances:`, source name to target name or the literal `ignore`.
+- **`CategoryMapping.category(source)`**, **`provenance(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
+- **`CategoryMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
+- **`CategoryMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
+- **`DocumentSetException(path, detail)`** — Extends `IllegalArgumentException`; `path` names the manifest or document.
+
+## Configuration
+
+- Manifest `index.txt`: one document path per line, relative to the root; blank lines and lines starting with `#` are not entries; a path listed twice fails.
+- Mapping document: `categories:` and `provenances:` maps; both sections required (`{}` when empty); every target is declared in `context` at load; a null target or a source spelled `ignore` fails.
+
+## Gotchas
+
+- Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
+- With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
+- Translation never touches subjects, ports, guards, signatures, or value semantics.
+- Every stream the opener yields is closed by the load, whether or not the decode succeeds.
 
 ---
 
@@ -196,6 +245,9 @@ policy.isDangerous(vocabulary.requireProvenance("remote"), vocabulary.requireVul
 - **`Vocabulary(vulnClasses: Map<VulnClassId, VulnClassDecl>, provenances: Map<ProvenanceId, ProvenanceDecl>)`** — Sole authority for what category and color names exist.
 - **`Vocabulary.requireVulnClass(raw: String): VulnClassId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.requireProvenance(raw: String): ProvenanceId`** — Interns and validates a color name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
+- **`Vocabulary.verify(entry: ModelEntry)`** — Checks every category and color the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
+- **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
 - **`VulnClassId(id: String)`**, **`ProvenanceId(id: String)`** — Interned lowercase reference tokens (value classes). Use past the load boundary instead of raw strings.
 - **`VulnClassDecl(id: VulnClassId, description: String)`**, **`ProvenanceDecl(id: ProvenanceId, description: String)`** — One declared vocabulary entry.
 - **`PolicyRow(origin: ProvenanceId, enables: Set<VulnClassId>)`** — One policy statement.
@@ -212,7 +264,6 @@ policy.isDangerous(vocabulary.requireProvenance("remote"), vocabulary.requireVul
 - Identifiers are lowercased at interning; declare and reference names in lowercase.
 - A repeated name within a vocabulary section raises `VocabularyException` at load.
 - `VocabularyException` extends `IllegalArgumentException`.
-- Model entries decoded by `ModelLoader` carry raw color/category strings — intern them through `requireProvenance` / `requireVulnClass` yourself.
+- Model entries decoded by `ModelLoader` are not checked against any vocabulary — call `verify(entry)` yourself, or load through `DocumentSetLoader`.
 
 ---
-

@@ -2,20 +2,23 @@
 
 > Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries, and `DocumentSetLoader` composes them over one document set (manifest, optional vocabulary and policy, listed documents), optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
 
 ## Instructions for Agents
 
 - Call `ModelLoader.load(input)` to decode a model document into `List<ModelEntry>`.
 - Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
+- Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
+- Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
-- Intern color and category strings of decoded model entries through `Vocabulary.requireProvenance` / `Vocabulary.requireVulnClass` — `ModelLoader` does not.
+- Call `Vocabulary.verify(entry)` on entries decoded by `ModelLoader` alone — `DocumentSetLoader` verifies every entry it returns.
 - Never write `returns:` beside a callable `signature:` in a model file — load failure.
 - Never hand-build subject instances from split strings — pass the PHP-native spelling to the subtype creator.
 
 ## Loading
 
 - [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
+- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, accumulation across sets.
 
 ## Decoded Types
 
