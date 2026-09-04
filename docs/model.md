@@ -2,7 +2,8 @@
 
 Semantics of the assertion axis: sections, subjects, ports, and the two-axis
 color model. Declaration axis: [model-declarations.md](model-declarations.md).
-Guarded branches: [model-guards.md](model-guards.md).
+Guarded branches: [model-guards.md](model-guards.md). Document sets and
+category mapping: [model-sets.md](model-sets.md).
 
 ## Entities
 
