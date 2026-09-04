@@ -10,7 +10,9 @@ types, class structure). Several producers emit this knowledge — a generated
 layer extracted from upstream stub sources, hand-written rule files, and
 third-party fragments — and several consumers read it. Without one shared
 format and one shared validation implementation, each producer/consumer pair
-re-invents both.
+re-invents both. Without one shared organization of the documents, each
+side also re-invents the loading convention, and a consumer mounting a
+source that names categories on another axis has nowhere to translate them.
 
 **System Role.** commons-phpmodels is the format library — it owns the
 model types, the YAML decoding, and the load-time validation, while every
@@ -19,9 +21,10 @@ consumers.
 
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
-  entries (explicit models and generators).
+  entries (explicit models and generators) — grouped into document sets
+  under one root each; optionally a category mapping for one set.
 - **Outputs:** validated typed values — the vocabulary, the taint policy,
-  decoded model entries.
+  decoded model entries, and one loaded document set per root.
 - **Connections:** producers (stub extraction, rule authors, third-party
   fragments) → this library (decode + validate) → consumers (analyzers,
   compilers).
@@ -29,17 +32,21 @@ consumers.
 **Scope Boundaries**
 - **Owned:** the model format — subjects, ports, sections, signatures, guards,
   generators, vocabulary, policy; strict YAML decoding; every load-time
-  validation rule of the format itself.
+  validation rule of the format itself; the document-set convention shared
+  by every producer and consumer; the category mapping that translates one
+  set's categories and colors into a consumer's vocabulary.
 - **Not Owned:** layer ordering and override resolution, branch selection at a
   call, subject resolution from a program graph, the taint query, artifact
-  compilation, and any file organization convention of a particular consumer.
+  compilation, and where a document set is stored (classpath, file,
+  artifact) — the caller opens the streams.
 
 ## Concepts
 
 ```
-vocabulary ──┐
-policy ──────┤──► decode + validate ──► typed values ──► consumer
-model files ─┘        (this library)
+document set root ─┬─ index.txt ──► model files ─┐
+                   ├─ vocabulary.yaml ───────────┤──► decode + validate ──► typed values ──► consumer
+                   └─ policy.yaml ───────────────┘        (this library)          ▲
+category mapping (consumer-supplied) ── translates a set's names ──────────────────┘
 ```
 
 **Model** — The single declarative statement about one subject: what its calls
@@ -112,8 +119,10 @@ to.
 **Vocabulary** — The closed, declared sets of origin colors and danger
 categories.
 - Scope: any color or category named anywhere else must be declared here
-  first.
-- Relationships: referenced by every Model and by the Policy.
+  first. A second declaration of a name is admitted only when identical to
+  the first: two sets can restate a shared name, never silently disagree.
+- Relationships: referenced by every Model and by the Policy; accumulated
+  across Document Sets by the consumer.
 
 **Policy** — The global mapping from an origin color to the danger categories
 it can trigger.
@@ -121,12 +130,33 @@ it can trigger.
 - Relationships: relates Origin Colors to Danger Categories; validated
   against the Vocabulary.
 
+**Document Set** — One source of models as it is stored: a root holding a
+manifest that lists the model documents in order, an optional vocabulary,
+and an optional policy, under fixed file names.
+- Scope: the unit a producer publishes and a consumer mounts; one root, one
+  manifest. Its layer position and precedence are the consumer's.
+- Relationships: contains Models, at most one Vocabulary and one Policy;
+  loaded whole; the target of at most one Category Mapping.
+
+**Category Mapping** — A consumer-supplied translation from the danger
+categories and origin colors a Document Set names to the names in the
+consumer's own vocabulary.
+- Scope: total over the set — every name the set uses is either mapped to
+  a declared name or explicitly discarded; an unlisted name fails the load.
+  A mapped set contributes no vocabulary of its own: its entries reach the
+  consumer already spelled in the consumer's names.
+- Relationships: applied to one Document Set at load; targets the
+  consumer's Vocabulary. Naming rule: names are never renamed to match a
+  source; a source naming sinks by the medium written to rather than the
+  vulnerability enabled keeps its names, and the consumer translates.
+
 ## Contracts & Flow
 
 **Data Contracts**
-- **With producers:** producers emit YAML in this format; a malformed entry is
-  a decode failure at the producer's build or the consumer's load — never a
-  silent miss. One validation implementation serves every caller.
+- **With producers:** producers emit YAML in this format, organized as
+  document sets; a malformed entry is a decode failure at the producer's
+  build or the consumer's load — never a silent miss. One validation
+  implementation and one loading convention serve every caller.
 - **With consumers:** consumers receive only validated typed values.
   Interned identifiers replace raw color and category names past the load
   boundary, so a name mismatch cannot occur downstream
@@ -139,6 +169,9 @@ it can trigger.
    closed vocabularies, non-empty sections, coupling rules.
 3. Intern — vocabulary names become identity tokens; references are checked
    against the declared sets.
+4. Resolve a set — read the manifest, load the set's vocabulary against the
+   caller's accumulated vocabulary, then its policy, then its documents in
+   manifest order; apply the category mapping when one is supplied.
 
 ## Scenarios
 
@@ -152,6 +185,14 @@ it can trigger.
   signature-only entries for tens of thousands of builtin declarations. The
   same decode-and-validate path a consumer uses at runtime validates the
   generated files at the producer's build.
+- **Interaction — mapped upstream taint set.** A producer publishes a
+  document set whose sinks are categorized by the medium they write to
+  (`sql`, `html`, `shell`). A consumer whose vocabulary names vulnerability
+  classes (`sqli`, `xss`, `cmdi`) mounts the set with a category mapping.
+  The set's entries arrive in the consumer's names; a new upstream medium
+  absent from the mapping fails the load instead of vanishing.
+- **Boundary — conflicting redeclaration.** Two sets both declare `sqli`;
+  one describes it differently. The load fails naming the set and the name.
 
 Domain semantics: [model.md](model.md),
 [model-declarations.md](model-declarations.md),
