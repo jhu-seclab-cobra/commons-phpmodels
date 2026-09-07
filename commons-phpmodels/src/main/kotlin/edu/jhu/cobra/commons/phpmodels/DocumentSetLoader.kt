@@ -3,9 +3,9 @@ package edu.jhu.cobra.commons.phpmodels
 /**
  * Loads one document set under the caller's accumulated vocabulary,
  * optionally through a [CategoryMapping], in the order the model fixes
- * (model-sets.md): manifest, vocabulary, policy, documents. Composes the
- * three single-document loaders; every stream the opener yields is closed
- * here.
+ * (model-sets.md): manifest, provenance, vocabulary, policy, documents.
+ * Composes the single-document loaders; every stream the opener yields is
+ * closed here.
  */
 public object DocumentSetLoader {
     /** The manifest file name, directly under the set root. */
@@ -17,6 +17,9 @@ public object DocumentSetLoader {
     /** The optional policy file name, directly under the set root. */
     public const val POLICY: String = "policy.yaml"
 
+    /** The optional provenance file name, directly under the set root. */
+    public const val PROVENANCE: String = "provenance.yaml"
+
     private const val COMMENT = '#'
 
     /**
@@ -27,7 +30,8 @@ public object DocumentSetLoader {
      * merged vocabulary. With [mapping]: `vocabulary.yaml` is ignored, every
      * mapping target is verified declared in [context], policy rows and
      * entries are translated, emptied entries dropped, and the returned
-     * set's vocabulary is empty.
+     * set's vocabulary is empty. Either way `provenance.yaml`, when present,
+     * is decoded and attached to the returned set.
      *
      * @param open Resolves paths relative to the set root.
      * @param context The vocabulary accumulated from earlier sets.
@@ -37,7 +41,8 @@ public object DocumentSetLoader {
      *   or a listed document is malformed (the decode failure is the cause).
      * @throws VocabularyException If a redeclaration conflicts, a reference or mapping target is undeclared,
      *   or a mapped name is unlisted; a reference failure names the document.
-     * @throws IllegalArgumentException If the vocabulary, the policy, or a mapping document is malformed.
+     * @throws IllegalArgumentException If the vocabulary, the policy, the provenance, or a mapping document
+     *   is malformed.
      */
     public fun load(
         open: ResourceOpener,
@@ -45,7 +50,9 @@ public object DocumentSetLoader {
         mapping: CategoryMapping? = null,
     ): DocumentSet {
         val paths = manifest(open)
-        return if (mapping == null) loadDeclared(open, paths, context) else loadMapped(open, paths, context, mapping)
+        val provenance = open.open(PROVENANCE)?.use(ProvenanceLoader::load)
+        val set = if (mapping == null) loadDeclared(open, paths, context) else loadMapped(open, paths, context, mapping)
+        return set.copy(provenance = provenance)
     }
 
     private fun loadDeclared(

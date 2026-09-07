@@ -7,32 +7,38 @@ The types loading one document set and translating its names. Semantics:
 ## Design Overview
 
 - **Classes:** `DocumentSet`, `Document`, `DocumentSetLoader` (object),
-  `CategoryMapping`, `CategoryMappingLoader` (object)
+  `CategoryMapping`, `CategoryMappingLoader` (object), `SetProvenance`,
+  `Verification` (enum), `Precedence`, `ProvenanceLoader` (object)
 - **Abstract:** `ResourceOpener` (`fun interface`; implemented by callers
   over classpath, file system, or archive)
 - **Relationships:** `DocumentSet` contains one `Vocabulary`, a list of
-  `PolicyRow`, and a list of `Document`; `Document` contains a path and a
-  list of `ModelEntry`; `DocumentSetLoader` uses `ResourceOpener`,
-  `VocabularyLoader`, `PolicyLoader`, `ModelLoader`, and `CategoryMapping`;
-  `CategoryMappingLoader` decodes through `ModelYaml`. All arrows one-way
-  into the data types; no existing type depends on a new one.
+  `PolicyRow`, a list of `Document`, and at most one `SetProvenance`;
+  `Document` contains a path and a list of `ModelEntry`; `SetProvenance`
+  contains a producer string and one `Verification`; `Precedence` orders
+  `Verification`; `DocumentSetLoader` uses `ResourceOpener`,
+  `VocabularyLoader`, `PolicyLoader`, `ProvenanceLoader`, `ModelLoader`,
+  and `CategoryMapping`; `CategoryMappingLoader` and `ProvenanceLoader`
+  decode through `ModelYaml`. All arrows one-way into the data types.
 - **Exceptions:** `DocumentSetException` extends `IllegalArgumentException`
   (missing manifest or listed document, duplicate manifest line, malformed
   listed document with the decode failure as cause); `VocabularyException`
   (conflicting redeclaration, undeclared reference naming the document,
   unmapped name, mapping target undeclared); `IllegalArgumentException`
-  from the vocabulary, policy, and mapping decodes as before.
+  from the vocabulary, policy, provenance, and mapping decodes as before.
 - **Dependency roles:** Data holders: `DocumentSet`, `Document`,
-  `CategoryMapping`. Orchestrator: `DocumentSetLoader`. Contract:
-  `ResourceOpener`. Loaders: `CategoryMappingLoader`.
+  `CategoryMapping`, `SetProvenance`, `Precedence`. Orchestrator:
+  `DocumentSetLoader`. Contract: `ResourceOpener`. Loaders:
+  `CategoryMappingLoader`, `ProvenanceLoader`.
 
 Package `edu.jhu.cobra.commons.phpmodels`. All public. Additive: the three
 existing loaders keep their signatures and remain the decode surface for
 one document; `DocumentSetLoader` composes them.
 
-Value placement: the three fixed file names are constants on
-`DocumentSetLoader` (`MANIFEST`, `VOCABULARY`, `POLICY`), tier constant —
-they are the format's convention, never configured.
+Value placement: the four fixed file names are constants on
+`DocumentSetLoader` (`MANIFEST`, `VOCABULARY`, `POLICY`, `PROVENANCE`),
+tier constant — they are the format's convention, never configured. The
+default precedence order is the constant `Precedence.DEFAULT`; a consumer
+that ranks differently constructs its own `Precedence`.
 
 ## Class / Type Specifications
 
@@ -56,10 +62,53 @@ root); `val entries: List<ModelEntry>` (document order).
 **State/Fields:** `val vocabulary: Vocabulary` — the declarations this set
 contributed (empty for a mapped set); `val policy: List<PolicyRow>` — this
 set's rows, already in the consumer's names; `val documents: List<Document>`
-— manifest order.
+— manifest order; `val provenance: SetProvenance?` — the set's declared
+provenance, `null` when the root holds no `provenance.yaml`.
 
 **Methods:** `val entries: List<ModelEntry>` — every document's entries in
 order, for consumers that do not need document boundaries.
+
+### Verification
+
+**Responsibility:** The closed kind of checking a set's entries received.
+`enum class Verification { GENERATED, MANUAL }`; decoded from the
+lowercase scalars `generated` and `manual`.
+
+### SetProvenance
+
+**Responsibility:** One set's declared provenance, attached to the loaded
+set and read by the consumer's `Precedence`.
+
+**State/Fields:** `val producer: String` — non-blank identifier of the
+emitting process or party; `val verification: Verification`.
+
+**Validation (`init`):** `producer` non-blank (`IllegalArgumentException`).
+
+### Precedence
+
+**Responsibility:** The consumer's total order over `Verification`,
+highest first; a `Comparator<Verification>` so a consumer's fold compares
+two sets' kinds without knowing the order.
+
+**State/Fields:** `val order: List<Verification>` — every kind exactly once,
+highest first. `companion val DEFAULT = Precedence(listOf(MANUAL, GENERATED))`.
+
+**Methods:**
+- `fun rank(kind: Verification): Int` — position in `order`; `0` is highest.
+- `override fun compare(a: Verification, b: Verification): Int` — positive
+  when `a` ranks higher than `b`, zero when equal.
+
+**Validation (`init`):** `order` lists every `Verification` exactly once
+(`IllegalArgumentException`).
+
+### ProvenanceLoader
+
+**Responsibility:** Decode one provenance document.
+
+**Methods:** `fun load(input: InputStream): SetProvenance`. Document shape:
+two scalars, `producer:` and `verification:`. Unknown keys, a missing
+field, a blank producer, and a verification spelling outside the enum fail
+the decode with `IllegalArgumentException`.
 
 ### CategoryMapping
 
@@ -99,7 +148,8 @@ optionally through a mapping, in the order the model fixes.
 **Methods:**
 - `fun load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY,
   mapping: CategoryMapping? = null): DocumentSet`
-  - **Behavior:** read `index.txt` (fail when absent); when `mapping` is
+  - **Behavior:** read `index.txt` (fail when absent); read
+    `provenance.yaml` when present, mapped or not; when `mapping` is
     null: load `vocabulary.yaml` if present and merge into `context`
     (identical redeclaration admitted, conflicting fails); load
     `policy.yaml` if present against the merged vocabulary; decode each
@@ -110,12 +160,16 @@ optionally through a mapping, in the order the model fixes.
     emptied entries dropped, and the returned set's `vocabulary` is empty.
   - **Input:** `open` resolves paths relative to the root; `context` is the
     accumulated vocabulary; `mapping` translates this set.
-  - **Output:** the `DocumentSet`; the caller unions `set.vocabulary` into
-    its accumulator and appends `set.policy` and `set.entries` in order.
+  - **Output:** the `DocumentSet` with its provenance; the caller unions
+    `set.vocabulary` into its accumulator, appends `set.policy` and
+    `set.entries` in order, and keeps `set.provenance` beside the entries
+    for its fold.
   - **Errors:** `DocumentSetException`, `VocabularyException`,
-    `IllegalArgumentException` as listed above.
+    `IllegalArgumentException` as listed above; a malformed
+    `provenance.yaml` is an `IllegalArgumentException` like a malformed
+    vocabulary.
 - `const val MANIFEST = "index.txt"`, `VOCABULARY = "vocabulary.yaml"`,
-  `POLICY = "policy.yaml"`.
+  `POLICY = "policy.yaml"`, `PROVENANCE = "provenance.yaml"`.
 
 ### Vocabulary (extension)
 

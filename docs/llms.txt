@@ -2,7 +2,7 @@
 
 > Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries, and `DocumentSetLoader` composes them over one document set (manifest, optional vocabulary and policy, listed documents), optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, and every query over the decoded entries.
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries, and `DocumentSetLoader` composes them over one document set (manifest, optional vocabulary, policy, and provenance, listed documents), optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, the fold that applies `Precedence` to two sets' entries, and every query over the decoded entries.
 
 ## Instructions for Agents
 
@@ -10,6 +10,8 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 - Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
 - Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
 - Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
+- Read `set.provenance` and rank sets with `Precedence.DEFAULT` (or a consumer-built `Precedence`) before letting a later set override an earlier one; never rank by mount order alone.
+- Ship `provenance.yaml` beside `index.txt` in every published set; state `verification: generated` for extraction output and `manual` for hand-reviewed entries.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
 - Call `Vocabulary.verify(entry)` on entries decoded by `ModelLoader` alone — `DocumentSetLoader` verifies every entry it returns.
 - Never write `returns:` beside a callable `signature:` in a model file — load failure.
@@ -18,7 +20,7 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 ## Loading
 
 - [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
-- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, accumulation across sets.
+- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
 
 ## Decoded Types
 
@@ -29,5 +31,6 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 ## Optional
 
 - [Concepts](concept.md): Problem, scope, terminology, data flow, scenarios.
+- [Set provenance](concept-provenance.md): Producer, verification kind, precedence between sets.
 - [Domain model](model.md): Model sections, subjects, color model, invariants.
 - [Design](design.md): Full type specifications and validation rules.

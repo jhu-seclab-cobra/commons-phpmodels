@@ -32,11 +32,13 @@ public data class Document(
  * @property vocabulary The declarations this set contributed; empty for a mapped set.
  * @property policy This set's rows, already in the consumer's names.
  * @property documents The listed documents in manifest order.
+ * @property provenance The set's declared provenance; null when the root holds no `provenance.yaml`.
  */
 public data class DocumentSet(
     val vocabulary: Vocabulary,
     val policy: List<PolicyRow>,
     val documents: List<Document>,
+    val provenance: SetProvenance? = null,
 ) {
     /** Every document's entries in manifest then document order. */
     public val entries: List<ModelEntry>

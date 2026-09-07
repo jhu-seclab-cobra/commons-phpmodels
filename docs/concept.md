@@ -34,10 +34,11 @@ consumers.
   generators, vocabulary, policy; strict YAML decoding; every load-time
   validation rule of the format itself; the document-set convention shared
   by every producer and consumer; the category mapping that translates one
-  set's categories and colors into a consumer's vocabulary.
-- **Not Owned:** layer ordering and override resolution, branch selection at a
-  call, subject resolution from a program graph, the taint query, artifact
-  compilation, and where a document set is stored (classpath, file,
+  set's names into a consumer's; the set provenance each set declares and
+  the precedence over verification kinds ([concept-provenance.md](concept-provenance.md)).
+- **Not Owned:** the fold that applies precedence to entries, branch selection
+  at a call, subject resolution from a program graph, the taint query,
+  artifact compilation, and where a document set is stored (classpath, file,
   artifact) — the caller opens the streams.
 
 ## Concepts
@@ -45,7 +46,8 @@ consumers.
 ```
 document set root ─┬─ index.txt ──► model files ─┐
                    ├─ vocabulary.yaml ───────────┤──► decode + validate ──► typed values ──► consumer
-                   └─ policy.yaml ───────────────┘        (this library)          ▲
+                   ├─ policy.yaml ───────────────┤        (this library)          ▲
+                   └─ provenance.yaml ───────────┘                                │
 category mapping (consumer-supplied) ── translates a set's names ──────────────────┘
 ```
 
@@ -134,7 +136,8 @@ it can trigger.
 manifest that lists the model documents in order, an optional vocabulary,
 and an optional policy, under fixed file names.
 - Scope: the unit a producer publishes and a consumer mounts; one root, one
-  manifest. Its layer position and precedence are the consumer's.
+  manifest. Its position among sets is the consumer's; its rank against
+  another set follows its set provenance ([concept-provenance.md](concept-provenance.md)).
 - Relationships: contains Models, at most one Vocabulary and one Policy;
   loaded whole; the target of at most one Category Mapping.
 
@@ -182,9 +185,8 @@ consumer's own vocabulary.
   two `::` separators, or a property without its `$`, fails the decode with
   the entry named. The closed grammar admits no guess.
 - **Interaction — generated layer.** A stub-extraction producer emits
-  signature-only entries for tens of thousands of builtin declarations. The
-  same decode-and-validate path a consumer uses at runtime validates the
-  generated files at the producer's build.
+  signature-only entries for tens of thousands of builtin declarations; the
+  decode-and-validate path a consumer uses at runtime validates them at the producer's build.
 - **Interaction — mapped upstream taint set.** A producer publishes a
   document set whose sinks are categorized by the medium they write to
   (`sql`, `html`, `shell`). A consumer whose vocabulary names vulnerability
@@ -194,7 +196,5 @@ consumer's own vocabulary.
 - **Boundary — conflicting redeclaration.** Two sets both declare `sqli`;
   one describes it differently. The load fails naming the set and the name.
 
-Domain semantics: [model.md](model.md),
-[model-declarations.md](model-declarations.md),
-[model-guards.md](model-guards.md). Software structure:
-[design.md](design.md).
+Domain semantics: [model.md](model.md), [model-declarations.md](model-declarations.md),
+[model-guards.md](model-guards.md), [model-sets.md](model-sets.md). Software structure: [design.md](design.md).

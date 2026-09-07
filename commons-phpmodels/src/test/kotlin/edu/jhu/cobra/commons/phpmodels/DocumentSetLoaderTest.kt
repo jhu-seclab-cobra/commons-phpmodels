@@ -21,6 +21,8 @@ import kotlin.test.assertTrue
  * - `mapped …` — vocabulary.yaml is ignored, an undeclared target fails,
  *   entries and rows are translated, emptied entries drop, the returned
  *   vocabulary is empty, and an unlisted name fails.
+ * - `provenance …` — `provenance.yaml` attaches to a declared and a mapped
+ *   load, is null when absent, and fails the load when malformed.
  * - `closes every stream` — the opener's streams are released.
  */
 internal class DocumentSetLoaderTest {
@@ -228,17 +230,43 @@ internal class DocumentSetLoaderTest {
         }
     }
 
+    private val provenance = "producer: review\nverification: manual\n"
+
+    @Test
+    fun `provenance attaches to a declared load`() {
+        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to provenance), context)
+        assertEquals(SetProvenance("review", Verification.MANUAL), set.provenance)
+    }
+
+    @Test
+    fun `provenance attaches to a mapped load`() {
+        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to provenance), context, mapping)
+        assertEquals(SetProvenance("review", Verification.MANUAL), set.provenance)
+    }
+
+    @Test
+    fun `provenance is null when absent`() {
+        assertEquals(null, DocumentSetLoader.load(opener("index.txt" to ""), context).provenance)
+    }
+
+    @Test
+    fun `provenance malformed fails`() {
+        val files = opener("index.txt" to "", "provenance.yaml" to "producer: x\nverification: reviewed\n")
+        assertFailsWith<IllegalArgumentException> { DocumentSetLoader.load(files) }
+    }
+
     @Test
     fun `closes every stream`() {
         val opener =
             opener(
                 "index.txt" to "a.yaml\n",
+                "provenance.yaml" to provenance,
                 "vocabulary.yaml" to vocabulary,
                 "policy.yaml" to "- origin: user-input\n  enables: [sqli]\n",
                 "a.yaml" to sink("a", "sqli"),
             )
         DocumentSetLoader.load(opener, context)
-        assertEquals(4, opener.opened.size)
+        assertEquals(5, opener.opened.size)
         assertTrue(opener.opened.all { it.closed })
     }
 }

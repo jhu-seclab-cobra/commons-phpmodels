@@ -54,6 +54,10 @@ into `Map<String, String?>` and rejects the null itself.
 no mapping) fails as a missing non-nullable creator parameter
 (`MismatchedInputException`); an empty section is spelled `categories: {}`.
 
+**[jackson]** `enum class Verification` decodes from the lowercase scalars
+`generated`/`manual` through `ACCEPT_CASE_INSENSITIVE_ENUMS`, the same
+path as `ReturnKind`; `ProvenanceLoaderTest` pins that `reviewed` fails.
+
 **[jackson]** Mapping keys keep their scalar text: `no:` and `017:` decode as
 the strings `"no"` and `"017"`, so the YAML 1.1 boolean/octal readings that
 affect guard values never touch a name key.

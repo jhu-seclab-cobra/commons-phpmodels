@@ -8,10 +8,26 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
 ## Entities
 
 - **Document Set** — One stored source of models: a root, a manifest, at
-  most one vocabulary document, at most one policy document, and the model
-  documents the manifest lists. Existence condition: the root holds a
-  manifest. Identity is the root. Order within the set is manifest order;
-  the set's position among other sets is the consumer's.
+  most one vocabulary document, at most one policy document, at most one
+  provenance document, and the model documents the manifest lists.
+  Existence condition: the root holds a manifest. Identity is the root.
+  Order within the set is manifest order; the set's position among other
+  sets is the consumer's.
+- **Set Provenance** — The statement of where a set's entries come from: a
+  producer and a verification kind. Existence condition: the root holds a
+  provenance document; a set without one has no provenance and the
+  consumer's default stands in. One per set; it applies to every entry
+  the set lists and never varies within the set.
+- **Producer** — The non-blank identifier of the process or party that
+  emitted a set. Documentary: it names the source in diagnostics and is
+  never compared for rank.
+- **Verification** — The closed kind stating how a set's entries were
+  checked. Two kinds exist: *generated*, emitted by a program from an
+  upstream source and never reviewed entry by entry; *manual*, written or
+  reviewed by hand. Any other spelling is a load failure.
+- **Precedence** — The consumer's total order over verification kinds,
+  highest first. Existence condition: supplied by the consumer once for
+  all the sets it mounts. The default order ranks manual above generated.
 - **Manifest** — The ordered list of model document paths under a root,
   relative to it. A path that resolves to nothing is a load failure. A
   comment line or blank line is not an entry.
@@ -45,6 +61,10 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
 | Category Mapping | Document Set | translates | 1:1 | Applied to exactly one set at its load |
 | Category Mapping | Danger Category / Origin Color | targets | N:1 | Every target is declared in the accumulated vocabulary |
 | Accumulated Vocabulary | Document Set | grows by | 1:N | Set order is declaration order |
+| Document Set | Set Provenance | declares | 1:0..1 | One statement covering every listed entry |
+| Set Provenance | Producer | names | 1:1 | Documentary; never ranked |
+| Set Provenance | Verification | states | 1:1 | The rank input |
+| Precedence | Verification | orders | 1:N | Total, highest first; every kind ranked exactly once |
 
 ## State Model
 
@@ -71,11 +91,27 @@ An entry whose translation removes its last section, and which carries no
 signature, is removed from the set. Removal is not a failure: the set said
 nothing the consumer keeps.
 
+### Rank of Two Sets Stating One Subject and Unit
+
+| Set A verification | Set B verification | Winner |
+|--------------------|--------------------|--------|
+| ranks higher under the Precedence | ranks lower | A, whatever the mount order |
+| equal | equal | the consumer's mount order decides |
+| absent (no provenance document) | any | A ranks as the consumer's default kind |
+
+The rank is read from the two sets' provenance alone; no entry field
+takes part.
+
 ## Invariants
 
 - A set's manifest lists each document at most once.
-- The three fixed file names are `index.txt`, `vocabulary.yaml`, and
-  `policy.yaml`, directly under the root. No other location is searched.
+- The four fixed file names are `index.txt`, `vocabulary.yaml`,
+  `policy.yaml`, and `provenance.yaml`, directly under the root. No other
+  location is searched.
+- A set's provenance is the same value for every entry the set lists; a
+  mapping never changes it.
+- A precedence ranks every verification kind exactly once; two kinds never
+  share a rank.
 - A set's own declarations are in force before its policy and models are
   checked; a set may reference what it declares.
 - A mapping is total over the names its set uses: every name is mapped or
@@ -96,6 +132,10 @@ nothing the consumer keeps.
 - **Vocabulary authority is unchanged.** The accumulated vocabulary is the
   sole authority for what names exist; a mapping only spells entries in
   those names.
+- **Set provenance is not an origin color.** The origin color a source
+  gives a tainted value ([model.md](model.md)) says where data comes from
+  at run time; the set provenance says where the *statement* comes from.
+  Neither is read for the other.
 
 Concept and rationale: [concept.md](concept.md). Software structure:
 [design-sets.md](design-sets.md).
