@@ -2,7 +2,7 @@
 
 Semantics of the assertion axis: sections, subjects, ports, and the two-axis
 color model. Declaration axis: [model-declarations.md](model-declarations.md).
-Guarded branches: [model-guards.md](model-guards.md). Document sets and
+Conditional entries: [model-conditions.md](model-conditions.md). Document sets and
 category mapping: [model-sets.md](model-sets.md).
 
 ## Entities
@@ -20,7 +20,7 @@ category mapping: [model-sets.md](model-sets.md).
   condition: a declared subject kind together with exactly the identity
   fields that kind requires. Seven kinds with PHP-native spellings:
   [model-declarations.md](model-declarations.md). Callable kinds are
-  *function* and *method*; only they admit calls, ports, and guards.
+  *function* and *method*; only they admit calls, ports, and conditions.
 - **Port** — An explicitly named location in a call to a callable subject:
   *argument(n)* with n ≥ 0, *this* — the receiver of a call to a method —
   or *return*. The closed set of positional references; no other location
@@ -28,8 +28,8 @@ category mapping: [model-sets.md](model-sets.md).
   call supplies values through; *return* is never an input port.
 - **Model** — The single declarative statement attached to one Matching
   Subject. Composed of sections; existence condition: at least one section
-  present. An entry may carry a When Guard, making it one branch of the
-  subject's model ([model-guards.md](model-guards.md)). Section kinds:
+  present. An entry may carry a Condition, making it one alternative of
+  the subject's model ([model-conditions.md](model-conditions.md)). Section kinds:
   - *returns* — the classification of the call result.
   - *propagation* — a set of declared flows, each from one input port to a
     different port of the same call. Together with *returns* it
@@ -56,13 +56,6 @@ category mapping: [model-sets.md](model-sets.md).
   production site. Satisfied only when the entire key matches,
   case-sensitively — array keys are runtime data, not identifiers, so no
   case folding applies.
-- **Model Generator** — One declaration denoting one model per satisfying
-  subject: a generator name, the subject kind to find, a constraint set every
-  generated subject satisfies, and one model body. The name is the
-  generator's identity — unique within one load, and the handle by which
-  load failures and generated models are traced back to their generator. A
-  generated model is the same statement as a written one; no consumer
-  distinguishes them.
 - **Policy** — The global relation from each Origin Color to the set of
   Danger Categories it can trigger. One instance for the whole analysis.
   Rows sharing an origin accumulate (union of enabled categories).
@@ -88,8 +81,6 @@ itself an effect.
 | Model (sinks) | Port × Danger Category | consumes under | N:M | The named argument port is sensitive to that category |
 | Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value |
 | Policy | Origin Color × Danger Category | enables | M:N | This color reaching a sink of this category is a vulnerability |
-| Model Generator | Name Constraint | constrains by | 1:N | A subject satisfies the generator only when every constraint holds |
-| Model Generator | Model | generates | 1:N | One model per satisfying subject, carrying the generator's body |
 | Model / Policy | Vocabulary | references | N:1 | Every named color/category must be declared in the vocabulary |
 
 ## State Model
@@ -119,8 +110,8 @@ model, driven by the declarations defined here.
   model for any other subject naming it, in any section, is a load failure.
 - A propagation's from-port is an input port; its to-port is any different
   port. *return* as a from-port, and from equals to, are load failures.
-- A sink element and a When Guard name argument ports only; neither admits
-  the receiver or the return port.
+- A sink element names argument ports only; it admits neither the receiver
+  nor the return port.
 - A propagation section requires a returns section in the same declaration.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return
@@ -146,18 +137,6 @@ model, driven by the declarations defined here.
   model is declared in the vocabulary. An undeclared reference is a load
   failure.
 - Policy enables relates only declared colors to declared categories.
-- Each Model Generator declares a generator name, exactly one subject kind
-  to find, at least a name constraint, and one model body satisfying every
-  model invariant. The body is validated at decode, before any subject is
-  matched. A generator no subject satisfies generates nothing and is not a
-  failure.
-- The constraint set is closed: a name constraint for every findable kind, a
-  class constraint only for the method kind. Any other constraint is a load
-  failure. A constraint pattern is matched against the entire case-folded
-  identity field; a pattern that is not a valid regular expression is a load
-  failure.
-- Generator name uniqueness spans one whole load across layers; it is the
-  loading consumer's check, because no single document sees every layer.
 
 ## Cross-Structure Contracts
 
@@ -165,13 +144,9 @@ model, driven by the declarations defined here.
   external-input superglobal is an ordinary model whose sources section
   produces the user-input Origin Color, differing from a function source
   only in its declared subject kind.
-- **Generated ≡ written.** A generator denotes the family of models over all
-  subjects satisfying its constraints; whether that family is materialized
-  eagerly or resolved per lookup is not observable to consumers of the
-  format.
 - **Interned identity.** After load, colors and categories are referenced by
   interned identity, not by raw string, so a name mismatch cannot occur past
   the load boundary.
 
 Concept and rationale: [concept.md](concept.md). Software structure:
-[design.md](design.md), [design-generators.md](design-generators.md).
+[design.md](design.md), [design-subjects.md](design-subjects.md).

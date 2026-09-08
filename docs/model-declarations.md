@@ -35,7 +35,7 @@ declaration kind, with no nesting of one declaration inside another.
   emitted by an extraction producer from upstream stub sources. Structurally
   marked by provenance (directory and file header naming source and producer
   version); never hand-edited — a correction is a higher-layer entry
-  overriding per (subject, guard, unit).
+  overriding per (subject, condition, unit).
 
 ## Subject Kinds
 
@@ -73,7 +73,7 @@ carries a signature.
 |------|----|----------|-------------|---------|
 | Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; members reference their class by identity, never by containment |
 | Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the returns classification when propagation is asserted |
-| Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, guard, unit) |
+| Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, condition, unit) |
 
 ## Value-Semantics Coupling
 
@@ -130,10 +130,6 @@ comes from:
 - **Existence ≡ signature entry.** A consumer's "does this builtin exist"
   question is answered by the presence of a declaration entry, the same
   lookup that serves assertions. No separate declaration store exists.
-- **Layer 0 entries are explicit models.** They take the explicit side of
-  every precedence rule in [model.md](model.md): a generator's answer yields
-  to a layer-0 entry for the same subject and unit, and every higher layer
-  overrides layer 0 by ordinary layer order.
 - **Truth and view.** Files store declared PHP types; consumers see derived
   classifications. Files store the full declaration; a consumer may retain
   only the projection it consumes.
