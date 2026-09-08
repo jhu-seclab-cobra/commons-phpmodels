@@ -4,6 +4,7 @@
 |------|---------|
 | concept.md | Problem, scope, terminology, data flow, scenarios. |
 | concept-provenance.md | Set provenance: producer, verification kind, precedence over sets. |
+| concept-index.md | Model Index: merge of sets by section precedence, branches, guard arguments and verdicts. |
 | model.md | Model sections, subjects, color model, relations, invariants. |
 | model-guards.md | Conditional models: when guard, branches, combination semantics. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
