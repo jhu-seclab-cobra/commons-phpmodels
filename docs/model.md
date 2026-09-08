@@ -69,9 +69,9 @@ category mapping: [model-sets.md](model-sets.md).
 - **Override Unit** — The granularity at which one declaration replaces
   another for the same subject: the value-semantics unit (returns together
   with propagation), sources, sinks, sanitizers, or the signature. A
-  declaration replaces a unit whole, never merges inside one. How layered
-  configuration sources apply this granularity is consumer behavior; the
-  unit boundaries are fixed here.
+  declaration replaces a unit whole, never merges inside one. The Model
+  Index applies this granularity when it merges sets
+  ([model-index.md](model-index.md)); the unit boundaries are fixed here.
 
 A subject whose model has no taint section has no taint effect; the absence
 is the statement. No section expresses "carries its argument" as a role —
@@ -156,8 +156,8 @@ model, driven by the declarations defined here.
   failure. A constraint pattern is matched against the entire case-folded
   identity field; a pattern that is not a valid regular expression is a load
   failure.
-- Generator name uniqueness spans one whole load across layers; it is the
-  loading consumer's check, because no single document sees every layer.
+- Generator name uniqueness spans one whole merge across sets; it is the
+  Model Index's check, because no single document sees every set.
 
 ## Cross-Structure Contracts
 

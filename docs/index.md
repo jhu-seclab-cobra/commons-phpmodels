@@ -9,6 +9,7 @@
 | model-guards.md | Conditional models: when guard, branches, combination semantics. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
 | model-sets.md | Document sets, accumulated vocabulary, category mapping, set provenance rank. |
+| model-index.md | Model Index: merge by section precedence, branch table, guard argument, effective statement, generator answer. |
 | design.md | Vocabulary, policy, body types, decoder, loaders. |
 | design-subjects.md | Subject kinds, ports, and the propagation pair. |
 | design-generators.md | Entry forms, generator constraints, entry-level validation. |
