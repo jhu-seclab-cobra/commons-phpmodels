@@ -101,7 +101,7 @@ public data class Vocabulary(
     public fun requireVulnClass(raw: String): VulnClassId {
         val id = VulnClassId(raw)
         if (id in vulnClasses) return id
-        throw undeclared("vulnerability class", raw, vulnClasses.keys.map { it.id })
+        throw undeclared("vulnerability class", raw, vulnClasses.values.map { "${it.id.id} (${it.description})" })
     }
 
     /**
@@ -114,7 +114,7 @@ public data class Vocabulary(
     public fun requireOrigin(raw: String): OriginId {
         val id = OriginId(raw)
         if (id in origins) return id
-        throw undeclared("origin", raw, origins.keys.map { it.id })
+        throw undeclared("origin", raw, origins.values.map { "${it.id.id} (${it.description})" })
     }
 
     /**
