@@ -59,10 +59,10 @@ internal class DocumentSetLoaderTest {
 
     private fun opener(vararg files: Pair<String, String>): MemoryOpener = MemoryOpener(files.toMap())
 
-    private fun SubjectModel.sinkCategories(): List<VulnClassId> =
+    private fun ModelEntry.sinkCategories(): List<VulnClassId> =
         body.sinks
             .orEmpty()
-            .map { it.category }
+            .map { it.vulnClass }
 
     private fun sink(
         name: String,
@@ -144,7 +144,7 @@ internal class DocumentSetLoaderTest {
         val declared = set.vocabulary.vulnClasses.keys
         assertEquals(listOf("xss"), declared.map { it.id })
         assertEquals(setOf(VulnClassId("sqli"), VulnClassId("xss")), set.policy.single().enables)
-        val entry = assertIs<SubjectModel>(set.entries.single())
+        val entry = assertIs<ModelEntry>(set.entries.single())
         assertEquals(listOf(VulnClassId("xss")), entry.sinkCategories())
     }
 
@@ -202,8 +202,8 @@ internal class DocumentSetLoaderTest {
                 mapping,
             )
         assertEquals(Vocabulary.EMPTY, set.vocabulary)
-        assertEquals(listOf(PolicyRow(ProvenanceId("user-input"), setOf(VulnClassId("sqli")))), set.policy)
-        val entry = assertIs<SubjectModel>(set.entries.single())
+        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnClassId("sqli")))), set.policy)
+        val entry = assertIs<ModelEntry>(set.entries.single())
         assertEquals("a", (entry.subject as FunctionSubject).name)
         assertEquals(listOf(VulnClassId("sqli")), entry.sinkCategories())
     }

@@ -10,7 +10,7 @@ package edu.jhu.cobra.commons.phpmodels
  * @throws IllegalArgumentException If no category is enabled.
  */
 public data class PolicyRow(
-    val origin: ProvenanceId,
+    val origin: OriginId,
     val enables: Set<VulnClassId>,
 ) {
     init {
@@ -28,7 +28,7 @@ public data class PolicyRow(
 public class TaintPolicy(
     rows: List<PolicyRow>,
 ) {
-    private val matrix: Map<ProvenanceId, Set<VulnClassId>> =
+    private val matrix: Map<OriginId, Set<VulnClassId>> =
         rows.groupingBy { it.origin }.fold(emptySet()) { acc, row -> acc + row.enables }
 
     /**
@@ -39,7 +39,7 @@ public class TaintPolicy(
      * @return True when the matrix enables [category] for [color].
      */
     public fun isDangerous(
-        color: ProvenanceId,
+        color: OriginId,
         category: VulnClassId,
     ): Boolean = matrix[color]?.contains(category) == true
 }

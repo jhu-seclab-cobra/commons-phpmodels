@@ -24,9 +24,9 @@ internal class PolicyLoaderTest {
                     VulnClassId("sqli") to VulnClassDecl(VulnClassId("sqli"), "SQL injection"),
                     VulnClassId("xss") to VulnClassDecl(VulnClassId("xss"), "Cross-site scripting"),
                 ),
-            provenances =
+            origins =
                 mapOf(
-                    ProvenanceId("remote") to ProvenanceDecl(ProvenanceId("remote"), "Remote user input"),
+                    OriginId("remote") to OriginDecl(OriginId("remote"), "Remote user input"),
                 ),
         )
 
@@ -42,7 +42,7 @@ internal class PolicyLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(PolicyRow(ProvenanceId("remote"), setOf(VulnClassId("sqli"), VulnClassId("xss")))),
+            listOf(PolicyRow(OriginId("remote"), setOf(VulnClassId("sqli"), VulnClassId("xss")))),
             rows,
         )
     }
@@ -92,8 +92,8 @@ internal class PolicyLoaderTest {
                     """.trimIndent(),
                 ),
             )
-        assertEquals(true, policy.isDangerous(ProvenanceId("remote"), VulnClassId("sqli")))
-        assertEquals(true, policy.isDangerous(ProvenanceId("remote"), VulnClassId("xss")))
-        assertEquals(false, policy.isDangerous(ProvenanceId("local"), VulnClassId("sqli")))
+        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("sqli")))
+        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("xss")))
+        assertEquals(false, policy.isDangerous(OriginId("local"), VulnClassId("sqli")))
     }
 }

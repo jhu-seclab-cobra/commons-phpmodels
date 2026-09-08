@@ -1,5 +1,7 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import edu.jhu.cobra.commons.value.FloatVal
+import edu.jhu.cobra.commons.value.StrVal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,22 +14,20 @@ import kotlin.test.assertIs
  * [ModelLoaderAdmissibilityTest]; signature-fixed port semantics:
  * [ModelLoaderPortBoundsTest].
  *
- * - `flat model decodes subject sections and guard` — subject, returns,
- *   propagation, sinks, and when-guard of one callable entry.
+ * - `entry decodes subject sections and condition` — subject, returns,
+ *   propagation, sinks, and when-condition of one callable entry.
  * - `entries of every subject kind decode` — the seven one-key subject
  *   spellings route to their subtypes.
- * - `generator entry decodes beside flat models` — deduction routes the
- *   name/find/where/model form.
  * - `sanitizers section decodes to its category sets` — the fifth assertion
  *   section round-trips through the loader.
- * - `entry mixing both forms is rejected` — deduction picks one form and the
- *   other form's fields fail as unknown keys.
+ * - `generator keys are rejected` — the retired name/find/where/model form
+ *   fails as unknown keys.
  * - `mixed-case category and color references intern lowercased` — the
  *   Jackson decode path folds identity tokens like the interning path does.
  * - `entry asserting nothing is rejected` — no signature and no section.
  * - `unknown subject kind is rejected` — closed wrapper-key set.
- * - `guard integer beyond Long range is rejected` — the compared value never
- *   truncates silently.
+ * - `condition integer beyond Long range reads as a float` — the compared
+ *   value never truncates silently; it widens to the float shape.
  * - `second document in one stream is rejected` — entries after a `---`
  *   separator never drop silently.
  * - `duplicate key in one mapping is rejected` — a doubled key never decodes
@@ -35,15 +35,13 @@ import kotlin.test.assertIs
  */
 internal class ModelLoaderTest {
     @Test
-    fun `flat model decodes subject sections and guard`() {
+    fun `entry decodes subject sections and condition`() {
         val model =
             loadModel(
                 """
                 - subject:
                     function: Settype
-                  when:
-                    port: argument(1)
-                    is: string
+                  when: [_, string]
                   returns: str
                   propagation:
                     - from: argument(0)
@@ -54,10 +52,10 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(FunctionSubject("settype"), model.subject)
-        assertEquals(WhenGuard(Port.Argument(1), GuardValue.StrValue("string")), model.guard)
+        assertEquals(ArgPattern(listOf(null, StrVal("string"))), model.condition)
         assertEquals(ReturnKind.STR, model.body.returns)
         assertEquals(listOf(Propagation(from = Port.Argument(0), to = Port.Return)), model.body.propagation)
-        assertEquals(listOf(SinkPoint(Port.Argument(0), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))), model.body.sinks)
     }
 
     @Test
@@ -94,7 +92,7 @@ internal class ModelLoaderTest {
                     - provenance: [remote]
                 """.trimIndent(),
             )
-        val subjects = entries.map { assertIs<SubjectModel>(it).subject }
+        val subjects = entries.map { assertIs<ModelEntry>(it).subject }
         assertEquals(
             listOf(
                 FunctionSubject("strlen"),
@@ -107,32 +105,6 @@ internal class ModelLoaderTest {
             ),
             subjects,
         )
-    }
-
-    @Test
-    fun `generator entry decodes beside flat models`() {
-        val entries =
-            load(
-                """
-                - subject:
-                    function: getenv
-                  sources:
-                    - provenance: [environment]
-                - name: superglobal-arrays
-                  find: variable
-                  where:
-                    - constraint: name
-                      pattern: _(get|post|cookie)
-                  model:
-                    sources:
-                      - provenance: [remote]
-                """.trimIndent(),
-            )
-        val generator = assertIs<ModelGenerator>(entries[1])
-        assertEquals("superglobal-arrays", generator.name)
-        assertEquals(SubjectKind.VARIABLE, generator.find)
-        assertEquals(true, generator.matches(VariableSubject("_get")))
-        assertEquals(false, generator.matches(VariableSubject("_server")))
     }
 
     @Test
@@ -153,7 +125,7 @@ internal class ModelLoaderTest {
     }
 
     @Test
-    fun `entry mixing both forms is rejected`() {
+    fun `generator keys are rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load(
                 """
@@ -188,12 +160,12 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(SinkPoint(Port.Argument(0), VulnClassId("sqli"))),
-            assertIs<SubjectModel>(entries[0]).body.sinks,
+            listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))),
+            assertIs<ModelEntry>(entries[0]).body.sinks,
         )
         assertEquals(
-            listOf(SourceDecl(setOf(ProvenanceId("remote")))),
-            assertIs<SubjectModel>(entries[1]).body.sources,
+            listOf(SourceDecl(setOf(OriginId("remote")))),
+            assertIs<ModelEntry>(entries[1]).body.sources,
         )
     }
 
@@ -223,19 +195,17 @@ internal class ModelLoaderTest {
     }
 
     @Test
-    fun `guard integer beyond Long range is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
+    fun `condition integer beyond Long range reads as a float`() {
+        val model =
+            loadModel(
                 """
                 - subject:
                     function: strlen
-                  when:
-                    port: argument(0)
-                    is: 99999999999999999999999999
+                  when: [99999999999999999999999999]
                   returns: num
                 """.trimIndent(),
             )
-        }
+        assertEquals(ArgPattern(listOf(FloatVal(1.0e26))), model.condition)
     }
 
     @Test

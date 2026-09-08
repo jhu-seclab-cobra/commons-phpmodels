@@ -29,7 +29,7 @@ internal class CategoryMappingLoaderTest {
             )
         assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
         assertNull(mapping.category(VulnClassId("text")))
-        assertEquals(ProvenanceId("user-input"), mapping.provenance(ProvenanceId("input")))
+        assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
     }
 
     @Test

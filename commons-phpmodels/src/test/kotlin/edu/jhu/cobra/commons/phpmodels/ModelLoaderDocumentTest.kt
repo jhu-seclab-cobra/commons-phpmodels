@@ -19,14 +19,10 @@ import kotlin.test.assertIs
  *   set.
  * - `unknown returns vocabulary is rejected` — `returns` admits the closed
  *   kind set only.
- * - `unknown find kind is rejected` — `find` admits the closed generator
- *   kind set only.
- * - `unknown constraint discriminator is rejected` — the `where` list admits
- *   the closed constraint set only.
- * - `two entries for one subject load as branches` — the loader never
- *   deduplicates; entries are branches in declaration order.
- * - `duplicate generator names load` — name uniqueness is the caller's
- *   check, not the loader's.
+ * - `two entries for one subject load as alternatives` — an unconditional
+ *   and a conditional entry for one subject both load, in declaration order.
+ * - `two entries sharing subject and condition are rejected` — the
+ *   (subject, condition) key is unique within one document.
  * - `alias value is rejected` — an alias never substitutes an anchored
  *   value silently.
  * - `block scalar spelling is rejected` — a literal block scalar carries a
@@ -85,41 +81,7 @@ internal class ModelLoaderDocumentTest {
     }
 
     @Test
-    fun `unknown find kind is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - name: traversables
-                  find: class
-                  where:
-                    - constraint: name
-                      pattern: .*iterator
-                  model:
-                    returns: any
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `unknown constraint discriminator is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - name: mysqli-queries
-                  find: method
-                  where:
-                    - constraint: owner
-                      pattern: mysqli.*
-                  model:
-                    returns: any
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `two entries for one subject load as branches`() {
+    fun `two entries for one subject load as alternatives`() {
         val entries =
             load(
                 """
@@ -128,46 +90,45 @@ internal class ModelLoaderDocumentTest {
                   returns: str
                 - subject:
                     function: json_decode
-                  when:
-                    port: argument(1)
-                    is: true
+                  when: [_, true]
                   returns: any
                 """.trimIndent(),
             )
         assertEquals(2, entries.size)
         assertEquals(
             List(2) { FunctionSubject("json_decode") },
-            entries.map { assertIs<SubjectModel>(it).subject },
+            entries.map { assertIs<ModelEntry>(it).subject },
         )
     }
 
     @Test
-    fun `duplicate generator names load`() {
-        val entries =
+    fun `two entries sharing subject and condition are rejected`() {
+        assertFailsWith<IllegalArgumentException> {
             load(
                 """
-                - name: superglobals
-                  find: variable
-                  where:
-                    - constraint: name
-                      pattern: _get
-                  model:
-                    sources:
-                      - provenance: [remote]
-                - name: superglobals
-                  find: variable
-                  where:
-                    - constraint: name
-                      pattern: _post
-                  model:
-                    sources:
-                      - provenance: [remote]
+                - subject:
+                    function: json_decode
+                  returns: str
+                - subject:
+                    function: json_decode
+                  returns: any
                 """.trimIndent(),
             )
-        assertEquals(
-            List(2) { "superglobals" },
-            entries.map { assertIs<ModelGenerator>(it).name },
-        )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: json_decode
+                  when: [_, true]
+                  returns: str
+                - subject:
+                    function: json_decode
+                  when: [_, true]
+                  returns: any
+                """.trimIndent(),
+            )
+        }
     }
 
     @Test

@@ -34,7 +34,7 @@ internal class VocabularyLoaderTest {
     fun `vocabulary decodes both sections`() {
         val vocabulary = load(document)
         assertEquals(setOf(VulnClassId("sqli")), vocabulary.vulnClasses.keys)
-        assertEquals(setOf(ProvenanceId("remote")), vocabulary.provenances.keys)
+        assertEquals(setOf(OriginId("remote")), vocabulary.origins.keys)
     }
 
     @Test
@@ -67,7 +67,7 @@ internal class VocabularyLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(setOf(VulnClassId("header")), vocabulary.vulnClasses.keys)
-        assertEquals(setOf(ProvenanceId("header")), vocabulary.provenances.keys)
+        assertEquals(setOf(OriginId("header")), vocabulary.origins.keys)
     }
 
     @Test
@@ -89,8 +89,8 @@ internal class VocabularyLoaderTest {
     fun `require methods validate references`() {
         val vocabulary = load(document)
         assertEquals(VulnClassId("sqli"), vocabulary.requireVulnClass("SQLI"))
-        assertEquals(ProvenanceId("remote"), vocabulary.requireProvenance("remote"))
+        assertEquals(OriginId("remote"), vocabulary.requireOrigin("remote"))
         assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
-        assertFailsWith<VocabularyException> { vocabulary.requireProvenance("local") }
+        assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
     }
 }

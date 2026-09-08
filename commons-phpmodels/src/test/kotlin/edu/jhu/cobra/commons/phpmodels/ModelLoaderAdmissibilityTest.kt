@@ -5,13 +5,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Subject-kind admissibility of decoded entries: which sections, guards, and
+ * Subject-kind admissibility of decoded entries: which sections, conditions, and
  * ports each subject kind admits.
  *
  * - `variable entry declaring a sink is rejected` — sources-only kinds.
  * - `class entry declaring sources is rejected` — a class asserts nothing
  *   besides its signature.
- * - `guard on a non-callable subject is rejected` — guards are callable-only.
+ * - `condition on a non-callable subject is rejected` — conditions are callable-only.
  * - `receiver port decodes on a method entry` — `this` as a propagation side.
  * - `receiver port on a non-method subject is rejected` — `this` exists only
  *   in a call to a method.
@@ -60,15 +60,13 @@ internal class ModelLoaderAdmissibilityTest {
     }
 
     @Test
-    fun `guard on a non-callable subject is rejected`() {
+    fun `condition on a non-callable subject is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load(
                 """
                 - subject:
                     constant: PHP_EOL
-                  when:
-                    port: argument(0)
-                    is: true
+                  when: [true]
                   signature:
                     type: string
                 """.trimIndent(),

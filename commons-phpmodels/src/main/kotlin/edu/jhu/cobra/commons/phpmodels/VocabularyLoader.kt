@@ -20,7 +20,7 @@ internal data class VocabularyEntry(
  * from a YAML document. Where the document lives — classpath resource, file,
  * artifact — is the caller's value placement, not this library's.
  */
-public object VocabularyLoader {
+internal object VocabularyLoader {
     /**
      * Parses a vocabulary document into a [Vocabulary].
      *
@@ -29,13 +29,13 @@ public object VocabularyLoader {
      * @throws IllegalArgumentException If an entry is malformed or carries a stray key.
      * @throws VocabularyException If a name repeats within a section.
      */
-    public fun load(input: InputStream): Vocabulary {
+    fun load(input: InputStream): Vocabulary {
         val file = ModelYaml.decode(input, jacksonTypeRef<VocabularyFile>())
         val vulnClasses = file.vulnClasses.declaredBy("vulnClasses") { VulnClassId(it.name) }
-        val provenances = file.provenances.declaredBy("provenances") { ProvenanceId(it.name) }
+        val origins = file.provenances.declaredBy("provenances") { OriginId(it.name) }
         return Vocabulary(
             vulnClasses = vulnClasses.mapValues { (id, entry) -> VulnClassDecl(id, entry.description) },
-            provenances = provenances.mapValues { (id, entry) -> ProvenanceDecl(id, entry.description) },
+            origins = origins.mapValues { (id, entry) -> OriginDecl(id, entry.description) },
         )
     }
 

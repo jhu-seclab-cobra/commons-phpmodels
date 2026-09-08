@@ -26,20 +26,20 @@ public value class VulnClassId private constructor(
  * Interned reference token for a declared origin color (provenance). Travels
  * with a tainted value from its source. Construction folds any spelling to
  * lowercase, so a mixed-case reference cannot miss a vocabulary lookup;
- * membership in the declared set is checked by [Vocabulary.requireProvenance],
+ * membership in the declared set is checked by [Vocabulary.requireOrigin],
  * never by construction.
  *
  * @property id Lowercased origin-color name, as declared in the vocabulary.
  */
 @JvmInline
-public value class ProvenanceId private constructor(
+public value class OriginId private constructor(
     public val id: String,
 ) {
     public companion object {
         /** Interns [raw], folding it to its lowercased declared form. */
         @JvmStatic
         @JsonCreator
-        public operator fun invoke(raw: String): ProvenanceId = ProvenanceId(raw.lowercase())
+        public operator fun invoke(raw: String): OriginId = OriginId(raw.lowercase())
     }
 }
 
@@ -62,8 +62,8 @@ public data class VulnClassDecl(
  * @property description Human-readable summary; self-documents the vocabulary
  *   file and enriches the undeclared-reference error message.
  */
-public data class ProvenanceDecl(
-    val id: ProvenanceId,
+public data class OriginDecl(
+    val id: OriginId,
     val description: String,
 )
 
@@ -85,11 +85,11 @@ public class VocabularyException(
  * decodes single documents.
  *
  * @property vulnClasses Declared danger categories, keyed by interned identity.
- * @property provenances Declared origin colors, keyed by interned identity.
+ * @property origins Declared origin colors, keyed by interned identity.
  */
 public data class Vocabulary(
     val vulnClasses: Map<VulnClassId, VulnClassDecl>,
-    val provenances: Map<ProvenanceId, ProvenanceDecl>,
+    val origins: Map<OriginId, OriginDecl>,
 ) {
     /**
      * Interns [raw] to its [VulnClassId], validating it is declared.
@@ -105,16 +105,16 @@ public data class Vocabulary(
     }
 
     /**
-     * Interns [raw] to its [ProvenanceId], validating it is declared.
+     * Interns [raw] to its [OriginId], validating it is declared.
      *
      * @param raw Origin-color tag from a YAML document (case-insensitive).
      * @return The interned identity of the declared origin color.
      * @throws VocabularyException If [raw] names no declared origin color.
      */
-    public fun requireProvenance(raw: String): ProvenanceId {
-        val id = ProvenanceId(raw)
-        if (id in provenances) return id
-        throw undeclared("provenance", raw, provenances.keys.map { it.id })
+    public fun requireOrigin(raw: String): OriginId {
+        val id = OriginId(raw)
+        if (id in origins) return id
+        throw undeclared("origin", raw, origins.keys.map { it.id })
     }
 
     /**
@@ -129,23 +129,19 @@ public data class Vocabulary(
     public fun merge(other: Vocabulary): Vocabulary =
         Vocabulary(
             vulnClasses = vulnClasses.merged(other.vulnClasses, "vulnerability class") { it.description },
-            provenances = provenances.merged(other.provenances, "provenance") { it.description },
+            origins = origins.merged(other.origins, "origin") { it.description },
         )
 
     /**
      * Checks that every category and color [entry] references is declared.
      *
-     * @param entry A flat model or generator; its sources, sinks, and sanitizers are read.
+     * @param entry A model entry; its sources, sinks, and sanitizers are read.
      * @throws VocabularyException If a referenced name is undeclared.
      */
     public fun verify(entry: ModelEntry) {
-        val body =
-            when (entry) {
-                is SubjectModel -> entry.body
-                is ModelGenerator -> entry.model
-            }
-        body.sources?.forEach { source -> source.provenance.forEach(::requireDeclared) }
-        body.sinks?.forEach { sink -> requireDeclared(sink.category) }
+        val body = entry.body
+        body.sources?.forEach { source -> source.origin.forEach(::requireDeclared) }
+        body.sinks?.forEach { sink -> requireDeclared(sink.vulnClass) }
         body.sanitizers?.forEach { sanitizer -> sanitizer.categories.forEach(::requireDeclared) }
     }
 
@@ -153,8 +149,8 @@ public data class Vocabulary(
         requireVulnClass(id.id)
     }
 
-    private fun requireDeclared(id: ProvenanceId) {
-        requireProvenance(id.id)
+    private fun requireDeclared(id: OriginId) {
+        requireOrigin(id.id)
     }
 
     private fun <K, V> Map<K, V>.merged(

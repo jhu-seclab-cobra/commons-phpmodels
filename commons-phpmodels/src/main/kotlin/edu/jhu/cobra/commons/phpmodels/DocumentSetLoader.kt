@@ -96,9 +96,9 @@ public object DocumentSetLoader {
                 throw VocabularyException("Mapping target category '${target.id}' is not declared")
             }
         }
-        mapping.provenances.values.filterNotNull().forEach { target ->
-            if (target !in context.provenances) {
-                throw VocabularyException("Mapping target provenance '${target.id}' is not declared")
+        mapping.origins.values.filterNotNull().forEach { target ->
+            if (target !in context.origins) {
+                throw VocabularyException("Mapping target origin '${target.id}' is not declared")
             }
         }
     }
@@ -106,7 +106,7 @@ public object DocumentSetLoader {
     private fun CategoryMapping.sourceVocabulary(): Vocabulary =
         Vocabulary(
             vulnClasses = categories.keys.associateWith { VulnClassDecl(it, "mapped source name") },
-            provenances = provenances.keys.associateWith { ProvenanceDecl(it, "mapped source name") },
+            origins = origins.keys.associateWith { OriginDecl(it, "mapped source name") },
         )
 
     // A set lists many documents; a failure inside one names it.

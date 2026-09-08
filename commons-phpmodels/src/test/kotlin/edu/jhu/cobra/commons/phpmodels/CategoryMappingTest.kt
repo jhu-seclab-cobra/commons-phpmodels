@@ -27,10 +27,10 @@ internal class CategoryMappingTest {
                     VulnClassId("html") to VulnClassId("xss"),
                     VulnClassId("text") to null,
                 ),
-            provenances = mapOf(ProvenanceId("input") to ProvenanceId("user-input"), ProvenanceId("env") to null),
+            origins = mapOf(OriginId("input") to OriginId("user-input"), OriginId("env") to null),
         )
 
-    private fun model(sections: String): SubjectModel =
+    private fun model(sections: String): ModelEntry =
         loadModel("- subject:\n    function: f\n" + sections.trimIndent().prependIndent("  ") + "\n")
 
     @Test
@@ -45,8 +45,8 @@ internal class CategoryMappingTest {
                     category: text
                 """,
             )
-        val translated = assertIs<SubjectModel>(mapping.apply(entry))
-        assertEquals(listOf(SinkPoint(Port.Argument(0), VulnClassId("sqli"))), translated.body.sinks)
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
+        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))), translated.body.sinks)
     }
 
     @Test
@@ -59,7 +59,7 @@ internal class CategoryMappingTest {
                   - categories: [text]
                 """,
             )
-        val translated = assertIs<SubjectModel>(mapping.apply(entry))
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(listOf(SanitizerDecl(setOf(VulnClassId("sqli")))), translated.body.sanitizers)
     }
 
@@ -75,8 +75,8 @@ internal class CategoryMappingTest {
                     - provenance: [env]
                 """.trimIndent(),
             )
-        val translated = assertIs<SubjectModel>(mapping.apply(entry))
-        assertEquals(listOf(SourceDecl(setOf(ProvenanceId("user-input")))), translated.body.sources)
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
+        assertEquals(listOf(SourceDecl(setOf(OriginId("user-input")))), translated.body.sources)
     }
 
     @Test
@@ -100,7 +100,7 @@ internal class CategoryMappingTest {
                     category: text
                 """,
             )
-        val translated = assertIs<SubjectModel>(mapping.apply(entry))
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(true, translated.body.isEmpty)
         assertEquals(entry.signature, translated.signature)
     }
@@ -119,46 +119,27 @@ internal class CategoryMappingTest {
                     category: html
                 """,
             )
-        val translated = assertIs<SubjectModel>(mapping.apply(entry))
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(entry.body.valueSemantics(), translated.body.valueSemantics())
         val sinks = translated.body.sinks.orEmpty()
-        assertEquals(listOf(VulnClassId("xss")), sinks.map { it.category })
-    }
-
-    @Test
-    fun `generator emptied is dropped`() {
-        val entry =
-            load(
-                """
-                - name: printers
-                  find: function
-                  where:
-                    - constraint: name
-                      pattern: print.*
-                  model:
-                    sinks:
-                      - port: argument(0)
-                        category: text
-                """.trimIndent(),
-            ).single()
-        assertNull(mapping.apply(entry))
+        assertEquals(listOf(VulnClassId("xss")), sinks.map { it.vulnClass })
     }
 
     @Test
     fun `policy rows translated and emptied rows dropped`() {
         val rows =
             listOf(
-                PolicyRow(ProvenanceId("input"), setOf(VulnClassId("sql"), VulnClassId("text"))),
-                PolicyRow(ProvenanceId("input"), setOf(VulnClassId("text"))),
-                PolicyRow(ProvenanceId("env"), setOf(VulnClassId("sql"))),
+                PolicyRow(OriginId("input"), setOf(VulnClassId("sql"), VulnClassId("text"))),
+                PolicyRow(OriginId("input"), setOf(VulnClassId("text"))),
+                PolicyRow(OriginId("env"), setOf(VulnClassId("sql"))),
             )
-        assertEquals(listOf(PolicyRow(ProvenanceId("user-input"), setOf(VulnClassId("sqli")))), mapping.apply(rows))
+        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnClassId("sqli")))), mapping.apply(rows))
     }
 
     @Test
     fun `unlisted name fails`() {
         val entry = model("sinks:\n  - port: argument(0)\n    category: shell")
         assertFailsWith<VocabularyException> { mapping.apply(entry) }
-        assertFailsWith<VocabularyException> { mapping.provenance(ProvenanceId("remote")) }
+        assertFailsWith<VocabularyException> { mapping.origin(OriginId("remote")) }
     }
 }

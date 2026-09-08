@@ -8,7 +8,7 @@ import kotlin.test.assertFailsWith
  * Port semantics fixed by a declared callable signature: arity bounds,
  * by-reference requirements on written-into ports, and the void return type.
  *
- * - `port beyond the declared parameter list is rejected` — a guard,
+ * - `port beyond the declared parameter list is rejected` — a condition,
  *   propagation, or sink argument port outside a callable signature's arity.
  * - `source site beyond the declared parameter list is rejected` — the
  *   arity bound covers the source `at` port too.
@@ -70,9 +70,7 @@ internal class ModelLoaderPortBoundsTest {
                       - name: value
                         type: string
                     returnType: bool
-                  when:
-                    port: argument(1)
-                    is: true
+                  when: [_, true]
                   sinks:
                     - port: argument(0)
                       category: sqli
@@ -121,7 +119,7 @@ internal class ModelLoaderPortBoundsTest {
                       category: sqli
                 """.trimIndent(),
             )
-        assertEquals(listOf(SinkPoint(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
     }
 
     @Test

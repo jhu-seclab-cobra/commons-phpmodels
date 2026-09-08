@@ -1,6 +1,7 @@
 package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * One declared flow between two ports of a call.
@@ -80,7 +81,7 @@ public data class KeyPattern(
 /**
  * One produced color set of a sources section.
  *
- * @property provenance Origin colors the produced value carries.
+ * @property origin Origin colors the produced value carries; YAML key `provenance`.
  * @property at The argument port produced into (a by-reference out-parameter),
  *   or null for the subject kind's default production site.
  * @property keys Key patterns restricting production to matching array keys,
@@ -89,12 +90,12 @@ public data class KeyPattern(
  *   key-pattern set is empty.
  */
 public data class SourceDecl(
-    val provenance: Set<ProvenanceId>,
+    @param:JsonProperty("provenance") @get:JsonProperty("provenance") val origin: Set<OriginId>,
     val at: Port.Argument? = null,
     val keys: List<KeyPattern>? = null,
 ) {
     init {
-        require(provenance.isNotEmpty()) { "Sources element declares no origin color" }
+        require(origin.isNotEmpty()) { "Sources element declares no origin color" }
         require(keys == null || keys.isNotEmpty()) { "Sources element declares an empty key-pattern set" }
     }
 }
@@ -103,11 +104,11 @@ public data class SourceDecl(
  * One dangerously consumed port of a sinks section.
  *
  * @property port The argument port consumed dangerously.
- * @property category The danger category a color reaching [port] enables.
+ * @property vulnClass The danger category a color reaching [port] enables; YAML key `category`.
  */
-public data class SinkPoint(
+public data class SinkDecl(
     val port: Port.Argument,
-    val category: VulnClassId,
+    @param:JsonProperty("category") @get:JsonProperty("category") val vulnClass: VulnClassId,
 )
 
 /**
@@ -125,9 +126,7 @@ public data class SanitizerDecl(
 }
 
 /**
- * The sectioned statement of one model: five optional assertion sections. One
- * shape shared by the flat entry and the generator body, so a body written in
- * either form carries the same validation.
+ * The sectioned statement of one model: five optional assertion sections.
  *
  * `returns` and `propagation` form one value-semantics unit: declaring `returns`
  * asserts the flow set exhaustively, so an absent propagation section means the
@@ -136,8 +135,8 @@ public data class SanitizerDecl(
  *
  * An all-absent body is constructible — a signature-only entry has one — and
  * the at-least-one-section rule therefore lives at the entry level, where the
- * signature is visible: `SubjectModel` requires a signature or a non-empty
- * body, `ModelGenerator` requires a non-empty body.
+ * signature is visible: `ModelEntry` requires a signature or a non-empty
+ * body.
  *
  * @throws IllegalArgumentException If propagation comes without returns, or a
  *   declared section is empty.
@@ -146,7 +145,7 @@ public data class ModelBody(
     val returns: ReturnKind? = null,
     val propagation: List<Propagation>? = null,
     val sources: List<SourceDecl>? = null,
-    val sinks: List<SinkPoint>? = null,
+    val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
 ) {
     init {
@@ -167,9 +166,8 @@ public data class ModelBody(
     public val declaresOnlySources: Boolean
         get() = sources != null && returns == null && propagation == null && sinks == null && sanitizers == null
 
-    // The two port-admissibility predicates below are the one authority both
-    // entry forms read; the subject-kind (or find-kind) requirement lives in
-    // the entry validations.
+    // The two port-admissibility predicates below are the one authority the
+    // entry validation reads; the subject-kind requirement lives there.
 
     /** True when a propagation side names the receiver port. */
     public val namesReceiverPort: Boolean

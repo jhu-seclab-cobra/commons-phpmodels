@@ -100,7 +100,7 @@ internal class ModelBodyTest {
     @Test
     fun `source element rejects an empty key-pattern set`() {
         assertFailsWith<IllegalArgumentException> {
-            SourceDecl(setOf(ProvenanceId("remote")), keys = emptyList())
+            SourceDecl(setOf(OriginId("remote")), keys = emptyList())
         }
     }
 
@@ -131,7 +131,7 @@ internal class ModelBodyTest {
 
     @Test
     fun `declaresOnlySources reflects the section set`() {
-        val sources = listOf(SourceDecl(setOf(ProvenanceId("remote"))))
+        val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
         assertEquals(true, ModelBody(sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody().declaresOnlySources)
@@ -143,6 +143,6 @@ internal class ModelBodyTest {
             ValueSemantics(ReturnKind.STR, emptyList()),
             ModelBody(returns = ReturnKind.STR).valueSemantics(),
         )
-        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(ProvenanceId("remote"))))).valueSemantics())
+        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote"))))).valueSemantics())
     }
 }

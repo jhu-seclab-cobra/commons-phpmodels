@@ -13,7 +13,7 @@ internal data class ProvenanceFile(
  * Decodes one set's [SetProvenance] from its `provenance.yaml`. Where the
  * document lives is the caller's value placement, not this library's.
  */
-public object ProvenanceLoader {
+internal object ProvenanceLoader {
     /**
      * Parses a provenance document into a [SetProvenance].
      *
@@ -22,7 +22,7 @@ public object ProvenanceLoader {
      * @throws IllegalArgumentException If a field is missing, the producer is blank, the verification
      *   kind is not `generated` or `manual`, or the document carries a stray key.
      */
-    public fun load(input: InputStream): SetProvenance {
+    fun load(input: InputStream): SetProvenance {
         val file = ModelYaml.decode(input, jacksonTypeRef<ProvenanceFile>())
         return SetProvenance(file.producer, file.verification)
     }

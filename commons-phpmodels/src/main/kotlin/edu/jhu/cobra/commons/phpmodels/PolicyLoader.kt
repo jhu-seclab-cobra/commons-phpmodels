@@ -14,7 +14,7 @@ internal data class PolicyRowEntry(
  * validating every origin color and danger category against an
  * already-interned [Vocabulary].
  */
-public object PolicyLoader {
+internal object PolicyLoader {
     /**
      * Parses a policy document into a list of [PolicyRow].
      *
@@ -24,13 +24,13 @@ public object PolicyLoader {
      * @throws IllegalArgumentException If a row is malformed or carries a stray key.
      * @throws VocabularyException If a row references an undeclared color or category.
      */
-    public fun load(
+    fun load(
         input: InputStream,
         vocabulary: Vocabulary,
     ): List<PolicyRow> =
         ModelYaml.decode(input, jacksonTypeRef<List<PolicyRowEntry>>()).map { row ->
             PolicyRow(
-                origin = vocabulary.requireProvenance(row.origin),
+                origin = vocabulary.requireOrigin(row.origin),
                 enables = row.enables.map(vocabulary::requireVulnClass).toSet(),
             )
         }

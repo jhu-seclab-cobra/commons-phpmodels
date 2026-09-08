@@ -59,16 +59,16 @@ internal class ModelLoaderSignatureTest {
                     static: false
                 """.trimIndent(),
             )
-        val callable = assertIs<SignatureInfo.CallableSignature>(assertIs<SubjectModel>(entries[0]).signature)
+        val callable = assertIs<SignatureInfo.CallableSignature>(assertIs<ModelEntry>(entries[0]).signature)
         assertEquals(2, callable.params.size)
         assertEquals(DeclaredType("string"), callable.returnType)
-        val classSig = assertIs<SignatureInfo.ClassSignature>(assertIs<SubjectModel>(entries[1]).signature)
+        val classSig = assertIs<SignatureInfo.ClassSignature>(assertIs<ModelEntry>(entries[1]).signature)
         assertEquals(Classifier.CLASS, classSig.classifier)
         assertEquals("base", classSig.parent)
         assertEquals(listOf("traversable"), classSig.interfaces)
-        val typed = assertIs<SignatureInfo.TypedSignature>(assertIs<SubjectModel>(entries[2]).signature)
+        val typed = assertIs<SignatureInfo.TypedSignature>(assertIs<ModelEntry>(entries[2]).signature)
         assertEquals("\n", typed.value)
-        val property = assertIs<SignatureInfo.PropertySignature>(assertIs<SubjectModel>(entries[3]).signature)
+        val property = assertIs<SignatureInfo.PropertySignature>(assertIs<ModelEntry>(entries[3]).signature)
         assertEquals(Visibility.PUBLIC, property.visibility)
     }
 

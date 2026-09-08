@@ -3,8 +3,6 @@ package edu.jhu.cobra.commons.phpmodels
 import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.fasterxml.jackson.annotation.JsonSubTypes
-import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.fasterxml.jackson.annotation.JsonUnwrapped
 import com.fasterxml.jackson.databind.JsonNode
 import edu.jhu.cobra.commons.phpmodels.SignatureInfo.CallableSignature
@@ -14,44 +12,31 @@ import edu.jhu.cobra.commons.phpmodels.SignatureInfo.TypedSignature
 import kotlin.reflect.KClass
 
 /**
- * One decoded configuration entry: a [SubjectModel] naming its subject
- * explicitly, or a [ModelGenerator] denoting one model per subject satisfying
- * its constraints. The forms carry no `type` tag — they are deduced from their
- * disjoint required fields (`subject` versus `name`/`find`/`where`/`model`),
- * and an entry matching neither or both fails the decode (impl.md).
- */
-@JsonTypeInfo(use = JsonTypeInfo.Id.DEDUCTION)
-@JsonSubTypes(
-    JsonSubTypes.Type(value = SubjectModel::class),
-    JsonSubTypes.Type(value = ModelGenerator::class),
-)
-public sealed interface ModelEntry
-
-/**
- * One explicit model: the subject it identifies and the sectioned statement
- * asserted for it. The subject is the entry's identity — the form carries no
- * name. The five section fields decode flat beside `subject`, with no wrapper
- * key.
+ * One model: the subject it identifies and the sectioned statement asserted
+ * for it, under an optional condition. The subject is the entry's identity —
+ * the form carries no name. The five section fields decode flat beside
+ * `subject`, with no wrapper key.
  *
- * An entry carrying a `when:` guard is one branch of its subject's model,
- * selected per call; an unguarded entry is the default branch. An entry
- * carrying a `signature:` describes the declaration; the signature subtype is
- * selected by the subject kind at decode.
+ * An entry carrying a `when:` condition holds for the calls its pattern
+ * matches; an unconditional entry is the subject's default statement, and
+ * several entries for one subject are alternatives. An entry carrying a
+ * `signature:` describes the declaration; the signature subtype is selected
+ * by the subject kind at decode.
  *
  * @property subject The PHP declaration the model identifies.
- * @property guard The branch condition, or null for the default branch.
+ * @property condition The argument pattern, or null for the unconditional entry.
  * @property signature The declaration description, or null when undeclared.
  * @property body The sectioned statement this entry asserts.
  * @throws IllegalArgumentException If the entry asserts nothing, the subject
- *   admits neither the guard, the signature subtype, nor a declared section,
- *   or the body validation fails.
+ *   admits neither the condition, the signature subtype, nor a declared
+ *   section, or the body validation fails.
  */
-public data class SubjectModel(
+public data class ModelEntry(
     public val subject: ModelSubject,
-    public val guard: WhenGuard? = null,
+    public val condition: ArgPattern? = null,
     public val signature: SignatureInfo? = null,
     public val body: ModelBody = ModelBody(),
-) : ModelEntry {
+) {
     init {
         require(signature != null || !body.isEmpty) {
             "Entry for $subject asserts nothing: no signature and no section"
@@ -61,7 +46,7 @@ public data class SubjectModel(
     }
 
     // The subject admits only the sections its kind allows: assertion sections
-    // and guards belong to callable kinds; value-producing kinds declare
+    // and conditions belong to callable kinds; value-producing kinds declare
     // sources; a class declares nothing besides its signature. Port
     // admissibility follows the same kind: the receiver port requires a
     // method, an explicit source site requires a callable.
@@ -74,7 +59,9 @@ public data class SubjectModel(
             "Entry for $subject names the receiver port; 'this' exists only in a call to a method"
         }
         if (subject is FunctionSubject || subject is MethodSubject) return
-        require(guard == null) { "Entry for $subject carries a when guard; guards apply to callable subjects only" }
+        require(condition == null) {
+            "Entry for $subject carries a when condition; conditions apply to callable subjects only"
+        }
         require(!body.declaresExplicitSourceSite) {
             "Entry for $subject declares an explicit source site; sites apply to callable subjects only"
         }
@@ -126,7 +113,7 @@ public data class SubjectModel(
 
     private fun namedArgumentPorts(): List<Port.Argument> =
         buildList {
-            guard?.let { add(it.port) }
+            condition?.positions?.forEach { add(Port.Argument(it)) }
             body.propagation?.forEach { pair ->
                 (pair.from as? Port.Argument)?.let(::add)
                 (pair.to as? Port.Argument)?.let(::add)
@@ -145,10 +132,10 @@ public data class SubjectModel(
         @JsonCreator
         internal fun decode(
             @JsonProperty("subject") subject: ModelSubject,
-            @JsonProperty("when") guard: WhenGuard?,
+            @JsonProperty("when") condition: ArgPattern?,
             @JsonProperty("signature") signature: JsonNode?,
             @JsonUnwrapped sections: SectionFields,
-        ): SubjectModel {
+        ): ModelEntry {
             val decoded = signature?.let { narrowSignature(subject, it) }
             val callable = decoded as? CallableSignature
             require(sections.returns == null || callable == null) {
@@ -157,7 +144,7 @@ public data class SubjectModel(
             val effectiveReturns =
                 sections.returns
                     ?: callable?.returnType?.toReturnKind()?.takeIf { sections.propagation != null }
-            return SubjectModel(subject, guard, decoded, sections.complete(effectiveReturns))
+            return ModelEntry(subject, condition, decoded, sections.complete(effectiveReturns))
         }
 
         private fun narrowSignature(
@@ -196,7 +183,7 @@ internal data class SectionFields(
     val returns: ReturnKind? = null,
     val propagation: List<Propagation>? = null,
     val sources: List<SourceDecl>? = null,
-    val sinks: List<SinkPoint>? = null,
+    val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
 ) {
     /** The entry's body, with [returns] completed by the enclosing creator. */

@@ -36,7 +36,7 @@ public object CategoryMappingLoader {
         val file = ModelYaml.decode(input, jacksonTypeRef<CategoryMappingFile>())
         return CategoryMapping(
             categories = file.categories.translated("categories") { VulnClassId(it) },
-            provenances = file.provenances.translated("provenances") { ProvenanceId(it) },
+            origins = file.provenances.translated("provenances") { OriginId(it) },
         )
     }
 

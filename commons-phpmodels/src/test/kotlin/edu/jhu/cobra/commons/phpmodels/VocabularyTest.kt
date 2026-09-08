@@ -9,7 +9,7 @@ import kotlin.test.assertFailsWith
  *
  * - `vuln class id folds to lowercase` — any spelling constructs the
  *   lowercased identity, so no reference misses a vocabulary lookup.
- * - `provenance id folds to lowercase` — same folding for origin colors.
+ * - `origin id folds to lowercase` — same folding for origin colors.
  */
 internal class VocabularyTest {
     @Test
@@ -19,9 +19,9 @@ internal class VocabularyTest {
     }
 
     @Test
-    fun `provenance id folds to lowercase`() {
-        assertEquals("remote", ProvenanceId("REMOTE").id)
-        assertEquals(ProvenanceId("remote"), ProvenanceId("Remote"))
+    fun `origin id folds to lowercase`() {
+        assertEquals("remote", OriginId("REMOTE").id)
+        assertEquals(OriginId("remote"), OriginId("Remote"))
     }
 }
 
@@ -30,19 +30,19 @@ internal class VocabularyTest {
  *
  * - `merge …` — union in declaration order; an identical redeclaration is
  *   one declaration, a differing description is a conflict.
- * - `verify …` — every category and color on the three taint sections of a
- *   flat model or a generator is declared.
+ * - `verify …` — every category and color on the three taint sections of an
+ *   entry is declared.
  */
 internal class VocabularyMergeVerifyTest {
     private fun vocabulary(
         vararg classes: Pair<String, String>,
         provenance: Pair<String, String> = "user-input" to "request data",
     ): Vocabulary {
-        val color = ProvenanceId(provenance.first)
+        val color = OriginId(provenance.first)
         return Vocabulary(
             vulnClasses =
                 classes.associate { (name, text) -> VulnClassId(name) to VulnClassDecl(VulnClassId(name), text) },
-            provenances = mapOf(color to ProvenanceDecl(color, provenance.second)),
+            origins = mapOf(color to OriginDecl(color, provenance.second)),
         )
     }
 
@@ -50,7 +50,7 @@ internal class VocabularyMergeVerifyTest {
     fun `merge unions distinct names in declaration order`() {
         val merged = vocabulary("sqli" to "sql").merge(vocabulary("xss" to "html"))
         assertEquals(listOf("sqli", "xss"), merged.vulnClasses.keys.map { it.id })
-        assertEquals(listOf("user-input"), merged.provenances.keys.map { it.id })
+        assertEquals(listOf("user-input"), merged.origins.keys.map { it.id })
     }
 
     @Test
@@ -77,7 +77,7 @@ internal class VocabularyMergeVerifyTest {
 
     @Test
     fun `EMPTY declares nothing`() {
-        assertEquals(0, Vocabulary.EMPTY.vulnClasses.size + Vocabulary.EMPTY.provenances.size)
+        assertEquals(0, Vocabulary.EMPTY.vulnClasses.size + Vocabulary.EMPTY.origins.size)
     }
 
     @Test
@@ -113,20 +113,8 @@ internal class VocabularyMergeVerifyTest {
     }
 
     @Test
-    fun `verify rejects an undeclared sanitizer category on a generator`() {
-        val entry =
-            load(
-                """
-                - name: escapers
-                  find: function
-                  where:
-                    - constraint: name
-                      pattern: esc_.*
-                  model:
-                    sanitizers:
-                      - categories: [xss]
-                """.trimIndent(),
-            ).single()
+    fun `verify rejects an undeclared sanitizer category`() {
+        val entry = loadModel("- subject:\n    function: esc_html\n  sanitizers:\n    - categories: [xss]\n")
         assertFailsWith<VocabularyException> { vocabulary("sqli" to "sql").verify(entry) }
     }
 }
