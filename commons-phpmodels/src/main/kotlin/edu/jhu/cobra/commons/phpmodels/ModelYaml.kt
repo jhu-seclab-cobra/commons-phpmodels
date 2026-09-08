@@ -75,14 +75,15 @@ internal object ModelYaml {
     private fun requireAliasFree(content: String) {
         val events = ParserImpl(StreamReader(content), LoaderOptions())
         try {
-            var event = events.event
-            while (event != null && event !is StreamEndEvent) {
-                val alias = event as? AliasEvent
-                require(alias == null) {
-                    "Malformed model document: alias '*${alias?.anchor}' is never substituted; spell the value out"
+            generateSequence { events.event }
+                .takeWhile { it !is StreamEndEvent }
+                .filterIsInstance<AliasEvent>()
+                .firstOrNull()
+                ?.let { alias ->
+                    throw IllegalArgumentException(
+                        "Malformed model document: alias '*${alias.anchor}' is never substituted; spell the value out",
+                    )
                 }
-                event = events.event
-            }
         } catch (cause: YAMLException) {
             throw IllegalArgumentException("Malformed model document: ${cause.message}", cause)
         }

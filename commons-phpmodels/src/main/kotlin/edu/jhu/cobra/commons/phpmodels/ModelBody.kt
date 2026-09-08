@@ -35,20 +35,25 @@ public data class Propagation private constructor(
             output: Port? = null,
         ): Propagation =
             Propagation(
-                exactlyOne("from", from, "input", input),
-                exactlyOne("to", to, "output", output),
+                exactlyOne("from" to from, "input" to input),
+                exactlyOne("to" to to, "output" to output),
             )
     }
 }
 
+// Each side arrives as its two spellings paired with their values; exactly
+// one of the two must carry a value.
 private fun <T : Any> exactlyOne(
-    aName: String,
-    a: T?,
-    bName: String,
-    b: T?,
+    first: Pair<String, T?>,
+    second: Pair<String, T?>,
 ): T {
-    require(a == null || b == null) { "'$aName' and '$bName' are synonym spellings; declare one" }
-    return a ?: b ?: throw IllegalArgumentException("Propagation is missing '$aName' (or '$bName')")
+    val (firstName, firstValue) = first
+    val (secondName, secondValue) = second
+    require(firstValue == null || secondValue == null) {
+        "'$firstName' and '$secondName' are synonym spellings; declare one"
+    }
+    return firstValue ?: secondValue
+        ?: throw IllegalArgumentException("Propagation is missing '$firstName' (or '$secondName')")
 }
 
 /**
@@ -152,19 +157,31 @@ public data class ModelBody(
         require(propagation == null || returns != null) {
             "Propagation without returns: the value-semantics unit is asserted whole or not at all"
         }
-        require(propagation == null || propagation.isNotEmpty()) { "Declared propagation section is empty" }
-        require(sources == null || sources.isNotEmpty()) { "Declared sources section is empty" }
-        require(sinks == null || sinks.isNotEmpty()) { "Declared sinks section is empty" }
-        require(sanitizers == null || sanitizers.isNotEmpty()) { "Declared sanitizers section is empty" }
+        requireDeclaredNonEmpty(propagation, "propagation")
+        requireDeclaredNonEmpty(sources, "sources")
+        requireDeclaredNonEmpty(sinks, "sinks")
+        requireDeclaredNonEmpty(sanitizers, "sanitizers")
     }
+
+    // An absent section is null; a declared section must list at least one element.
+    private fun requireDeclaredNonEmpty(
+        section: List<*>?,
+        name: String,
+    ) {
+        require(section == null || section.isNotEmpty()) { "Declared $name section is empty" }
+    }
+
+    // Every section other than sources is absent.
+    private val declaresNothingBesidesSources: Boolean
+        get() = returns == null && propagation == null && sinks == null && sanitizers == null
 
     /** True when no section is declared. */
     public val isEmpty: Boolean
-        get() = returns == null && propagation == null && sources == null && sinks == null && sanitizers == null
+        get() = sources == null && declaresNothingBesidesSources
 
     /** True when the body declares nothing besides its sources section. */
     public val declaresOnlySources: Boolean
-        get() = sources != null && returns == null && propagation == null && sinks == null && sanitizers == null
+        get() = sources != null && declaresNothingBesidesSources
 
     // The two port-admissibility predicates below are the one authority the
     // entry validation reads; the subject-kind requirement lives there.

@@ -124,11 +124,14 @@ public value class DeclaredType(
 
     /** True when the declared type is `void`: the callable produces no result. */
     public val isVoid: Boolean
-        get() = raw.equals("void", ignoreCase = true)
+        get() = raw.equals(VOID, ignoreCase = true)
 
     override fun toString(): String = raw
 
     private companion object {
+        // The keyword naming the absent result type, fixed by the PHP type system.
+        private const val VOID = "void"
+
         // The keyword-type vocabulary is fixed by the PHP type system, not
         // configuration. Each keyword carries the returns classification it
         // derives to; non-scalar keywords derive to ANY.
@@ -143,7 +146,7 @@ public value class DeclaredType(
                 "callable" to ReturnKind.ANY,
                 "resource" to ReturnKind.ANY,
                 "mixed" to ReturnKind.ANY,
-                "void" to ReturnKind.ANY,
+                VOID to ReturnKind.ANY,
                 "null" to ReturnKind.ANY,
                 "iterable" to ReturnKind.ANY,
             )

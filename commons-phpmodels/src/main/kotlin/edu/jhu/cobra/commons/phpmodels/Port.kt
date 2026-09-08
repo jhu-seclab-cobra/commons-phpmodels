@@ -37,7 +37,7 @@ public sealed interface Port {
             require(position >= 0) { "Argument position must be non-negative: $position" }
         }
 
-        override fun toString(): String = "argument($position)"
+        override fun toString(): String = "$ARGUMENT_SPELLING($position)"
 
         public companion object {
             // A field typed as this subtype does not consult the supertype's
@@ -51,16 +51,21 @@ public sealed interface Port {
 
     /** The receiver of a call to a method, spelled `this`. */
     public object Receiver : Input {
-        override fun toString(): String = "this"
+        override fun toString(): String = RECEIVER_SPELLING
     }
 
     /** The call result. */
     public object Return : Port {
-        override fun toString(): String = "return"
+        override fun toString(): String = RETURN_SPELLING
     }
 
     public companion object {
-        private val ARGUMENT_SPELLING = Regex("""argument\((\d+)\)""")
+        // The three port spellings are fixed by the model format; each port's
+        // string form and the parser read the same constant.
+        private const val RETURN_SPELLING = "return"
+        private const val RECEIVER_SPELLING = "this"
+        private const val ARGUMENT_SPELLING = "argument"
+        private val ARGUMENT_PATTERN = Regex("""$ARGUMENT_SPELLING\((\d+)\)""")
 
         /**
          * The port the spelling [raw] names.
@@ -72,14 +77,14 @@ public sealed interface Port {
         @JsonCreator
         public fun parse(raw: String): Port =
             when (raw) {
-                "return" -> Return
-                "this" -> Receiver
+                RETURN_SPELLING -> Return
+                RECEIVER_SPELLING -> Receiver
                 else -> parseArgumentSpelling(raw)
             }
 
         private fun parseArgumentSpelling(raw: String): Argument {
             val match =
-                ARGUMENT_SPELLING.matchEntire(raw)
+                ARGUMENT_PATTERN.matchEntire(raw)
                     ?: throw IllegalArgumentException("Port must be 'return', 'this', or 'argument(n)', got '$raw'")
             val position =
                 match.groupValues[1].toIntOrNull()

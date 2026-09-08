@@ -20,7 +20,12 @@ public object DocumentSetLoader {
     /** The optional provenance file name, directly under the set root. */
     public const val PROVENANCE: String = "provenance.yaml"
 
+    // The manifest comment marker, fixed by the manifest format (model-sets.md).
     private const val COMMENT = '#'
+
+    // The description a mapped set's source names carry: the mapping declares
+    // no descriptions, so one documentary text stands for every source name.
+    private const val MAPPED_SOURCE_DESCRIPTION = "mapped source name"
 
     /**
      * Loads the set rooted at [open].
@@ -49,27 +54,35 @@ public object DocumentSetLoader {
         context: Vocabulary = Vocabulary.EMPTY,
         mapping: CategoryMapping? = null,
     ): DocumentSet {
-        val paths = manifest(open)
-        val provenance = open.open(PROVENANCE)?.use(ProvenanceLoader::load)
-        val set = if (mapping == null) loadDeclared(open, paths, context) else loadMapped(open, paths, context, mapping)
+        val root = SetRoot(open, manifest(open))
+        val provenance = root.open(PROVENANCE)?.use(ProvenanceLoader::load)
+        val set = if (mapping == null) loadDeclared(root, context) else loadMapped(root, context, mapping)
         return set.copy(provenance = provenance)
     }
 
+    // The opened set root together with its manifest, which is read before
+    // any other document so that a missing or malformed manifest fails first.
+    private class SetRoot(
+        opener: ResourceOpener,
+        val paths: List<String>,
+    ) : ResourceOpener by opener
+
     private fun loadDeclared(
-        open: ResourceOpener,
-        paths: List<String>,
+        root: SetRoot,
         context: Vocabulary,
     ): DocumentSet {
-        val declared = open.open(VOCABULARY)?.use(VocabularyLoader::load) ?: Vocabulary.EMPTY
+        val declared = root.open(VOCABULARY)?.use(VocabularyLoader::load) ?: Vocabulary.EMPTY
         val merged = context.merge(declared)
-        val policy = open.open(POLICY)?.use { PolicyLoader.load(it, merged) }.orEmpty()
-        val documents = paths.map { path -> Document(path, decode(open, path).onEach { verify(merged, it, path) }) }
+        val policy = root.open(POLICY)?.use { PolicyLoader.load(it, merged) }.orEmpty()
+        val documents =
+            root.paths.map { path ->
+                Document(path, decode(root, path).onEach { verify(merged, it, path) })
+            }
         return DocumentSet(declared, policy, documents)
     }
 
     private fun loadMapped(
-        open: ResourceOpener,
-        paths: List<String>,
+        root: SetRoot,
         context: Vocabulary,
         mapping: CategoryMapping,
     ): DocumentSet {
@@ -78,10 +91,10 @@ public object DocumentSetLoader {
         // lists them, so the mapping's sources serve as the vocabulary its
         // policy decodes against; an unlisted name fails there.
         val sources = mapping.sourceVocabulary()
-        val policy = open.open(POLICY)?.use { PolicyLoader.load(it, sources) }.orEmpty()
+        val policy = root.open(POLICY)?.use { PolicyLoader.load(it, sources) }.orEmpty()
         val documents =
-            paths.map { path ->
-                val entries = decode(open, path).mapNotNull(mapping::apply).onEach { verify(context, it, path) }
+            root.paths.map { path ->
+                val entries = decode(root, path).mapNotNull(mapping::apply).onEach { verify(context, it, path) }
                 Document(path, entries)
             }
         return DocumentSet(Vocabulary.EMPTY, mapping.apply(policy), documents)
@@ -91,22 +104,22 @@ public object DocumentSetLoader {
         mapping: CategoryMapping,
         context: Vocabulary,
     ) {
-        mapping.categories.values.filterNotNull().forEach { target ->
-            if (target !in context.vulnClasses) {
-                throw VocabularyException("Mapping target category '${target.id}' is not declared")
-            }
+        mapping.categories.values.firstUndeclaredIn(context.vulnClasses)?.let { target ->
+            throw VocabularyException("Mapping target category '${target.id}' is not declared")
         }
-        mapping.origins.values.filterNotNull().forEach { target ->
-            if (target !in context.origins) {
-                throw VocabularyException("Mapping target origin '${target.id}' is not declared")
-            }
+        mapping.origins.values.firstUndeclaredIn(context.origins)?.let { target ->
+            throw VocabularyException("Mapping target origin '${target.id}' is not declared")
         }
     }
 
+    // A discarding (null) target names nothing that must be declared.
+    private fun <K : Any> Collection<K?>.firstUndeclaredIn(declared: Map<K, *>): K? =
+        filterNotNull().firstOrNull { it !in declared }
+
     private fun CategoryMapping.sourceVocabulary(): Vocabulary =
         Vocabulary(
-            vulnClasses = categories.keys.associateWith { VulnClassDecl(it, "mapped source name") },
-            origins = origins.keys.associateWith { OriginDecl(it, "mapped source name") },
+            vulnClasses = categories.keys.associateWith { VulnClassDecl(it, MAPPED_SOURCE_DESCRIPTION) },
+            origins = origins.keys.associateWith { OriginDecl(it, MAPPED_SOURCE_DESCRIPTION) },
         )
 
     // A set lists many documents; a failure inside one names it.

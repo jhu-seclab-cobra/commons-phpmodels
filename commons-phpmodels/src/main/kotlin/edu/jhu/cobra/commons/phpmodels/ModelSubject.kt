@@ -49,7 +49,7 @@ public sealed class NamedSubject(
     private val spelledPrefix: String = "",
 ) : ModelSubject {
     init {
-        val label = kind.replaceFirstChar(Char::uppercaseChar)
+        val label = labelOf(kind)
         require(name.isNotBlank()) { "$label subject declares a blank name" }
         requirePlainIdentity(label, "name", name)
     }
@@ -83,7 +83,7 @@ public sealed class MemberSubject(
     public val owner: String = owner.lowercase()
 
     init {
-        val label = kind.replaceFirstChar(Char::uppercaseChar)
+        val label = labelOf(kind)
         require(this.owner.isNotBlank()) { "$label subject declares a blank class" }
         require(name.isNotBlank()) { "$label subject '${this.owner}' declares a blank name" }
         requirePlainIdentity(label, "class", this.owner)
@@ -233,20 +233,28 @@ public class VariableSubject(
 // rejected by the base-class identity invariant, so the spelling creators and
 // direct construction yield one identity.
 
+// The member separator and the namespace prefix are fixed by PHP's own
+// name syntax.
+private const val MEMBER_SEPARATOR = "::"
+private const val NAMESPACE_PREFIX = "\\"
+
+// The kind's sentence-initial form in failure messages.
+private fun labelOf(kind: String): String = kind.replaceFirstChar(Char::uppercaseChar)
+
 private fun requirePlainIdentity(
     label: String,
     field: String,
     value: String,
 ) {
-    require("::" !in value) { "$label subject $field contains '::': '$value'" }
+    require(MEMBER_SEPARATOR !in value) { "$label subject $field contains '$MEMBER_SEPARATOR': '$value'" }
     require('$' !in value) { "$label subject $field contains '\$': '$value'" }
-    require(!value.startsWith('\\')) { "$label subject $field starts with '\\': '$value'" }
+    require(!value.startsWith(NAMESPACE_PREFIX)) { "$label subject $field starts with '$NAMESPACE_PREFIX': '$value'" }
     // No PHP identifier contains whitespace; a block-scalar spelling would
     // otherwise smuggle its trailing newline into the identity.
     require(value.none(Char::isWhitespace)) { "$label subject $field contains whitespace: '$value'" }
 }
 
-private fun simpleName(raw: String): String = raw.removePrefix("\\")
+private fun simpleName(raw: String): String = raw.removePrefix(NAMESPACE_PREFIX)
 
 private fun propertyPieces(
     kind: String,
@@ -261,8 +269,8 @@ private fun ownerAndMember(
     kind: String,
     raw: String,
 ): Pair<String, String> {
-    val spelling = raw.removePrefix("\\")
-    val separator = spelling.indexOf("::")
+    val spelling = simpleName(raw)
+    val separator = spelling.indexOf(MEMBER_SEPARATOR)
     require(separator >= 0) { "A $kind subject must be spelled 'class::member', got '$raw'" }
-    return spelling.substring(0, separator) to spelling.substring(separator + 2)
+    return spelling.substring(0, separator) to spelling.substring(separator + MEMBER_SEPARATOR.length)
 }
