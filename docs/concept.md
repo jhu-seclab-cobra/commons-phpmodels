@@ -15,14 +15,15 @@ side also re-invents the loading convention, and a consumer mounting a
 source that names categories on another axis has nowhere to translate them.
 
 **System Role.** commons-phpmodels is the format library — it owns the
-model types, the YAML decoding, and the load-time validation, while every
-analysis (graph lookups, taint queries, layer mounting) belongs to
-consumers.
+model types, the YAML decoding, and the load-time validation of one
+document set, while every use of the decoded sets (merging them, lookup by
+name, graph resolution, taint queries) belongs to consumers.
 
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
-  entries (explicit models and generators) — grouped into document sets
-  under one root each; optionally a category mapping for one set.
+  entries — grouped into document sets under one root each; optionally a
+  category mapping for one set; scalar values from commons-value where a
+  document states a literal.
 - **Outputs:** validated typed values — the vocabulary, the taint policy,
   decoded model entries, and one loaded document set per root.
 - **Connections:** producers (stub extraction, rule authors, third-party
@@ -30,16 +31,19 @@ consumers.
   compilers).
 
 **Scope Boundaries**
-- **Owned:** the model format — subjects, ports, sections, signatures, guards,
-  generators, vocabulary, policy; strict YAML decoding; every load-time
+- **Owned:** the model format — subjects, ports, sections, signatures,
+  conditions, vocabulary, policy; strict YAML decoding; every load-time
   validation rule of the format itself; the document-set convention shared
   by every producer and consumer; the category mapping that translates one
   set's names into a consumer's; the set provenance each set declares and
-  the precedence over verification kinds ([concept-provenance.md](concept-provenance.md)).
-- **Not Owned:** the fold that applies precedence to entries, branch selection
-  at a call, subject resolution from a program graph, the taint query,
-  artifact compilation, and where a document set is stored (classpath, file,
-  artifact) — the caller opens the streams.
+  the precedence over verification kinds ([concept-provenance.md](concept-provenance.md));
+  the one operation that matches a condition against a list of argument
+  values.
+- **Not Owned:** merging sets (which entry is in force per subject,
+  condition, and section), deciding what a call's arguments are, subject
+  resolution from a program graph, the taint query, artifact compilation,
+  and where a document set is stored (classpath, file, artifact) — the
+  caller opens the streams.
 
 ## Concepts
 
@@ -71,8 +75,7 @@ declaration looks like. Composed of sections, at least one present.
 (`return`).
 - Scope: every positional reference in a model; the meaning is in the port
   name, never in a surrounding field name.
-- Relationships: named by Propagations, source elements, sink elements, and
-  When Guards.
+- Relationships: named by Propagations, source elements, and sink elements.
 
 **Propagation** — One declared flow from one input port — an argument or the
 method receiver — to another port of the same call.
@@ -85,7 +88,7 @@ method receiver — to another port of the same call.
   constant, predefined variable — spelled with PHP's own static-reference
   grammar (`mysqli::query`, `mysqli::$insert_id`); the entry key names the
   kind, the spelling encodes identity only.
-- Relationships: identified by exactly one Model; found by Model Generators.
+- Relationships: identified by one Model per Condition.
 
 **Signature** — The descriptive section: what the declaration looks like,
 never what an analysis believes about it.
@@ -93,19 +96,16 @@ never what an analysis believes about it.
   declaration exists".
 - Relationships: one Section of a Model; describes the Matching Subject.
 
-**Model Generator** — One entry declaring one model body over every subject
-satisfying its constraints.
-- Scope: a unique name, the subject kind to find, name constraints, and the
-  model to attach; the only entry form with a wrapper level, separating what
-  is matched from what is asserted.
-- Relationships: denotes one Model per satisfying Matching Subject.
-
-**When Guard** — An optional condition on a model entry: an argument port
-equals one scalar value.
-- Scope: entries for one subject form branches, the unguarded entry being
-  the default; the guard's meaning is fixed here, selection at a call is
-  consumer behavior.
-- Relationships: attaches to a Model entry; names one Port.
+**Condition** — An optional argument pattern on a model entry: one
+expected value per argument position, a wildcard where the position does
+not matter; the entry holds when every listed position carries its value.
+- Scope: positional scalars only (commons-value primitives); a pattern
+  longer than a call's argument list never holds. The one match operation
+  over a list of argument values — holds, fails, or undecidable — is fixed
+  here; what a consumer does with each answer is the consumer's.
+- Relationships: attaches to a Model entry; an entry without one is the
+  subject's unconditional statement; several entries for one subject are
+  alternatives.
 
 **Origin Color** — A named category of untrusted provenance.
 - Scope: travels with a value along data flow.
@@ -124,7 +124,7 @@ categories.
   first. A second declaration of a name is admitted only when identical to
   the first: two sets can restate a shared name, never silently disagree.
 - Relationships: referenced by every Model and by the Policy; accumulated
-  across Document Sets by the consumer.
+  across Document Sets by the consumer that loads them in sequence.
 
 **Policy** — The global mapping from an origin color to the danger categories
 it can trigger.
@@ -197,4 +197,4 @@ consumer's own vocabulary.
   one describes it differently. The load fails naming the set and the name.
 
 Domain semantics: [model.md](model.md), [model-declarations.md](model-declarations.md),
-[model-guards.md](model-guards.md), [model-sets.md](model-sets.md). Software structure: [design.md](design.md).
+[model-conditions.md](model-conditions.md), [model-sets.md](model-sets.md). Software structure: [design.md](design.md).
