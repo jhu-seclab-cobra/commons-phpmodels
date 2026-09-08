@@ -37,7 +37,7 @@ declaration kind, with no nesting of one declaration inside another.
   version); never hand-edited — a correction is a higher-layer entry
   overriding per (subject, condition, unit).
 
-## Subject Kinds
+### Subject Kinds
 
 | Kind | Spelling | Identity | Case |
 |------|----------|----------|------|
@@ -55,7 +55,7 @@ predefined variable carries the `$` prefix. The entry key names the kind —
 the spelling encodes identity only, never kind. Leading namespace slashes
 are stripped before folding. Any other shape is a load failure.
 
-## Return Classification
+### Return Classification
 
 Derived at load from the declared return type; never stored in a file that
 carries a signature.
@@ -74,24 +74,6 @@ carries a signature.
 | Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; members reference their class by identity, never by containment |
 | Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the returns classification when propagation is asserted |
 | Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, condition, unit) |
-
-## Value-Semantics Coupling
-
-The value-semantics unit stays one exhaustive statement
-([model.md](model.md)); the signature changes only where its returns half
-comes from:
-
-- Signature present, propagation declared → the unit is asserted: returns
-  derived from the declared return type, flows exactly as declared.
-- Signature present, no propagation → **no value-semantics unit**. Existence
-  is asserted; value flow stays at the consumer's conservative default in
-  which every argument influences the result. Absence of a flow annotation
-  in the upstream data is not purity.
-- Signature present, explicit `returns` → load failure: one fact, one
-  source. A purity assertion (returns with an empty flow set) is a
-  hand-written statement and belongs in a higher layer without a signature.
-- No signature (hand-written form) → explicit returns asserts the unit
-  exhaustively.
 
 ## Invariants
 
@@ -124,6 +106,21 @@ comes from:
   addition to generated files.
 - Generated files are regenerable at any time from upstream sources; no
   information exists only in a generated file.
+- Value-semantics coupling — the unit stays one exhaustive statement
+  ([model.md](model.md)); the signature changes only where its returns half
+  comes from:
+  - Signature present, propagation declared → the unit is asserted: returns
+    derived from the declared return type, flows exactly as declared.
+  - Signature present, no propagation → **no value-semantics unit**. Existence
+    is asserted; value flow stays at the consumer's conservative default in
+    which every argument influences the result. Absence of a flow annotation
+    in the upstream data is not purity.
+  - Signature present, explicit `returns` → load failure: one fact, one
+    source. A purity assertion (returns with an empty flow set) is a
+    hand-written statement and belongs in a higher layer without a signature.
+  - No signature (hand-written form) → explicit returns asserts the unit
+    exhaustively.
+
 
 ## Cross-Structure Contracts
 

@@ -19,7 +19,7 @@ policy.isDangerous(vocabulary.requireOrigin("remote"), vocabulary.requireVulnCla
 - **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
 - **`Vocabulary.verify(entry: ModelEntry)`** — Checks every category and color the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
 - **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
-- **`VulnClassId(id: String)`**, **`OriginId(id: String)`** — Interned lowercase reference tokens (value classes). Use past the load boundary instead of raw strings.
+- **`VulnClassId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
 - **`VulnClassDecl(id: VulnClassId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
 - **`PolicyRow(origin: OriginId, enables: Set<VulnClassId>)`** — One policy statement.
 - **`TaintPolicy(rows: List<PolicyRow>)`** — The folded origin → categories matrix; rows sharing an origin accumulate by union.

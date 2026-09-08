@@ -134,12 +134,12 @@ it can trigger.
 
 **Document Set** — One source of models as it is stored: a root holding a
 manifest that lists the model documents in order, an optional vocabulary,
-and an optional policy, under fixed file names.
+an optional policy, and an optional provenance, under fixed file names.
 - Scope: the unit a producer publishes and a consumer mounts; one root, one
   manifest. Its position among sets is the consumer's; its rank against
   another set follows its set provenance ([concept-provenance.md](concept-provenance.md)).
-- Relationships: contains Models, at most one Vocabulary and one Policy;
-  loaded whole; the target of at most one Category Mapping.
+- Relationships: contains Models, at most one Vocabulary, one Policy, and
+  one Set Provenance; loaded whole; the target of at most one Category Mapping.
 
 **Category Mapping** — A consumer-supplied translation from the danger
 categories and origin colors a Document Set names to the names in the

@@ -27,7 +27,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 - **`Verification`** — `GENERATED`, `MANUAL`.
 - **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind)` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
 - **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
-- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes two maps, `categories:` and `provenances:`, source name to target name or the literal `ignore`.
+- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes two maps, `categories:` and `provenances:`, source name to target name or the literal `ignore` (`CategoryMappingLoader.IGNORE`).
 - **`CategoryMapping.category(source)`**, **`origin(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
 - **`CategoryMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
 - **`CategoryMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.

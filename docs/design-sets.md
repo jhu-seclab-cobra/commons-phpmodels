@@ -141,6 +141,7 @@ the decode with `IllegalArgumentException`.
 shape: two maps, `categories:` and `provenances:`, source name to target
 name; the literal target `ignore` marks a discarded name. Unknown keys and
 a `null` value fail the decode. A source name may not be `ignore`.
+`const val IGNORE = "ignore"` — the discard literal.
 
 ### DocumentSetLoader
 

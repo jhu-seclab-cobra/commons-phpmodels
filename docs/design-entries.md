@@ -34,8 +34,8 @@ carrying `subject:` and its sections. No discriminator, no deduction.
 **Responsibility:** One model: the subject it identifies and the sectioned
 statement asserted for it, under an optional condition. The subject is the
 entry's identity — the form carries no name. Several entries for one
-subject are alternatives; the set loader rejects two entries of one
-document sharing subject and condition ([design-sets.md](design-sets.md)).
+subject are alternatives; `ModelLoader` rejects two entries of one
+document sharing subject and condition ([design.md](design.md)).
 
 **State/Fields:** `val subject: ModelSubject`, `val condition: ArgPattern?`
 (decoded from the optional `when:` field), `val signature: SignatureInfo?`,

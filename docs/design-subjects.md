@@ -92,9 +92,10 @@ and no sentinel value exists anywhere in the port vocabulary.
 (object, spelling `this`); `Return` (object). The sealed sub-interface
 `Port.Input` marks the ports a call supplies values through (`Argument`,
 `Receiver`), so a from-side field is input-typed instead of
-runtime-checked. `Argument` and `Input` each carry their own narrowing
-creator (a field typed as a subtype does not consult the supertype's
-creator, [impl.md](impl.md)).
+runtime-checked. `Port.Argument.parseArgument(raw: String): Argument` and
+`Port.Input.parseInput(raw: String): Input` are the narrowing creators (a
+field typed as a subtype does not consult the supertype's creator,
+[impl.md](impl.md)).
 
 **Methods:** companion `parse(raw: String): Port` — the decode entry point;
 `IllegalArgumentException` on any other spelling.

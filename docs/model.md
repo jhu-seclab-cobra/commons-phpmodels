@@ -49,9 +49,6 @@ category mapping: [model-sets.md](model-sets.md).
     still carries its input value to its result.
   - *signature* — the descriptive section:
     [model-declarations.md](model-declarations.md).
-- **Name Constraint** — A regular expression over one identity field of a
-  subject kind. Satisfied only when the entire case-folded field matches; a
-  partial match does not satisfy.
 - **Key Pattern** — A regular expression over one array key at a source's
   production site. Satisfied only when the entire key matches,
   case-sensitively — array keys are runtime data, not identifiers, so no

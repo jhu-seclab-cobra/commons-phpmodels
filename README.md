@@ -48,7 +48,7 @@ val document =
 val open = ResourceOpener { path -> mapOf("index.txt" to "models.yaml\n", "models.yaml" to document)[path]?.byteInputStream() }
 val set = DocumentSetLoader.load(open)
 val substr = set.entries.last()
-substr.subject          // FunctionSubject(name=substr)
+substr.subject          // FunctionSubject; toString() = "function substr"
 substr.body.returns     // ReturnKind.STR — derived from the declared return type
 substr.body.propagation // [Propagation(from=argument(0), to=return)]
 set.entries.first().condition?.matches(listOf(StrVal("{}"), BoolVal(true)))  // true

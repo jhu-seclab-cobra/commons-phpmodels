@@ -46,8 +46,9 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
   condition: supplied by the consumer for one set; never stored with the
   set it translates.
 - **Mapped Set** — A document set loaded under a category mapping. Its own
-  vocabulary document, when present, is read only to know which names it
-  uses; none of its declarations join the accumulated vocabulary. Its
+  vocabulary document, when present, is not read: the names the mapping
+  lists are the names the set may use; none of its declarations join the
+  accumulated vocabulary. Its
   policy, when present, is translated like its models.
 
 ## Relations

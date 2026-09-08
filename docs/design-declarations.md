@@ -2,7 +2,7 @@
 
 Software structure of the declaration axis: the signature section types and
 the declared-type vocabulary. Subject spellings and creators:
-[design.md](design.md). Semantics:
+[design-subjects.md](design-subjects.md). Semantics:
 [model-declarations.md](model-declarations.md).
 
 ## Design Overview
@@ -39,7 +39,9 @@ describable kind, holding exactly the fields
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`; a `data class` with a private constructor
   whose companion `invoke` factory — also the Jackson creator — folds the
-  inheritance edges into the stored, compared form ([impl.md](impl.md))
+  inheritance edges into the stored, compared form ([impl.md](impl.md));
+  **Validation (`init`):** `parent`, when present, and every interface
+  name non-blank
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
@@ -71,7 +73,8 @@ caller.
 
 **Responsibility:** One declared parameter: `name: String`,
 `type: DeclaredType`, `optional: Boolean`, `byRef: Boolean`,
-`variadic: Boolean`. A pure data holder; position is list order.
+`variadic: Boolean`. Position is list order. **Validation (`init`):**
+`name` non-blank.
 
 ### DeclaredType
 

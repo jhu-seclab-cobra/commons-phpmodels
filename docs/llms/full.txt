@@ -4,8 +4,6 @@
 
 Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
 
-## Instructions for Agents
-
 - Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
 - Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Read `set.provenance` and rank sets with `Precedence.DEFAULT` (or a consumer-built `Precedence`) before letting a later set override an earlier one; never rank by mount order alone.

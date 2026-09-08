@@ -130,6 +130,9 @@ unit is asserted whole or not at all — the signature-derived completion
 happens in the entry, before construction); a declared section is non-empty.
 
 **Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
+`namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;
+`declaresExplicitSourceSite: Boolean` — a source element declares `at`
+(the port-admissibility predicates `ModelEntry` reads);
 `fun valueSemantics(): ValueSemantics?` — null when returns is undeclared.
 
 ### ValueSemantics

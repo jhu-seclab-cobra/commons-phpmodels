@@ -127,14 +127,12 @@ opener's resources are released regardless of the decode outcome.
 | `@JvmInline value class` over `String` | Decodes from the bare scalar; no custom deserializer | — |
 | `init { require(...) }` violation | Rejected | `ValueInstantiationException` |
 | Unknown enum constant | Rejected — never widens to a default | `InvalidFormatException` |
-| A nested `@JsonTypeInfo` level (`constraint`) on list elements | Decodes each element by its own discriminator | — |
 | `Regex(pattern)` in a property initializer, invalid pattern | Rejected at decode — `PatternSyntaxException` wrapped | `ValueInstantiationException` |
 | `@JsonCreator @JvmStatic fun parse(raw: String)` on a sealed interface companion | Decodes string scalars (`"return"` / `"argument(n)"`) to the sealed subtypes | — |
 | Field typed as the *subtype* (`Port.Argument`) | Does **not** consult the supertype's creator — the subtype needs its own `@JsonCreator` companion factory | `MismatchedInputException` without it |
 | Malformed port string (creator throws `IllegalArgumentException`) | Rejected at decode | `ValueInstantiationException` |
 | Synonym port-pair spellings | All four spellings (`from`/`input`/`to`/`output`) as nullable creator parameters; a require-exactly-one check per side | `ValueInstantiationException` on a doubled or missing side |
 | `@JsonAlias` for the synonym pair | Unusable: a mapping naming both spellings decodes silently, later key overwriting the earlier | — (silent) |
-| `@JsonCreator` companion factory with `@JsonProperty("is")` | The keyword config key binds through the creator-parameter rename | — |
 | Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the condition scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
 | Integral node wider than `Long` | `isIntegralNumber` is true for a `BigInteger` node and `longValue()` silently wraps — `canConvertToLong()` gates the narrowing; out-of-range throws in the creator | `ValueInstantiationException` |
 | Optional `when` field (`@JsonProperty("when")`, nullable `ArgPattern`) on the entry creator | Decodes a sequence when present, stays null when absent | — |
@@ -143,7 +141,7 @@ opener's resources are released regardless of the decode outcome.
 | Unknown wrapper key (`trait: foo`) | Rejected | `InvalidTypeIdException` |
 | `require(...)` inside a wrapper-routed delegating creator | Rejected at decode | `ValueInstantiationException` |
 | `init { require(...) }` in a `@JvmInline value class` | Rejected at decode — the value-class unwrapping path wraps the `IllegalArgumentException` in a plain `JsonMappingException`, **not** `ValueInstantiationException` | `JsonMappingException` |
-| Creator parameters `(kind: String, signature: JsonNode)` + `treeToValue(node, subtype)` inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |
+| Creator parameters `(subject: ModelSubject, signature: JsonNode?)` + `ModelYaml.narrow(node, subtype)` (`treeToValue`) inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |
 | Stray key inside a `treeToValue`-narrowed node | Rejected — the inner failure propagates unwrapped, not re-wrapped as `ValueInstantiationException` | `UnrecognizedPropertyException` |
 | `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters | — |
 | Stray key on a form with an `@JsonUnwrapped` creator parameter | Silently absorbed — the unwrapped path funnels unknown keys past `FAIL_ON_UNKNOWN_PROPERTIES`; a throwing `@JsonAnySetter` on the holder restores rejection | `JsonMappingException` (plain, wrapping the setter's `IllegalArgumentException` — not `UnrecognizedPropertyException`) |
