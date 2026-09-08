@@ -40,9 +40,28 @@ before decoding.
 `getEvent()` until `StreamEndEvent` — the pre-decode event scan.
 `YAMLException` from the scan is wrapped like a decode failure.
 
-**[jackson]** Unquoted guard scalars carry YAML 1.1 semantics: `no`/`off`/
-`on`/`yes` decode as booleans and a zero-prefixed integer (`017`) as octal.
-Quoting forces the string shape; `WhenGuardTest` pins both readings.
+**[jackson]** Unquoted condition scalars carry YAML 1.1 semantics (probe
+2026-09-08 on a `List<JsonNode>` creator): `no` decodes as boolean
+`false`, `017` as integer 15, `0x1F` as 31, `.inf` fails at parse
+("Malformed numeric value"), `_` and `x` as text, `null` and `~` as a null
+node, `99999999999999999999` as an integral node with
+`canConvertToLong() == false`. Quoting forces the string shape;
+`ArgPatternTest` pins the readings the format relies on.
+
+**[jackson]** A creator parameter typed `List<JsonNode>` under
+`@JsonCreator(mode = DELEGATING)` receives a YAML sequence element by
+element; a mapping (`when: {a: 1}`) or a bare scalar (`when: true`) in
+that position fails with `MismatchedInputException` ("Cannot deserialize
+value of type `ArrayList<JsonNode>` from Object value" / "from Boolean
+value"), so the sequence shape needs no check in the creator.
+
+**[commons-value 0.1.1]** `IPrimitiveVal` is a sealed interface over
+`StrVal(core: String)`, `IntVal(core: Long)`, `FloatVal(core: Double)`
+(data classes), `BoolVal` (private constructor; `BoolVal(value)` companion
+`invoke` returns the `T`/`F` singleton), `NullVal` (data object), and the
+`Unsure` enum. Equality is structural per class and never across classes:
+`IntVal(1) != FloatVal(1.0)`. `ArgPattern` stores `IPrimitiveVal?` and
+compares with `==`.
 
 **[jackson]** `Map<String, String>` with a null-valued key (`html:`) decodes
 to a map holding `null` — jackson-module-kotlin enforces non-nullability on
@@ -78,6 +97,11 @@ opener's resources are released regardless of the decode outcome.
 - org.yaml:snakeyaml:2.4 — the event-stream scan rejecting aliases; already
   the YAML backend under `jackson-dataformat-yaml`, declared explicitly
   because `ModelYaml` compiles against it. Catalog alias `snakeyaml`.
+- com.github.jhu-seclab-cobra:commons-value:0.1.1 — the argument scalar
+  types `ArgPattern` holds and consumers match against; `api` scope because
+  `ArgPattern.expected` and `matches` name `IPrimitiveVal`. Resolved from
+  JitPack (`https://jitpack.io`, already in the subproject repositories;
+  the `0.1.1` POM answers 200). Catalog alias `cobra-commons-value`.
 
 ## Developer instructions
 
@@ -97,9 +121,7 @@ opener's resources are released regardless of the decode outcome.
 
 | Contract | Behavior | Failure type |
 |----------|----------|--------------|
-| Sealed interface + `@JsonTypeInfo(Id.DEDUCTION)` + `@JsonSubTypes` over disjoint field sets | Routes `subject`-bearing entries and `name`/`find`/`where`/`model` entries with no `type` tag | — |
-| Entry mixing both forms' fields | Deduction picks one form; the other form's fields fail as unknown properties | `UnrecognizedPropertyException` |
-| Entry with a field of neither form | Deduced form rejects the stray key | `UnrecognizedPropertyException` |
+| One entry form (`ModelEntry` data class, no `@JsonTypeInfo`) | Every entry binds through the one companion creator; a former generator key (`name`, `find`, `where`, `model`) is a stray key | `JsonMappingException` (the any-setter row below) |
 | Unknown discriminator value | Rejected | `InvalidTypeIdException` |
 | Missing non-nullable constructor parameter | Rejected | `MismatchedInputException` |
 | `@JvmInline value class` over `String` | Decodes from the bare scalar; no custom deserializer | — |
@@ -113,17 +135,17 @@ opener's resources are released regardless of the decode outcome.
 | Synonym port-pair spellings | All four spellings (`from`/`input`/`to`/`output`) as nullable creator parameters; a require-exactly-one check per side | `ValueInstantiationException` on a doubled or missing side |
 | `@JsonAlias` for the synonym pair | Unusable: a mapping naming both spellings decodes silently, later key overwriting the earlier | — (silent) |
 | `@JsonCreator` companion factory with `@JsonProperty("is")` | The keyword config key binds through the creator-parameter rename | — |
-| Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the guard scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
+| Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the condition scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
 | Integral node wider than `Long` | `isIntegralNumber` is true for a `BigInteger` node and `longValue()` silently wraps — `canConvertToLong()` gates the narrowing; out-of-range throws in the creator | `ValueInstantiationException` |
-| Optional `when` field (`@param:JsonProperty("when")`, nullable, defaulted) on the flat model form | Decodes when present, stays null when absent; deduction routing unaffected | — |
-| `when` key on the generator form | Rejected — the field belongs to the flat form only | `UnrecognizedPropertyException` |
+| Optional `when` field (`@JsonProperty("when")`, nullable `ArgPattern`) on the entry creator | Decodes a sequence when present, stays null when absent | — |
+| `ArgPattern` `init` failure (empty sequence, all wildcards, nested sequence or mapping element) | Rejected at decode | `ValueInstantiationException` |
 | Sealed interface + `@JsonTypeInfo(Id.NAME, As.WRAPPER_OBJECT)` + `@JsonSubTypes` | One-key mapping (`function: strlen`) routes the wrapper key to the named subtype's delegating string creator | — |
 | Unknown wrapper key (`trait: foo`) | Rejected | `InvalidTypeIdException` |
 | `require(...)` inside a wrapper-routed delegating creator | Rejected at decode | `ValueInstantiationException` |
 | `init { require(...) }` in a `@JvmInline value class` | Rejected at decode — the value-class unwrapping path wraps the `IllegalArgumentException` in a plain `JsonMappingException`, **not** `ValueInstantiationException` | `JsonMappingException` |
 | Creator parameters `(kind: String, signature: JsonNode)` + `treeToValue(node, subtype)` inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |
 | Stray key inside a `treeToValue`-narrowed node | Rejected — the inner failure propagates unwrapped, not re-wrapped as `ValueInstantiationException` | `UnrecognizedPropertyException` |
-| `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters; unwrapped properties count in a `Id.DEDUCTION` fingerprint, so routing is unaffected | — |
+| `@JsonUnwrapped` parameter on a companion `@JsonCreator` (2.19, databind #1467) | Gathers the flat sibling fields into the holder type beside the named creator parameters | — |
 | Stray key on a form with an `@JsonUnwrapped` creator parameter | Silently absorbed — the unwrapped path funnels unknown keys past `FAIL_ON_UNKNOWN_PROPERTIES`; a throwing `@JsonAnySetter` on the holder restores rejection | `JsonMappingException` (plain, wrapping the setter's `IllegalArgumentException` — not `UnrecognizedPropertyException`) |
 | Companion `operator fun invoke` as `@JsonCreator` on a private-constructor `data class` (`@ConsistentCopyVisibility`) | Property-based binding through the factory with defaulted parameters; call sites keep constructor syntax while normalization lives in the factory | — |
 | Doubled key in one mapping (`STRICT_DUPLICATE_DETECTION`) | Rejected at parse — never decodes last-wins, including a doubled synonym spelling (`from:` twice) the `exactlyOne` check cannot see | `JsonParseException` |
