@@ -15,9 +15,9 @@ side also re-invents the loading convention, and a consumer mounting a
 source that names categories on another axis has nowhere to translate them.
 
 **System Role.** commons-phpmodels is the format library — it owns the
-model types, the YAML decoding, the load-time validation, and the merge of
-document sets into one Model Index ([concept-index.md](concept-index.md));
-every analysis (graph lookups, taint queries) belongs to consumers.
+model types, the YAML decoding, and the load-time validation, while every
+analysis (graph lookups, taint queries, layer mounting) belongs to
+consumers.
 
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
@@ -35,11 +35,11 @@ every analysis (graph lookups, taint queries) belongs to consumers.
   validation rule of the format itself; the document-set convention shared
   by every producer and consumer; the category mapping that translates one
   set's names into a consumer's; the set provenance each set declares and
-  the precedence over verification kinds ([concept-provenance.md](concept-provenance.md));
-  the merge that applies precedence and evaluates guards ([concept-index.md](concept-index.md)).
-- **Not Owned:** which sets a consumer mounts and in what order, subject
-  resolution from a program graph, the taint query, artifact compilation,
-  and where a set is stored (classpath, file, artifact) — the caller opens the streams.
+  the precedence over verification kinds ([concept-provenance.md](concept-provenance.md)).
+- **Not Owned:** the fold that applies precedence to entries, branch selection
+  at a call, subject resolution from a program graph, the taint query,
+  artifact compilation, and where a document set is stored (classpath, file,
+  artifact) — the caller opens the streams.
 
 ## Concepts
 
@@ -103,8 +103,8 @@ satisfying its constraints.
 **When Guard** — An optional condition on a model entry: an argument port
 equals one scalar value.
 - Scope: entries for one subject form branches, the unguarded entry being
-  the default; the guard's meaning and its evaluation against guard
-  arguments are fixed here, what an undecided guard means is the consumer's.
+  the default; the guard's meaning is fixed here, selection at a call is
+  consumer behavior.
 - Relationships: attaches to a Model entry; names one Port.
 
 **Origin Color** — A named category of untrusted provenance.
@@ -124,7 +124,7 @@ categories.
   first. A second declaration of a name is admitted only when identical to
   the first: two sets can restate a shared name, never silently disagree.
 - Relationships: referenced by every Model and by the Policy; accumulated
-  across Document Sets by the Model Index.
+  across Document Sets by the consumer.
 
 **Policy** — The global mapping from an origin color to the danger categories
 it can trigger.
@@ -196,5 +196,5 @@ consumer's own vocabulary.
 - **Boundary — conflicting redeclaration.** Two sets both declare `sqli`;
   one describes it differently. The load fails naming the set and the name.
 
-Merge: [concept-index.md](concept-index.md). Domain semantics: [model.md](model.md), [model-declarations.md](model-declarations.md),
+Domain semantics: [model.md](model.md), [model-declarations.md](model-declarations.md),
 [model-guards.md](model-guards.md), [model-sets.md](model-sets.md). Software structure: [design.md](design.md).

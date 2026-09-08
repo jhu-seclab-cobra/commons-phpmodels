@@ -31,7 +31,7 @@ declaration kind, with no nesting of one declaration inside another.
   (string, int, float, bool, array, object, callable, resource, mixed, void,
   null, iterable, or a class name). Stored losslessly; the four-kind returns
   classification is derived from it at load and never stored beside it.
-- **Generated Layer** — The lowest set of a merge ([model-index.md](model-index.md)): files
+- **Generated Layer** — The lowest configuration layer of a consumer: files
   emitted by an extraction producer from upstream stub sources. Structurally
   marked by provenance (directory and file header naming source and producer
   version); never hand-edited — a correction is a higher-layer entry

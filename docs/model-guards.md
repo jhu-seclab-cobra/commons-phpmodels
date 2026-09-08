@@ -23,9 +23,8 @@ Subject, Port, Override Unit: [model.md](model.md).
   no guard holds, every undecided branch plus the default branch when one
   exists.
 - **Guard Context** — What a consumer knows about one call's arguments: the
-  argument count when known, and per position one Guard Argument
-  ([model-index.md](model-index.md)) — the scalar when every interpretation
-  of that argument is one concrete scalar, unknown otherwise. The *unknown
+  argument count when known, and per position the scalar value when every
+  interpretation of that argument is one concrete scalar. The *unknown
   context* knows neither; under it every guard is undecided.
 
 ## Relations
@@ -61,10 +60,9 @@ combine per direction:
 | sanitizers | intersection of neutralized categories; a candidate without the unit neutralizes nothing | never trust a maybe-inactive neutralizer |
 | value semantics | answered only when every candidate declares it: returns joined (equal → itself, else unknown classification), propagations unioned | over-approximate flow |
 
-Selection and combination run in the Model Index
-([model-index.md](model-index.md)); a consumer reads the combined Effective
-Statement and never a branch, so every consumer interprets guarded branches
-identically.
+Selection and combination run in the consumer; the semantics above are the
+format's meaning of a guard, fixed here so every consumer interprets guarded
+branches identically.
 
 ## Invariants
 
@@ -82,7 +80,7 @@ identically.
 - At most one effective declaration exists per (subject, guard, unit): the
   override unit key gains the guard, with "no guard" as the default branch's
   key.
-- Guarded branches keep first-declaration order across sets; overriding a
+- Guarded branches keep first-declaration order across layers; overriding a
   (subject, guard, unit) replaces the unit in place, never reorders.
 - Model generators declare no guard; a generated body serves in the default
   branch's role, per unit, only where no explicit branch declares that unit.
@@ -99,13 +97,11 @@ identically.
 
 - **Guard context is the consumer's knowledge, not the model's.** A model
   states conditions; how precisely a call's arguments are known is a
-  property of the consuming phase, handed to the index as Guard Arguments.
-  The same branches answer differently under different contexts, and the
-  unknown context is always admissible.
+  property of the consuming phase. The same branches answer differently
+  under different contexts, and the unknown context is always admissible.
 - **Branch ≡ complete model.** No section of one branch leaks into another:
   selecting a branch answers every unit from that branch (or the combination
   rule above), never from a sibling.
 
-Rationale: [concept.md](concept.md). Merge and lookup:
-[model-index.md](model-index.md). Software structure:
+Rationale: [concept.md](concept.md). Software structure:
 [design-guards.md](design-guards.md).
