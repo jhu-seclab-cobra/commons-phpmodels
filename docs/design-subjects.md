@@ -1,8 +1,8 @@
 # PHP Models — Subject and Port Design
 
 The declaration-identity types: subjects, ports, and the propagation pair.
-Vocabulary, policy, body, and loaders: [design.md](design.md). Entry forms
-and generators: [design-generators.md](design-generators.md).
+Vocabulary, policy, body, and loaders: [design.md](design.md). The entry
+form: [design-entries.md](design-entries.md).
 
 ## Design Overview
 
@@ -32,9 +32,7 @@ as [design.md](design.md).
 kind, holding exactly that kind's identity fields, case-folded per the table
 in [model-declarations.md](model-declarations.md). Equality over the folded
 identity, so a subject is usable as a lookup key. The interface declares
-`name: String` — every kind has an own name; that shared field is what a
-generator's name constraint matches
-([design-generators.md](design-generators.md)).
+`name: String` — every kind has an own name.
 
 **Structure:** two sealed bases carry the identity mechanics once —
 `NamedSubject(kind, name)` for the name-only kinds,

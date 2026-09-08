@@ -10,6 +10,7 @@
 | model-sets.md | Document sets, accumulated vocabulary, category mapping, set provenance rank. |
 | design.md | Vocabulary, policy, body types, decoder, loaders. |
 | design-subjects.md | Subject kinds, ports, and the propagation pair. |
+| design-entries.md | The entry form, its creator, and entry-level validation. |
 | design-conditions.md | The argument pattern type and its match operation. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
 | design-sets.md | `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, `SetProvenance`, `Precedence`. |

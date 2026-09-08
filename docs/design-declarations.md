@@ -12,8 +12,8 @@ the declared-type vocabulary. Subject spellings and creators:
 - **Classes:** `ParameterInfo`, `DeclaredType` (value class)
 - **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM), `Visibility`
   (PUBLIC, PROTECTED, PRIVATE)
-- **Relationships:** `SubjectModel` contains at most one `SignatureInfo`
-  ([design-generators.md](design-generators.md)); `CallableSignature`
+- **Relationships:** `ModelEntry` contains at most one `SignatureInfo`
+  ([design-entries.md](design-entries.md)); `CallableSignature`
   contains `ParameterInfo`s; `ParameterInfo`, `TypedSignature`, and
   `PropertySignature` contain one `DeclaredType` each. All arrows one-way
   into the data types.
@@ -21,7 +21,7 @@ the declared-type vocabulary. Subject spellings and creators:
   spelling or an unknown declared type ([design.md](design.md)).
 - **Dependency roles:** Data holders: the signature types, `ParameterInfo`,
   `DeclaredType`. Validation: `init` blocks and the entry-level
-  kind-matching rule in `SubjectModel`.
+  kind-matching rule in `ModelEntry`.
 
 Package `edu.jhu.cobra.commons.phpmodels`. All types public — signatures are
 part of the decoded entry surface consumers serve lookups from.
@@ -49,16 +49,16 @@ The subtype is deduced from the subject kind at the entry level — the
 signature key carries no discriminator of its own; entry-level validation
 rejects a signature subtype that does not match the entry's subject kind,
 and rejects `returns:` beside a `CallableSignature` (one fact, one source;
-[design-generators.md](design-generators.md)). It runs with the
+[design-entries.md](design-entries.md)). It runs with the
 section-admissibility validations, before any vocabulary interning by the
 caller.
 
 **Entry-level constraints of a declared `CallableSignature`** (enforced in
-`SubjectModel`, [design-generators.md](design-generators.md)):
+`ModelEntry`, [design-entries.md](design-entries.md)):
 
-- Arity: every argument port the entry names — the guard port, both
-  propagation sides, sink ports, explicit source sites — lies inside the
-  parameter list. Exception: a variadic last parameter admits every
+- Arity: every argument position the entry names — the condition's
+  non-wildcard positions, both propagation sides, sink ports, explicit
+  source sites — lies inside the parameter list. Exception: a variadic last parameter admits every
   position. An entry without a signature is not arity-checked.
 - Write direction: every written-into argument port — a propagation `to:`
   side, a source element's explicit site — names a by-reference parameter.
@@ -108,5 +108,5 @@ vocabulary ([impl.md](impl.md)).
   at decode through the shared load-boundary contract
   ([design.md](design.md)).
 
-Semantics: [model-declarations.md](model-declarations.md). Entry forms:
-[design-generators.md](design-generators.md).
+Semantics: [model-declarations.md](model-declarations.md). The entry form:
+[design-entries.md](design-entries.md).

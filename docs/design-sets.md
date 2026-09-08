@@ -8,7 +8,7 @@ The types loading one document set and translating its names. Semantics:
 
 - **Classes:** `DocumentSet`, `Document`, `DocumentSetLoader` (object),
   `CategoryMapping`, `CategoryMappingLoader` (object), `SetProvenance`,
-  `Verification` (enum), `Precedence`, `ProvenanceLoader` (object)
+  `Verification` (enum), `Precedence`, `ProvenanceLoader` (internal object)
 - **Abstract:** `ResourceOpener` (`fun interface`; implemented by callers
   over classpath, file system, or archive)
 - **Relationships:** `DocumentSet` contains one `Vocabulary`, a list of
@@ -28,11 +28,13 @@ The types loading one document set and translating its names. Semantics:
 - **Dependency roles:** Data holders: `DocumentSet`, `Document`,
   `CategoryMapping`, `SetProvenance`, `Precedence`. Orchestrator:
   `DocumentSetLoader`. Contract: `ResourceOpener`. Loaders:
-  `CategoryMappingLoader`, `ProvenanceLoader`.
+  `CategoryMappingLoader` (public: a consumer decodes its own mapping
+  document), `ProvenanceLoader` (internal).
 
-Package `edu.jhu.cobra.commons.phpmodels`. All public. Additive: the three
-existing loaders keep their signatures and remain the decode surface for
-one document; `DocumentSetLoader` composes them.
+Package `edu.jhu.cobra.commons.phpmodels`. The two public loaders,
+`DocumentSetLoader` and `CategoryMappingLoader`, are the whole decode
+surface; the single-document loaders they compose are internal
+([design.md](design.md)).
 
 Value placement: the four fixed file names are constants on
 `DocumentSetLoader` (`MANIFEST`, `VOCABULARY`, `POLICY`, `PROVENANCE`),
@@ -101,7 +103,7 @@ highest first. `companion val DEFAULT = Precedence(listOf(MANUAL, GENERATED))`.
 **Validation (`init`):** `order` lists every `Verification` exactly once
 (`IllegalArgumentException`).
 
-### ProvenanceLoader
+### ProvenanceLoader (internal)
 
 **Responsibility:** Decode one provenance document.
 
@@ -115,14 +117,14 @@ the decode with `IllegalArgumentException`.
 **Responsibility:** One translation table, both axes.
 
 **State/Fields:** `val categories: Map<VulnClassId, VulnClassId?>`,
-`val provenances: Map<ProvenanceId, ProvenanceId?>` — a `null` target marks
-a discarded name.
+`val origins: Map<OriginId, OriginId?>` (YAML section `provenances:`) — a
+`null` target marks a discarded name.
 
 **Methods:**
 - `fun category(source: VulnClassId): VulnClassId?` — the target, or `null`
   when discarded. **Errors:** `VocabularyException` when `source` is
   unlisted.
-- `fun provenance(source: ProvenanceId): ProvenanceId?` — likewise.
+- `fun origin(source: OriginId): OriginId?` — likewise.
 - `fun apply(entry: ModelEntry): ModelEntry?` — the entry translated per
   [model-sets.md](model-sets.md); `null` when translation empties it.
 - `fun apply(rows: List<PolicyRow>): List<PolicyRow>` — rows translated,
@@ -190,5 +192,5 @@ consumers currently write by hand into the authority that owns the sets.
   name and the document), unmapped name (names the name and the set),
   mapping target undeclared (names the target).
 
-Domain semantics: [model-sets.md](model-sets.md). Entry forms:
-[design-generators.md](design-generators.md).
+Domain semantics: [model-sets.md](model-sets.md). The entry form:
+[design-entries.md](design-entries.md).

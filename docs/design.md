@@ -2,23 +2,23 @@
 
 The assertion-axis types: vocabulary, policy, and the sectioned model body.
 Subjects, ports, and propagations: [design-subjects.md](design-subjects.md).
-Entry forms and generators: [design-generators.md](design-generators.md).
-Guards: [design-guards.md](design-guards.md). Signatures:
+The entry form: [design-entries.md](design-entries.md). Conditions:
+[design-conditions.md](design-conditions.md). Signatures:
 [design-declarations.md](design-declarations.md). Document sets and
 category mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
-- **Classes:** `VulnClassId`, `ProvenanceId` (value classes), `VulnClassDecl`,
-  `ProvenanceDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `KeyPattern`,
-  `SourceDecl`, `SinkPoint`, `SanitizerDecl`, `ModelBody`, `ValueSemantics`,
-  `ModelYaml` (internal object), `VocabularyLoader` (object), `PolicyLoader`
-  (object), `ModelLoader` (object)
+- **Classes:** `VulnClassId`, `OriginId` (value classes), `VulnClassDecl`,
+  `OriginDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `KeyPattern`,
+  `SourceDecl`, `SinkDecl`, `SanitizerDecl`, `ModelBody`, `ValueSemantics`,
+  `ModelYaml`, `VocabularyLoader`, `PolicyLoader`, `ModelLoader` (the last
+  four internal objects)
 - **Sealed hierarchies:** `ModelSubject` and `Port` — specified in
   [design-subjects.md](design-subjects.md)
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
-  `SinkPoint` contains one `Port.Argument` and one `VulnClassId`;
+  `SinkDecl` contains one `Port.Argument` and one `VulnClassId`;
   `SourceDecl` contains an optional `Port.Argument` site override and
   optional `KeyPattern`s; `TaintPolicy` is built from `PolicyRow`s; the
   three loaders decode through `ModelYaml`. All arrows one-way into the
@@ -28,26 +28,30 @@ category mapping: [design-sets.md](design-sets.md).
   `IllegalArgumentException` from `init` blocks and creators on every other
   format violation.
 - **Dependency roles:** Data holders: all model types. Decoder: `ModelYaml`.
-  Loaders: `VocabularyLoader`, `PolicyLoader`, `ModelLoader`. Consumers live
-  outside this library.
+  Single-document loaders: `VocabularyLoader`, `PolicyLoader`,
+  `ModelLoader`, composed by `DocumentSetLoader`
+  ([design-sets.md](design-sets.md)). Consumers live outside this library.
 
 Package `edu.jhu.cobra.commons.phpmodels`, single module, `explicitApi()`.
 Every model type is public — exposing them is the library's purpose.
-`ModelYaml` is internal: no Jackson type crosses the public API, so Jackson
-stays an `implementation` dependency. Dependencies: Jackson
-(`jackson-dataformat-yaml`, `jackson-module-kotlin`) only. No dependency on
-any analyzer or value-lattice library.
+`ModelYaml` and the single-document loaders are internal: no Jackson type
+crosses the public API, so Jackson stays an `implementation` dependency,
+and the set is the only unit a consumer loads. Dependencies: Jackson
+(`jackson-dataformat-yaml`, `jackson-module-kotlin`) as `implementation`;
+commons-value as `api`, for the scalars a condition compares
+([design-conditions.md](design-conditions.md)). No dependency on any
+analyzer.
 
 ## Class / Type Specifications
 
-### VulnClassId, ProvenanceId
+### VulnClassId, OriginId
 
 **Responsibility:** Interned reference tokens (`@JvmInline value class` over
 `String`, lowercased) for a declared danger category and origin color.
 Replace raw strings past the load boundary so a name mismatch cannot occur
 downstream. Decode from the bare scalar.
 
-### VulnClassDecl, ProvenanceDecl
+### VulnClassDecl, OriginDecl
 
 **Responsibility:** One declared vocabulary entry: interned identity plus a
 human description that self-documents the file and enriches the
@@ -59,12 +63,12 @@ undeclared-reference error message.
 category and color names exist.
 
 **State/Fields:** `vulnClasses: Map<VulnClassId, VulnClassDecl>`,
-`provenances: Map<ProvenanceId, ProvenanceDecl>`.
+`origins: Map<OriginId, OriginDecl>` (YAML section `provenances:`).
 
 **Methods:**
 - `fun requireVulnClass(raw: String): VulnClassId` — interns and validates;
   `VocabularyException` when undeclared.
-- `fun requireProvenance(raw: String): ProvenanceId` — same for colors.
+- `fun requireOrigin(raw: String): OriginId` — same for colors.
 
 ### PolicyRow, TaintPolicy
 
@@ -83,13 +87,13 @@ asserts nothing, like every other empty declared section.
 produced color set, an optional explicit production site, and optional key
 patterns restricting production to matching array keys.
 
-**State/Fields:** `provenance: Set<ProvenanceId>`, `at: Port.Argument?`
+**State/Fields:** `origin: Set<OriginId>` (YAML key `provenance:`), `at: Port.Argument?`
 (null = the kind-fixed default site, [model.md](model.md)),
 `keys: List<KeyPattern>?`.
 
-**Validation (`init`):** `provenance` non-empty; a declared `keys` list
+**Validation (`init`):** `origin` non-empty; a declared `keys` list
 non-empty. Whether the subject admits an explicit site is entry-level
-validation ([design-generators.md](design-generators.md)).
+validation ([design-entries.md](design-entries.md)).
 
 ### KeyPattern
 
@@ -101,24 +105,24 @@ equality). Decoded from the bare pattern scalar.
 **Methods:** `fun matches(key: String): Boolean` — entire-key,
 case-sensitive match, never a substring match.
 
-### SinkPoint, SanitizerDecl
+### SinkDecl, SanitizerDecl
 
-**Responsibility:** One element of the sinks / sanitizers sections: one
-dangerously consumed argument port under one category; a non-empty
-neutralized category set.
+**Responsibility:** One element of the sinks / sanitizers sections:
+`SinkDecl(port: Port.Argument, vulnClass: VulnClassId)` — one dangerously
+consumed argument port under one category (YAML key `category:`);
+`SanitizerDecl(categories: Set<VulnClassId>)` — a non-empty neutralized
+category set.
 
 ### ModelBody
 
 **Responsibility:** The sectioned statement of one model: five optional
-assertion sections. One shape shared by the flat entry and the generator
-body, so a body written in either form carries the same validation. An
-all-absent body is constructible — a signature-only entry has one — and the
-at-least-one-section rule therefore lives at the entry level, where the
-signature is visible: `SubjectModel` requires a signature or a non-empty
-body, `ModelGenerator` requires a non-empty body.
+assertion sections. An all-absent body is constructible — a signature-only
+entry has one — and the at-least-one-section rule therefore lives at the
+entry level, where the signature is visible: `ModelEntry` requires a
+signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
-`sources: List<SourceDecl>?`, `sinks: List<SinkPoint>?`,
+`sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
 `sanitizers: List<SanitizerDecl>?`.
 
 **Validation (`init`):** propagation requires returns (the value-semantics
@@ -156,15 +160,14 @@ failure, never a silent drop. Reads the stream as UTF-8 and rejects any
 YAML alias before decoding — Jackson substitutes a scalar alias with its
 anchor's name, not the anchored value ([impl.md](impl.md)), so an alias
 would corrupt silently. Wraps every `JsonProcessingException` in
-`IllegalArgumentException` with the underlying reason. Internal — the three
-loaders are the public surface, so no Jackson type crosses the API.
+`IllegalArgumentException` with the underlying reason. Internal, so no
+Jackson type crosses the API.
 
-### VocabularyLoader, PolicyLoader, ModelLoader
+### VocabularyLoader, PolicyLoader, ModelLoader (internal)
 
-**Responsibility:** The public decode surface, one loader per document kind,
-each reading a caller-supplied `InputStream`. Where the documents live —
-classpath resource, file, artifact — is the caller's value placement, not
-this library's.
+**Responsibility:** One decoder per document kind, each reading an
+`InputStream` the set loader opens. Internal: a consumer loads a set, never
+a single document, so the set loader is the only place these run.
 
 **Methods:**
 - `VocabularyLoader.load(input): Vocabulary` — interns names; a repeated
@@ -173,10 +176,11 @@ this library's.
 - `PolicyLoader.load(input, vocabulary): List<PolicyRow>` — validates every
   row tag against the supplied vocabulary.
 - `ModelLoader.load(input): List<ModelEntry>` — decodes one model document's
-  entries ([design-generators.md](design-generators.md)); construction-time
-  validation runs during the decode. Vocabulary interning of the entries'
-  color and category references stays with the caller, which owns the
-  cross-document load order.
+  entries ([design-entries.md](design-entries.md)); construction-time
+  validation runs during the decode; two entries sharing subject and
+  condition are rejected (`IllegalArgumentException` naming the subject).
+  Vocabulary verification of the entries' color and category references
+  runs in the set loader, which owns the cross-document load order.
 
 ## Exception / Error Types
 
@@ -187,5 +191,5 @@ this library's.
   `init` blocks and creators while Jackson instantiates, so one catch at the
   caller's load boundary covers every decode failure ([impl.md](impl.md)).
 
-Domain semantics: [model.md](model.md). Entry forms:
-[design-generators.md](design-generators.md).
+Domain semantics: [model.md](model.md). The entry form:
+[design-entries.md](design-entries.md).
