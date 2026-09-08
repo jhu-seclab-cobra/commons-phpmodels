@@ -4,7 +4,7 @@
 
 Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
 
-![Kotlin JVM](https://img.shields.io/badge/Kotlin%20JVM-2.2.21%20%7C%20JVM%2021-blue?logo=kotlin)
+![Kotlin JVM](https://img.shields.io/badge/Kotlin%20JVM-2.4.20%20%7C%20JVM%2021-blue?logo=kotlin)
 [![Release](https://img.shields.io/badge/release-v0.4.0-blue.svg)](https://github.com/jhu-seclab-cobra/commons-phpmodels/releases)
 [![last commit](https://img.shields.io/github/last-commit/jhu-seclab-cobra/commons-phpmodels)](https://github.com/jhu-seclab-cobra/commons-phpmodels/commits/main)
 [![license](https://img.shields.io/badge/license-GPL--2.0-blue.svg)](./LICENSE)
