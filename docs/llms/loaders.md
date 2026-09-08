@@ -1,31 +1,31 @@
 # Loaders
 
-> Public decode surface: one loader object per document kind, reading a caller-supplied `InputStream`.
+> Public decode surface: `DocumentSetLoader` over one document set, `CategoryMappingLoader` over a consumer's mapping document.
 
 ## Quick Start
 
 ```kotlin
-val vocabulary = VocabularyLoader.load(vocabYaml.byteInputStream())
-val policy = PolicyLoader.load(policyYaml.byteInputStream(), vocabulary)
-val entries = ModelLoader.load(modelsYaml.byteInputStream())
+val set = DocumentSetLoader.load(opener, context = Vocabulary.EMPTY)
+val mapping = CategoryMappingLoader.load(mappingYaml.byteInputStream())
+val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mapping = mapping)
 ```
 
 ## API
 
-- **`ModelLoader.load(input: InputStream): List<ModelEntry>`** — Decodes one model document's entries in file order. Raises `IllegalArgumentException` on any format violation.
-- **`VocabularyLoader.load(input: InputStream): Vocabulary`** — Decodes the two-axis vocabulary. Raises `VocabularyException` when a name repeats within a section.
-- **`PolicyLoader.load(input: InputStream, vocabulary: Vocabulary): List<PolicyRow>`** — Decodes policy rows, interning every tag against `vocabulary`. Raises `VocabularyException` on an undeclared color or category.
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
+- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes a consumer's translation table.
+
+The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, `ProvenanceLoader`) are internal: a consumer loads a set, never a single document.
 
 ## Configuration
 
-- No configuration. Document location — classpath resource, file, artifact — is the caller's choice; loaders take streams only.
+- No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
 - Vocabulary document keys: `vulnClasses`, `provenances`; each entry carries `name` and `description`.
-- Policy row keys: `origin` (one provenance name), `enables` (list of vuln-class names).
+- Policy row keys: `origin` (one origin-color name), `enables` (list of vuln-class names).
 
 ## Gotchas
 
 - Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
-- The input stream is consumed by the load call and not closed; close it yourself, or load through `DocumentSetLoader`, which closes every stream it opens.
-- `VocabularyException` extends `IllegalArgumentException`; one catch covers both.
-- `ModelLoader` does not check the color and category names inside decoded entries — call `Vocabulary.verify(entry)` after loading, or load the whole set through `DocumentSetLoader` ([sets.md](sets.md)).
-- Load order: vocabulary first, then policy; model documents load independently.
+- `VocabularyException` and `DocumentSetException` extend `IllegalArgumentException`; one catch covers all.
+- Every stream the opener yields is closed by the set load; the mapping loader consumes its stream without closing it.
+- Load order inside a set: provenance, vocabulary, policy, then model documents in manifest order; every entry is verified against the accumulated vocabulary.

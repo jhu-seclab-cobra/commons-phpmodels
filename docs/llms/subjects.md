@@ -6,7 +6,7 @@
 
 ```kotlin
 val subject = MethodSubject.parse("mysqli::query")
-val model = ModelLoader.load(yaml.byteInputStream()).single() as SubjectModel
+val model = DocumentSetLoader.load(opener).entries.single()
 model.subject == subject
 ```
 

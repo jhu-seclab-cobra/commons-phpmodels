@@ -22,13 +22,13 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 - **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice, listed document malformed — the decode failure is the cause), `VocabularyException` (conflicting redeclaration, undeclared reference naming the document, undeclared mapping target, unlisted mapped name), `IllegalArgumentException` (malformed vocabulary, policy, or mapping document).
 - **`DocumentSetLoader.MANIFEST`**, **`VOCABULARY`**, **`POLICY`**, **`PROVENANCE`** — The four fixed file names, directly under the root.
 - **`DocumentSet(vocabulary: Vocabulary, policy: List<PolicyRow>, documents: List<Document>, provenance: SetProvenance? = null)`** — `vocabulary` is what this set contributed (empty for a mapped set); `entries` flattens the documents in order; `provenance` is null when `provenance.yaml` is absent.
-- **`ProvenanceLoader.load(input: InputStream): SetProvenance`** — Decodes `producer:` and `verification:`. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
+- `provenance.yaml` decodes `producer:` and `verification:` inside the set load. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
 - **`SetProvenance(producer: String, verification: Verification)`** — One set's declared provenance; `producer` non-blank.
 - **`Verification`** — `GENERATED`, `MANUAL`.
 - **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind)` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
 - **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
 - **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes two maps, `categories:` and `provenances:`, source name to target name or the literal `ignore`.
-- **`CategoryMapping.category(source)`**, **`provenance(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
+- **`CategoryMapping.category(source)`**, **`origin(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
 - **`CategoryMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
 - **`CategoryMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
 - **`DocumentSetException(path, detail, cause?)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
@@ -43,7 +43,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 
 - Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
 - With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
-- Translation never touches subjects, ports, guards, signatures, value semantics, or the set provenance.
-- `SetProvenance` is where a set's statements come from; `ProvenanceId` is the origin color of a tainted value. Neither substitutes for the other.
+- Translation never touches subjects, ports, conditions, signatures, value semantics, or the set provenance.
+- `SetProvenance` is where a set's statements come from; `OriginId` is the origin color of a tainted value. Neither substitutes for the other.
 - The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
 - Every stream the opener yields is closed by the load, whether or not the decode succeeds.

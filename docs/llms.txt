@@ -2,29 +2,27 @@
 
 > Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. Three loader objects decode YAML documents into immutable typed entries, and `DocumentSetLoader` composes them over one document set (manifest, optional vocabulary, policy, and provenance, listed documents), optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. Consumers own document location, layer ordering, the fold that applies `Precedence` to two sets' entries, and every query over the decoded entries.
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
 
 ## Instructions for Agents
 
-- Call `ModelLoader.load(input)` to decode a model document into `List<ModelEntry>`.
-- Call `VocabularyLoader.load(input)` before `PolicyLoader.load(input, vocabulary)` — the policy validates against the vocabulary.
 - Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
 - Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Read `set.provenance` and rank sets with `Precedence.DEFAULT` (or a consumer-built `Precedence`) before letting a later set override an earlier one; never rank by mount order alone.
 - Ship `provenance.yaml` beside `index.txt` in every published set; state `verification: generated` for extraction output and `manual` for hand-reviewed entries.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
-- Call `Vocabulary.verify(entry)` on entries decoded by `ModelLoader` alone — `DocumentSetLoader` verifies every entry it returns.
+- Convert a call's arguments to `List<IPrimitiveVal?>` (null or `Unsure` for an unknown argument) and call `entry.condition?.matches(args)`; decide what an undecidable `null` means in the consumer, never in the data.
 - Never write `returns:` beside a callable `signature:` in a model file — load failure.
 - Never hand-build subject instances from split strings — pass the PHP-native spelling to the subtype creator.
 
 ## Loading
 
-- [Loaders](llms/loaders.md): The three loader objects, their inputs, and decode strictness.
+- [Loaders](llms/loaders.md): The two public loader objects, their inputs, and decode strictness.
 - [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
 
 ## Decoded Types
 
-- [Entries and Bodies](llms/entries.md): `ModelEntry`, `SubjectModel`, `ModelGenerator`, `ModelBody`, guards, ports, propagation.
+- [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation.
 - [Subjects and Signatures](llms/subjects.md): The seven subject kinds, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
 - [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, interned identifiers, `TaintPolicy`.
 
