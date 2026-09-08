@@ -5,6 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * The translation table of model-sets.md "Translation of One Entry".
@@ -14,9 +15,14 @@ import kotlin.test.assertNull
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
  * - `value semantics pass through` — returns and propagation are untouched.
+ * - `subject condition signature and ports pass through` — translation
+ *   touches names only.
+ * - `category and origin translate directly` — mapped name, discarded
+ *   name as null.
  * - `policy …` — origin and categories replaced; discarded origin or
  *   emptied enables drops the row.
- * - `unlisted name fails` — an unlisted name is a failure, not a pass-through.
+ * - `unlisted name fails` — an unlisted name is a failure, not a pass-through;
+ *   the failure names the name, on an entry, a row, and a direct lookup.
  */
 internal class CategoryMappingTest {
     private val mapping =
@@ -137,9 +143,59 @@ internal class CategoryMappingTest {
     }
 
     @Test
+    fun `subject condition signature and ports pass through`() {
+        val entry =
+            model(
+                """
+                when: [_, true]
+                signature:
+                  params:
+                    - name: query
+                      type: string
+                    - name: mode
+                      type: bool
+                    - name: out
+                      type: array
+                      byRef: true
+                  returnType: string
+                sinks:
+                  - port: argument(0)
+                    category: sql
+                sources:
+                  - provenance: [input]
+                    at: argument(2)
+                    keys: ["k.*"]
+                """,
+            )
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
+        assertEquals(entry.subject, translated.subject)
+        assertEquals(entry.condition, translated.condition)
+        assertEquals(entry.signature, translated.signature)
+        assertEquals(entry.body.sinks?.map { it.port }, translated.body.sinks?.map { it.port })
+        val source = translated.body.sources!!.single()
+        assertEquals(Port.Argument(2), source.at)
+        assertEquals(listOf(KeyPattern("k.*")), source.keys)
+    }
+
+    @Test
+    fun `category and origin translate directly`() {
+        assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
+        assertNull(mapping.category(VulnClassId("text")))
+        assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
+        assertNull(mapping.origin(OriginId("env")))
+    }
+
+    @Test
     fun `unlisted name fails`() {
         val entry = model("sinks:\n  - port: argument(0)\n    category: shell")
-        assertFailsWith<VocabularyException> { mapping.apply(entry) }
+        val onEntry = assertFailsWith<VocabularyException> { mapping.apply(entry) }
+        assertTrue("shell" in onEntry.message.orEmpty(), onEntry.message)
+        val strayOrigin = listOf(PolicyRow(OriginId("remote"), setOf(VulnClassId("sql"))))
+        val onRow = assertFailsWith<VocabularyException> { mapping.apply(strayOrigin) }
+        assertTrue("remote" in onRow.message.orEmpty(), onRow.message)
+        val strayCategory = listOf(PolicyRow(OriginId("input"), setOf(VulnClassId("shell"))))
+        assertFailsWith<VocabularyException> { mapping.apply(strayCategory) }
+        assertFailsWith<VocabularyException> { mapping.category(VulnClassId("shell")) }
         assertFailsWith<VocabularyException> { mapping.origin(OriginId("remote")) }
     }
 }

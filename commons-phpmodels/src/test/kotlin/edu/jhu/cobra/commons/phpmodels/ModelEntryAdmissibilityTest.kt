@@ -6,9 +6,14 @@ import kotlin.test.assertFailsWith
 
 /**
  * Subject-kind admissibility of decoded entries: which sections, conditions, and
- * ports each subject kind admits.
+ * ports each subject kind admits (design-entries.md). Direct-construction
+ * path: [ModelEntryTest].
  *
  * - `variable entry declaring a sink is rejected` — sources-only kinds.
+ * - `value-producing kinds decode a sources section` — constant, class
+ *   constant, property, and variable declare sources.
+ * - `non-callable entry declaring returns is rejected` — value semantics
+ *   belong to callables.
  * - `class entry declaring sources is rejected` — a class asserts nothing
  *   besides its signature.
  * - `condition on a non-callable subject is rejected` — conditions are callable-only.
@@ -27,7 +32,7 @@ import kotlin.test.assertFailsWith
  *   `return` site is a load failure; the return site is the implicit
  *   default.
  */
-internal class ModelLoaderAdmissibilityTest {
+internal class ModelEntryAdmissibilityTest {
     @Test
     fun `variable entry declaring a sink is rejected`() {
         assertFailsWith<IllegalArgumentException> {
@@ -38,6 +43,55 @@ internal class ModelLoaderAdmissibilityTest {
                   sinks:
                     - port: argument(0)
                       category: sqli
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `value-producing kinds decode a sources section`() {
+        val entries =
+            load(
+                """
+                - subject:
+                    constant: PHP_EOL
+                  sources:
+                    - provenance: [environment]
+                - subject:
+                    class_constant: mysqli::MYSQLI_REPORT_ERROR
+                  sources:
+                    - provenance: [environment]
+                - subject:
+                    property: mysqli::${'$'}insert_id
+                  sources:
+                    - provenance: [environment]
+                - subject:
+                    variable: ${'$'}_GET
+                  sources:
+                    - provenance: [remote]
+                """.trimIndent(),
+            )
+        assertEquals(4, entries.size)
+        assertEquals(true, entries.all { it.body.declaresOnlySources })
+    }
+
+    @Test
+    fun `non-callable entry declaring returns is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    constant: PHP_EOL
+                  returns: str
+                """.trimIndent(),
+            )
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    property: mysqli::${'$'}insert_id
+                  returns: num
                 """.trimIndent(),
             )
         }

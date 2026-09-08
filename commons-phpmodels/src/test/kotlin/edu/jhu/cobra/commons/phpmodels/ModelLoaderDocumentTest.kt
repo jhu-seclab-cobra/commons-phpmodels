@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 /**
  * Document-stream and YAML-text strictness of [ModelLoader]: what the loader
@@ -13,8 +14,6 @@ import kotlin.test.assertIs
  * - `empty stream is rejected` — no document is a load failure, not an empty
  *   list.
  * - `root mapping is rejected` — the document root is a sequence of entries.
- * - `empty sequence loads as the empty list` — `[]` pins the current
- *   behavior; the docs do not fix this case.
  * - `merge key is rejected` — `<<` is a key outside the entry's closed field
  *   set.
  * - `unknown returns vocabulary is rejected` — `returns` admits the closed
@@ -22,7 +21,8 @@ import kotlin.test.assertIs
  * - `two entries for one subject load as alternatives` — an unconditional
  *   and a conditional entry for one subject both load, in declaration order.
  * - `two entries sharing subject and condition are rejected` — the
- *   (subject, condition) key is unique within one document.
+ *   (subject, condition) key is unique within one document; the failure
+ *   names the subject.
  * - `alias value is rejected` — an alias never substitutes an anchored
  *   value silently.
  * - `block scalar spelling is rejected` — a literal block scalar carries a
@@ -45,11 +45,6 @@ internal class ModelLoaderDocumentTest {
                 """.trimIndent(),
             )
         }
-    }
-
-    @Test
-    fun `empty sequence loads as the empty list`() {
-        assertEquals(emptyList(), load("[]"))
     }
 
     @Test
@@ -103,18 +98,20 @@ internal class ModelLoaderDocumentTest {
 
     @Test
     fun `two entries sharing subject and condition are rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: json_decode
-                  returns: str
-                - subject:
-                    function: json_decode
-                  returns: any
-                """.trimIndent(),
-            )
-        }
+        val failure =
+            assertFailsWith<IllegalArgumentException> {
+                load(
+                    """
+                    - subject:
+                        function: json_decode
+                      returns: str
+                    - subject:
+                        function: json_decode
+                      returns: any
+                    """.trimIndent(),
+                )
+            }
+        assertTrue("json_decode" in failure.message.orEmpty(), failure.message)
         assertFailsWith<IllegalArgumentException> {
             load(
                 """

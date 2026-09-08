@@ -22,6 +22,12 @@ import kotlin.test.assertNotEquals
  * - `class signature rejects blank inheritance names` — a blank parent or
  *   interface fails.
  * - `parameter rejects a blank name` — parameter identity is non-blank.
+ * - `parameter flags default to false` — optional, by-reference, and
+ *   variadic are opt-in.
+ * - `typed signature value defaults to null` — a constant without a literal.
+ * - `property signature static defaults to false` — instance is the default.
+ * - `callable signature params default to empty` — a nullary callable.
+ * - `declared type spells its raw text` — toString is the declared spelling.
  * - `class signatures compare by folded fields` — equality and hash code
  *   over classifier, folded parent, and folded interfaces.
  * - `class signature spells its fields` — the toString form.
@@ -52,6 +58,14 @@ internal class SignatureInfoTest {
         "void, ANY",
         "never, ANY",
         "self, ANY",
+        "mixed, ANY",
+        "object, ANY",
+        "callable, ANY",
+        "resource, ANY",
+        "null, ANY",
+        "iterable, ANY",
+        "static, ANY",
+        "false, ANY",
     )
     fun `declared type derives its return classification`(
         raw: String,
@@ -106,5 +120,33 @@ internal class SignatureInfoTest {
             "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable])",
             SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable")).toString(),
         )
+    }
+
+    @Test
+    fun `parameter flags default to false`() {
+        val parameter = ParameterInfo("value", DeclaredType("string"))
+        assertEquals(false, parameter.optional)
+        assertEquals(false, parameter.byRef)
+        assertEquals(false, parameter.variadic)
+    }
+
+    @Test
+    fun `typed signature value defaults to null`() {
+        assertEquals(null, SignatureInfo.TypedSignature(DeclaredType("int")).value)
+    }
+
+    @Test
+    fun `property signature static defaults to false`() {
+        assertEquals(false, SignatureInfo.PropertySignature(DeclaredType("int"), Visibility.PRIVATE).static)
+    }
+
+    @Test
+    fun `callable signature params default to empty`() {
+        assertEquals(emptyList(), SignatureInfo.CallableSignature(returnType = DeclaredType("void")).params)
+    }
+
+    @Test
+    fun `declared type spells its raw text`() {
+        assertEquals("\\Foo\\Bar", DeclaredType("\\Foo\\Bar").toString())
     }
 }

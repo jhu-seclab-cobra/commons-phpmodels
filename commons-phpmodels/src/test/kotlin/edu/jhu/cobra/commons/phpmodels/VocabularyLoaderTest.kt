@@ -14,6 +14,9 @@ import kotlin.test.assertFailsWith
  * - `one name may appear in both sections` — uniqueness is per section, not
  *   per document.
  * - `stray key is rejected` — strict decode.
+ * - `missing section is rejected` — both sections are required.
+ * - `descriptions are kept` — the human text travels with the declaration.
+ * - `empty sections decode to the empty vocabulary` — `[]` declares nothing.
  * - `require methods validate references` — declared names intern
  *   case-insensitively; undeclared names fail.
  */
@@ -92,5 +95,23 @@ internal class VocabularyLoaderTest {
         assertEquals(OriginId("remote"), vocabulary.requireOrigin("remote"))
         assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
         assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
+    }
+
+    @Test
+    fun `missing section is rejected`() {
+        assertFailsWith<IllegalArgumentException> { load("vulnClasses: []\n") }
+        assertFailsWith<IllegalArgumentException> { load("provenances: []\n") }
+    }
+
+    @Test
+    fun `descriptions are kept`() {
+        val vocabulary = load(document)
+        assertEquals("SQL injection", vocabulary.vulnClasses.getValue(VulnClassId("sqli")).description)
+        assertEquals("Remote user input", vocabulary.origins.getValue(OriginId("remote")).description)
+    }
+
+    @Test
+    fun `empty sections decode to the empty vocabulary`() {
+        assertEquals(Vocabulary.EMPTY, load("vulnClasses: []\nprovenances: []\n"))
     }
 }

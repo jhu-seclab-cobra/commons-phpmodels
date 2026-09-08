@@ -10,6 +10,7 @@ import edu.jhu.cobra.commons.value.Unsure
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 /**
  * Decode and match contract of the `when:` condition (design-conditions.md).
@@ -18,13 +19,21 @@ import kotlin.test.assertFailsWith
  *   null, and text elements narrow to the wildcard and the commons-value
  *   primitives; the YAML 1.1 readings (`no`, `017`, `0x1F`) are pinned.
  * - `quoted scalar keeps the string shape` — quoting forces `StrVal`.
+ * - `quoted underscore is still the wildcard` — the text `_` is never a
+ *   condition.
+ * - `integer beyond Long range reads as a float` — the compared value never
+ *   truncates silently; it widens to the float shape.
+ * - `non-finite float spelling is rejected` — `.inf` is not a comparable
+ *   literal.
  * - `empty pattern is rejected`, `all-wildcard pattern is rejected`,
  *   `non-scalar element is rejected`, `unsure element is rejected` — the
  *   construction rules.
  * - `mapping condition is rejected` — the retired `port`/`is` form fails.
+ * - `positions lists every non-wildcard position` — the derived view.
+ * - `patterns compare by their expected list` — equality and hash code.
  * - `matches …` — holds, fails, and undecidable outcomes, including a
  *   failing position deciding over an unknown one, a pattern longer than
- *   the call, and cross-type inequality.
+ *   the call, cross-type inequality, and `NullVal` as a known argument.
  */
 internal class ArgPatternTest {
     private fun condition(yaml: String): ArgPattern? =
@@ -57,6 +66,21 @@ internal class ArgPatternTest {
     }
 
     @Test
+    fun `quoted underscore is still the wildcard`() {
+        assertEquals(ArgPattern(listOf(null, IntVal(1))), condition("[\"_\", 1]"))
+    }
+
+    @Test
+    fun `integer beyond Long range reads as a float`() {
+        assertEquals(ArgPattern(listOf(FloatVal(1.0e26))), condition("[99999999999999999999999999]"))
+    }
+
+    @Test
+    fun `non-finite float spelling is rejected`() {
+        assertFailsWith<IllegalArgumentException> { condition("[.inf]") }
+    }
+
+    @Test
     fun `empty pattern is rejected`() {
         assertFailsWith<IllegalArgumentException> { condition("[]") }
         assertFailsWith<IllegalArgumentException> { ArgPattern(emptyList()) }
@@ -65,6 +89,7 @@ internal class ArgPatternTest {
     @Test
     fun `all-wildcard pattern is rejected`() {
         assertFailsWith<IllegalArgumentException> { condition("[_, _]") }
+        assertFailsWith<IllegalArgumentException> { ArgPattern(listOf(null)) }
     }
 
     @Test
@@ -84,11 +109,29 @@ internal class ArgPatternTest {
     }
 
     @Test
+    fun `positions lists every non-wildcard position`() {
+        assertEquals(listOf(0, 2), ArgPattern(listOf(IntVal(1), null, StrVal("x"))).positions)
+        assertEquals(listOf(1), ArgPattern(listOf(null, IntVal(257))).positions)
+    }
+
+    @Test
+    fun `patterns compare by their expected list`() {
+        assertEquals(ArgPattern(listOf(null, IntVal(1))), ArgPattern(listOf(null, IntVal(1))))
+        assertEquals(ArgPattern(listOf(null, IntVal(1))).hashCode(), ArgPattern(listOf(null, IntVal(1))).hashCode())
+        assertNotEquals(ArgPattern(listOf(null, IntVal(1))), ArgPattern(listOf(IntVal(1))))
+    }
+
+    @Test
     fun `matches holds when every listed position is equal`() {
         val pattern = ArgPattern(listOf(null, IntVal(257)))
         assertEquals(true, pattern.matches(listOf(StrVal("v"), IntVal(257))))
         assertEquals(true, pattern.matches(listOf(null, IntVal(257), Unsure.ANY)))
-        assertEquals(listOf(1), pattern.positions)
+    }
+
+    @Test
+    fun `matches treats NullVal as a known argument`() {
+        assertEquals(true, ArgPattern(listOf(NullVal)).matches(listOf<IPrimitiveVal?>(NullVal)))
+        assertEquals(false, ArgPattern(listOf(NullVal)).matches(listOf<IPrimitiveVal?>(IntVal(0))))
     }
 
     @Test

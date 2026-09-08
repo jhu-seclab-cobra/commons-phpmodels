@@ -1,7 +1,11 @@
 package edu.jhu.cobra.commons.phpmodels
 
-import java.io.ByteArrayInputStream
-import java.io.InputStream
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.PROVENANCE
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.VOCABULARY
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.context
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.mapping
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.opener
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sink
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -9,65 +13,31 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
- * The set-level load of design-sets.md over an in-memory [ResourceOpener].
+ * The set-level load of design-sets.md over an in-memory [ResourceOpener]:
+ * manifest, listed documents, provenance, and stream handling. Vocabulary
+ * accumulation: [DocumentSetLoaderDeclaredTest]; translation:
+ * [DocumentSetLoaderMappedTest].
  *
+ * - `file names are the fixed constants` — the four root file names.
  * - `manifest …` — absent manifest, absent document, and doubled line fail;
  *   comment and blank lines are not entries; order is manifest order.
  * - `listed document …` — a malformed document and an undeclared reference
  *   both name the document; the decode failure stays as the cause.
- * - `declared …` — vocabulary merges into the context, policy and entries
- *   decode against the merge, an undeclared reference or a conflicting
- *   redeclaration fails, and the returned vocabulary is the set's own.
- * - `mapped …` — vocabulary.yaml is ignored, an undeclared target fails,
- *   entries and rows are translated, emptied entries drop, the returned
- *   vocabulary is empty, and an unlisted name fails.
+ * - `loading twice yields equal sets` — the load is a pure function of the
+ *   storage.
  * - `provenance …` — `provenance.yaml` attaches to a declared and a mapped
  *   load, is null when absent, and fails the load when malformed.
- * - `closes every stream` — the opener's streams are released.
+ * - `closes every stream` — the opener's streams are released on success.
+ * - `closes the stream of a malformed document` — and on failure.
  */
 internal class DocumentSetLoaderTest {
-    private class TrackingStream(
-        content: String,
-    ) : ByteArrayInputStream(content.toByteArray()) {
-        var closed = false
-
-        override fun close() {
-            closed = true
-            super.close()
-        }
+    @Test
+    fun `file names are the fixed constants`() {
+        assertEquals("index.txt", DocumentSetLoader.MANIFEST)
+        assertEquals("vocabulary.yaml", DocumentSetLoader.VOCABULARY)
+        assertEquals("policy.yaml", DocumentSetLoader.POLICY)
+        assertEquals("provenance.yaml", DocumentSetLoader.PROVENANCE)
     }
-
-    private class MemoryOpener(
-        private val files: Map<String, String>,
-    ) : ResourceOpener {
-        val opened = mutableListOf<TrackingStream>()
-
-        override fun open(path: String): InputStream? = files[path]?.let { TrackingStream(it).also(opened::add) }
-    }
-
-    private val vocabulary =
-        """
-        vulnClasses:
-          - name: sqli
-            description: sql injection
-        provenances:
-          - name: user-input
-            description: request data
-        """.trimIndent()
-
-    private val context = VocabularyLoader.load(vocabulary.byteInputStream())
-
-    private fun opener(vararg files: Pair<String, String>): MemoryOpener = MemoryOpener(files.toMap())
-
-    private fun ModelEntry.sinkCategories(): List<VulnClassId> =
-        body.sinks
-            .orEmpty()
-            .map { it.vulnClass }
-
-    private fun sink(
-        name: String,
-        category: String,
-    ): String = "- subject:\n    function: $name\n  sinks:\n    - port: argument(0)\n      category: $category\n"
 
     @Test
     fun `manifest absent fails`() {
@@ -129,118 +99,27 @@ internal class DocumentSetLoaderTest {
     }
 
     @Test
-    fun `declared set merges vocabulary and decodes policy against the merge`() {
-        val set =
-            DocumentSetLoader.load(
-                opener(
-                    "index.txt" to "a.yaml\n",
-                    "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: xss\n    description: html\nprovenances: []\n",
-                    "policy.yaml" to "- origin: user-input\n  enables: [sqli, xss]\n",
-                    "a.yaml" to sink("a", "xss"),
-                ),
-                context,
+    fun `loading twice yields equal sets`() {
+        val files =
+            arrayOf(
+                "index.txt" to "a.yaml\n",
+                "vocabulary.yaml" to "vulnClasses:\n  - name: xss\n    description: html\nprovenances: []\n",
+                "policy.yaml" to "- origin: user-input\n  enables: [sqli, xss]\n",
+                "provenance.yaml" to PROVENANCE,
+                "a.yaml" to sink("a", "xss"),
             )
-        val declared = set.vocabulary.vulnClasses.keys
-        assertEquals(listOf("xss"), declared.map { it.id })
-        assertEquals(setOf(VulnClassId("sqli"), VulnClassId("xss")), set.policy.single().enables)
-        val entry = assertIs<ModelEntry>(set.entries.single())
-        assertEquals(listOf(VulnClassId("xss")), entry.sinkCategories())
+        assertEquals(DocumentSetLoader.load(opener(*files), context), DocumentSetLoader.load(opener(*files), context))
     }
-
-    @Test
-    fun `declared set without vocabulary contributes nothing`() {
-        val set = DocumentSetLoader.load(opener("index.txt" to "a.yaml\n", "a.yaml" to sink("a", "sqli")), context)
-        assertEquals(Vocabulary.EMPTY, set.vocabulary)
-        assertEquals(emptyList(), set.policy)
-    }
-
-    @Test
-    fun `declared set undeclared reference fails`() {
-        assertFailsWith<VocabularyException> {
-            DocumentSetLoader.load(opener("index.txt" to "a.yaml\n", "a.yaml" to sink("a", "xss")), context)
-        }
-    }
-
-    @Test
-    fun `declared set conflicting redeclaration fails`() {
-        assertFailsWith<VocabularyException> {
-            DocumentSetLoader.load(
-                opener(
-                    "index.txt" to "",
-                    "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: sqli\n    description: different\nprovenances: []\n",
-                ),
-                context,
-            )
-        }
-    }
-
-    @Test
-    fun `declared set identical redeclaration is admitted`() {
-        val set = DocumentSetLoader.load(opener("index.txt" to "", "vocabulary.yaml" to vocabulary), context)
-        assertEquals(context, set.vocabulary)
-    }
-
-    private val mapping =
-        CategoryMappingLoader.load(
-            "categories:\n  sql: sqli\n  text: ignore\nprovenances:\n  input: user-input\n".byteInputStream(),
-        )
-
-    @Test
-    fun `mapped set translates entries and rows and ignores its vocabulary`() {
-        val set =
-            DocumentSetLoader.load(
-                opener(
-                    "index.txt" to "a.yaml\n",
-                    "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: sqli\n    description: conflicting\nprovenances: []\n",
-                    "policy.yaml" to "- origin: input\n  enables: [sql, text]\n",
-                    "a.yaml" to sink("a", "sql") + sink("b", "text"),
-                ),
-                context,
-                mapping,
-            )
-        assertEquals(Vocabulary.EMPTY, set.vocabulary)
-        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnClassId("sqli")))), set.policy)
-        val entry = assertIs<ModelEntry>(set.entries.single())
-        assertEquals("a", (entry.subject as FunctionSubject).name)
-        assertEquals(listOf(VulnClassId("sqli")), entry.sinkCategories())
-    }
-
-    @Test
-    fun `mapped set undeclared target fails`() {
-        val stray = CategoryMapping(mapOf(VulnClassId("sql") to VulnClassId("xss")), emptyMap())
-        assertFailsWith<VocabularyException> {
-            DocumentSetLoader.load(opener("index.txt" to ""), context, stray)
-        }
-    }
-
-    @Test
-    fun `mapped set unlisted name fails`() {
-        assertFailsWith<VocabularyException> {
-            DocumentSetLoader.load(opener("index.txt" to "a.yaml\n", "a.yaml" to sink("a", "shell")), context, mapping)
-        }
-        assertFailsWith<VocabularyException> {
-            DocumentSetLoader.load(
-                opener("index.txt" to "", "policy.yaml" to "- origin: remote\n  enables: [sql]\n"),
-                context,
-                mapping,
-            )
-        }
-    }
-
-    private val provenance = "producer: review\nverification: manual\n"
 
     @Test
     fun `provenance attaches to a declared load`() {
-        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to provenance), context)
+        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to PROVENANCE), context)
         assertEquals(SetProvenance("review", Verification.MANUAL), set.provenance)
     }
 
     @Test
     fun `provenance attaches to a mapped load`() {
-        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to provenance), context, mapping)
+        val set = DocumentSetLoader.load(opener("index.txt" to "", "provenance.yaml" to PROVENANCE), context, mapping)
         assertEquals(SetProvenance("review", Verification.MANUAL), set.provenance)
     }
 
@@ -260,13 +139,21 @@ internal class DocumentSetLoaderTest {
         val opener =
             opener(
                 "index.txt" to "a.yaml\n",
-                "provenance.yaml" to provenance,
-                "vocabulary.yaml" to vocabulary,
+                "provenance.yaml" to PROVENANCE,
+                "vocabulary.yaml" to VOCABULARY,
                 "policy.yaml" to "- origin: user-input\n  enables: [sqli]\n",
                 "a.yaml" to sink("a", "sqli"),
             )
         DocumentSetLoader.load(opener, context)
         assertEquals(5, opener.opened.size)
+        assertTrue(opener.opened.all { it.closed })
+    }
+
+    @Test
+    fun `closes the stream of a malformed document`() {
+        val opener = opener("index.txt" to "bad.yaml\n", "bad.yaml" to "- subject:\n    trait: x\n")
+        assertFailsWith<DocumentSetException> { DocumentSetLoader.load(opener, context) }
+        assertEquals(2, opener.opened.size)
         assertTrue(opener.opened.all { it.closed })
     }
 }

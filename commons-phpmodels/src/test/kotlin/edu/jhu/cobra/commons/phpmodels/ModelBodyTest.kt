@@ -32,6 +32,15 @@ import kotlin.test.assertNull
  * - `key patterns compare by pattern text` — equality and hash-code
  *   agreement; an invalid pattern fails at construction.
  * - `declaresOnlySources reflects the section set` — true for sources alone.
+ * - `isEmpty is false once any section is declared` — each of the five
+ *   sections alone makes a body.
+ * - `namesReceiverPort reflects the propagation sides` — `this` on either
+ *   side of any pair.
+ * - `declaresExplicitSourceSite reflects the source at ports` — any source
+ *   naming `at`.
+ * - `valueSemantics keeps a declared propagation` — the unit as declared.
+ * - `key pattern parse equals construction` — the creator and the
+ *   constructor agree.
  * - `valueSemantics completes absent propagation to the empty list` — no
  *   flow, not unknown flow; null when returns is undeclared.
  * - `equal propagations agree on hash code and spelling` — equality over the
@@ -144,5 +153,50 @@ internal class ModelBodyTest {
             ModelBody(returns = ReturnKind.STR).valueSemantics(),
         )
         assertNull(ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote"))))).valueSemantics())
+    }
+
+    @Test
+    fun `isEmpty is false once any section is declared`() {
+        val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
+        val sinks = listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli")))
+        val sanitizers = listOf(SanitizerDecl(setOf(VulnClassId("sqli"))))
+        val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
+        assertEquals(false, ModelBody(returns = ReturnKind.ANY).isEmpty)
+        assertEquals(false, ModelBody(returns = ReturnKind.ANY, propagation = flow).isEmpty)
+        assertEquals(false, ModelBody(sources = sources).isEmpty)
+        assertEquals(false, ModelBody(sinks = sinks).isEmpty)
+        assertEquals(false, ModelBody(sanitizers = sanitizers).isEmpty)
+    }
+
+    @Test
+    fun `namesReceiverPort reflects the propagation sides`() {
+        val fromReceiver = listOf(Propagation(from = Port.Receiver, to = Port.Return))
+        val toReceiver = listOf(Propagation(from = Port.Argument(0), to = Port.Receiver))
+        val plain = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
+        assertEquals(true, ModelBody(returns = ReturnKind.ANY, propagation = fromReceiver).namesReceiverPort)
+        assertEquals(true, ModelBody(returns = ReturnKind.ANY, propagation = toReceiver).namesReceiverPort)
+        assertEquals(false, ModelBody(returns = ReturnKind.ANY, propagation = plain).namesReceiverPort)
+        assertEquals(false, ModelBody().namesReceiverPort)
+    }
+
+    @Test
+    fun `declaresExplicitSourceSite reflects the source at ports`() {
+        val sited = listOf(SourceDecl(setOf(OriginId("remote")), at = Port.Argument(1)))
+        val implicit = listOf(SourceDecl(setOf(OriginId("remote"))))
+        assertEquals(true, ModelBody(sources = sited).declaresExplicitSourceSite)
+        assertEquals(false, ModelBody(sources = implicit).declaresExplicitSourceSite)
+        assertEquals(false, ModelBody().declaresExplicitSourceSite)
+    }
+
+    @Test
+    fun `valueSemantics keeps a declared propagation`() {
+        val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
+        val body = ModelBody(returns = ReturnKind.STR, propagation = flow)
+        assertEquals(ValueSemantics(ReturnKind.STR, flow), body.valueSemantics())
+    }
+
+    @Test
+    fun `key pattern parse equals construction`() {
+        assertEquals(KeyPattern("user_.*"), KeyPattern.parse("user_.*"))
     }
 }

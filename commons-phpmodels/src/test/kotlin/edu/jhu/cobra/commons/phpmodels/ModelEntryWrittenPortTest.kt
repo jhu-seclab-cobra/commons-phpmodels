@@ -5,15 +5,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Port semantics fixed by a declared callable signature: arity bounds,
- * by-reference requirements on written-into ports, and the void return type.
+ * By-reference requirements on written-into ports and the void return type
+ * a declared callable signature fixes (design-entries.md). Arity bound:
+ * [ModelEntryArityTest]; direct construction: [ModelEntryTest].
  *
- * - `port beyond the declared parameter list is rejected` — a condition,
- *   propagation, or sink argument port outside a callable signature's arity.
- * - `source site beyond the declared parameter list is rejected` — the
- *   arity bound covers the source `at` port too.
- * - `variadic signature admits ports beyond the declared list` — the
- *   variadic tail collects every remaining position.
+ * - `variadic by-reference tail admits a written port` — the tail position
+ *   resolves to the variadic parameter's by-reference flag.
  * - `written ports into by-reference parameters decode` — a propagation
  *   target and a source site on by-reference parameters.
  * - `propagation into a by-value parameter is rejected` — a flow cannot
@@ -25,101 +22,30 @@ import kotlin.test.assertFailsWith
  * - `flow into the result of a void callable is rejected` — a void return
  *   type declares there is no result to flow into.
  */
-internal class ModelLoaderPortBoundsTest {
+internal class ModelEntryWrittenPortTest {
     @Test
-    fun `port beyond the declared parameter list is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: query
-                        type: string
-                    returnType: bool
-                  sinks:
-                    - port: argument(1)
-                      category: sqli
-                """.trimIndent(),
-            )
-        }
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: string
-                  propagation:
-                    - from: argument(1)
-                      to: return
-                """.trimIndent(),
-            )
-        }
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: bool
-                  when: [_, true]
-                  sinks:
-                    - port: argument(0)
-                      category: sqli
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `source site beyond the declared parameter list is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: value
-                        type: string
-                    returnType: bool
-                  sources:
-                    - provenance: [remote]
-                      at: argument(1)
-                """.trimIndent(),
-            )
-        }
-    }
-
-    @Test
-    fun `variadic signature admits ports beyond the declared list`() {
+    fun `variadic by-reference tail admits a written port`() {
         val model =
             loadModel(
                 """
                 - subject:
-                    function: sprintf
+                    function: foo
                   signature:
                     params:
                       - name: format
                         type: string
-                      - name: values
+                      - name: outputs
                         type: mixed
+                        byRef: true
                         variadic: true
-                    returnType: string
-                  sinks:
-                    - port: argument(5)
-                      category: sqli
+                    returnType: bool
+                  sources:
+                    - provenance: [remote]
+                      at: argument(5)
                 """.trimIndent(),
             )
-        assertEquals(listOf(SinkDecl(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
+        val source = model.body.sources!!.single()
+        assertEquals(Port.Argument(5), source.at)
     }
 
     @Test

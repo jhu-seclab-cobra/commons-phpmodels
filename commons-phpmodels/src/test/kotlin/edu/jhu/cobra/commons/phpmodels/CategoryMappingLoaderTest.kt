@@ -8,7 +8,10 @@ import kotlin.test.assertNull
 /**
  * Decoding of the mapping document shape (design-sets.md, impl.md).
  *
- * - `decodes both axes with ignore as discard` — the literal maps to null.
+ * - `decodes both axes with ignore as discard` — the literal maps to null,
+ *   on the category axis and on the provenance axis.
+ * - `IGNORE is the discard literal` — the constant the format names.
+ * - `empty sections decode to empty tables` — `{}` lists nothing.
  * - `rejects …` — null target, missing section, stray key, and a source
  *   spelled `ignore` fail the decode.
  */
@@ -25,11 +28,23 @@ internal class CategoryMappingLoaderTest {
                   text: ignore
                 provenances:
                   input: user-input
+                  env: ignore
                 """.trimIndent(),
             )
         assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
         assertNull(mapping.category(VulnClassId("text")))
         assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
+        assertNull(mapping.origin(OriginId("env")))
+    }
+
+    @Test
+    fun `IGNORE is the discard literal`() {
+        assertEquals("ignore", CategoryMappingLoader.IGNORE)
+    }
+
+    @Test
+    fun `empty sections decode to empty tables`() {
+        assertEquals(CategoryMapping(emptyMap(), emptyMap()), load("categories: {}\nprovenances: {}\n"))
     }
 
     @Test

@@ -24,8 +24,13 @@ import kotlin.test.assertNull
  * - `variable signature is rejected` — superglobals are hand-declared.
  * - `stray key inside a signature is rejected` — strictness survives the
  *   narrowing.
+ * - `classifier and visibility decode case-insensitively` — the lowercase
+ *   file vocabulary maps onto the closed sets.
+ * - `unknown classifier or visibility is rejected` — the sets are closed.
+ * - `kind-mismatched signature shape is rejected` — a class signature's
+ *   keys under a function subject.
  */
-internal class ModelLoaderSignatureTest {
+internal class ModelEntrySignatureTest {
     @Test
     fun `signature narrows per subject kind`() {
         val entries =
@@ -179,6 +184,54 @@ internal class ModelLoaderSignatureTest {
                     stray: 1
                 """.trimIndent(),
             )
+        }
+    }
+
+    @Test
+    fun `classifier and visibility decode case-insensitively`() {
+        val entries =
+            load(
+                """
+                - subject:
+                    class: mysqli
+                  signature:
+                    classifier: Interface
+                - subject:
+                    property: mysqli::${'$'}insert_id
+                  signature:
+                    type: string
+                    visibility: PROTECTED
+                    static: true
+                """.trimIndent(),
+            )
+        assertEquals(Classifier.INTERFACE, assertIs<SignatureInfo.ClassSignature>(entries[0].signature).classifier)
+        val property = assertIs<SignatureInfo.PropertySignature>(entries[1].signature)
+        assertEquals(Visibility.PROTECTED, property.visibility)
+        assertEquals(true, property.static)
+    }
+
+    @Test
+    fun `unknown classifier or visibility is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load("- subject:\n    class: mysqli\n  signature:\n    classifier: struct\n")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    property: mysqli::${'$'}p
+                  signature:
+                    type: string
+                    visibility: internal
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `kind-mismatched signature shape is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load("- subject:\n    function: strlen\n  signature:\n    classifier: class\n")
         }
     }
 }

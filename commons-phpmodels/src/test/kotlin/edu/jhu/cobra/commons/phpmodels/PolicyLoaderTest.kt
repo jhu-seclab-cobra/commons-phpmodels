@@ -15,6 +15,9 @@ import kotlin.test.assertFailsWith
  *   categories.
  * - `row enabling no category is rejected` — an empty enables set asserts
  *   nothing, like every other empty declared section.
+ * - `rows keep file order` — the consumer appends rows in order.
+ * - `stray key is rejected` — strict decode.
+ * - `empty document decodes to no rows` — `[]` states no policy.
  */
 internal class PolicyLoaderTest {
     private val vocabulary =
@@ -95,5 +98,21 @@ internal class PolicyLoaderTest {
         assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("sqli")))
         assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("xss")))
         assertEquals(false, policy.isDangerous(OriginId("local"), VulnClassId("sqli")))
+    }
+
+    @Test
+    fun `rows keep file order`() {
+        val rows = load("- origin: remote\n  enables: [xss]\n- origin: remote\n  enables: [sqli]\n")
+        assertEquals(listOf(setOf(VulnClassId("xss")), setOf(VulnClassId("sqli"))), rows.map { it.enables })
+    }
+
+    @Test
+    fun `stray key is rejected`() {
+        assertFailsWith<IllegalArgumentException> { load("- origin: remote\n  enables: [sqli]\n  note: x\n") }
+    }
+
+    @Test
+    fun `empty document decodes to no rows`() {
+        assertEquals(emptyList(), load("[]"))
     }
 }

@@ -1,6 +1,5 @@
 package edu.jhu.cobra.commons.phpmodels
 
-import edu.jhu.cobra.commons.value.FloatVal
 import edu.jhu.cobra.commons.value.StrVal
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,9 +9,9 @@ import kotlin.test.assertIs
 /**
  * End-to-end decode of model documents through [ModelLoader]: the entry forms
  * and the document strictness. Signature handling:
- * [ModelLoaderSignatureTest]; subject-kind admissibility:
- * [ModelLoaderAdmissibilityTest]; signature-fixed port semantics:
- * [ModelLoaderPortBoundsTest].
+ * [ModelEntrySignatureTest]; subject-kind admissibility:
+ * [ModelEntryAdmissibilityTest]; signature-fixed port semantics:
+ * [ModelEntryArityTest], [ModelEntryWrittenPortTest].
  *
  * - `entry decodes subject sections and condition` — subject, returns,
  *   propagation, sinks, and when-condition of one callable entry.
@@ -26,8 +25,6 @@ import kotlin.test.assertIs
  *   Jackson decode path folds identity tokens like the interning path does.
  * - `entry asserting nothing is rejected` — no signature and no section.
  * - `unknown subject kind is rejected` — closed wrapper-key set.
- * - `condition integer beyond Long range reads as a float` — the compared
- *   value never truncates silently; it widens to the float shape.
  * - `second document in one stream is rejected` — entries after a `---`
  *   separator never drop silently.
  * - `duplicate key in one mapping is rejected` — a doubled key never decodes
@@ -192,20 +189,6 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         }
-    }
-
-    @Test
-    fun `condition integer beyond Long range reads as a float`() {
-        val model =
-            loadModel(
-                """
-                - subject:
-                    function: strlen
-                  when: [99999999999999999999999999]
-                  returns: num
-                """.trimIndent(),
-            )
-        assertEquals(ArgPattern(listOf(FloatVal(1.0e26))), model.condition)
     }
 
     @Test
