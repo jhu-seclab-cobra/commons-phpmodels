@@ -1,12 +1,12 @@
 [versions]
-kotlin = "2.2.21"
-kover = "0.9.1"
-ktlint = "14.0.1"
+kotlin = "2.4.20"
+kover = "0.9.9"
+ktlint = "14.2.0"
 detekt = "1.23.8"
 jvm = "21"
-jackson = "2.19.0"
-snakeyaml = "2.4"
-junit = "5.10.2"
+jackson = "2.22.2"
+snakeyaml = "2.7"
+junit = "6.1.3"
 cobra-commons-value = "0.1.1"
 
 [libraries]
