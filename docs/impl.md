@@ -4,7 +4,7 @@
 
 **[jackson]** `YAMLMapper.builder().enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS).enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build().registerKotlinModule().enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)`
 — `jacksonObjectMapper(...)` takes a `KotlinModule.Builder.() -> Unit` in
-2.19, not a `JsonFactory`; passing `YAMLFactory()` to it does not compile.
+2.22, not a `JsonFactory`; passing `YAMLFactory()` to it does not compile.
 
 **[jackson]** `FAIL_ON_UNKNOWN_PROPERTIES` defaults to enabled — still set
 explicitly: rejection of stray keys is a stated design rule, not an
@@ -87,14 +87,14 @@ opener's resources are released regardless of the decode outcome.
 
 ## Libraries
 
-- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.0 —
+- com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.2 —
   `YAMLFactory`, the YAML backend. Catalog alias `jackson-dataformat-yaml`.
-- com.fasterxml.jackson.module:jackson-module-kotlin:2.19.0 — constructor
+- com.fasterxml.jackson.module:jackson-module-kotlin:2.22.2 — constructor
   binding, non-nullable enforcement, `value class` unwrapping. Catalog alias
   `jackson-module-kotlin`.
 - `jackson-databind` and `jackson-annotations` arrive transitively; neither
   is declared, so one version property governs the whole set.
-- org.yaml:snakeyaml:2.4 — the event-stream scan rejecting aliases; already
+- org.yaml:snakeyaml:2.7 — the event-stream scan rejecting aliases; already
   the YAML backend under `jackson-dataformat-yaml`, declared explicitly
   because `ModelYaml` compiles against it. Catalog alias `snakeyaml`.
 - com.github.jhu-seclab-cobra:commons-value:0.1.1 — the argument scalar
@@ -105,7 +105,7 @@ opener's resources are released regardless of the decode outcome.
 
 ## Developer instructions
 
-- Findings established against Jackson 2.19.0. Re-verify after any Jackson
+- Findings established against Jackson 2.22.2. Re-verify after any Jackson
   version bump by running the module's test suite — a behavior change fails
   the pinning tests.
 - `JacksonSubjectProbeTest` pins the one-key subject mapping, the
