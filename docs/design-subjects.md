@@ -100,6 +100,11 @@ field typed as a subtype does not consult the supertype's creator,
 **Methods:** companion `parse(raw: String): Port` — the decode entry point;
 `IllegalArgumentException` on any other spelling.
 
+**Open gap:** no subtype holds a callback port. The decided spellings
+`callback(argument(n)).parameter(m)` (a to-port only) and
+`callback(argument(n)).return` (a `Port.Input`) are in
+[model.md](model.md) Port.
+
 ### Propagation
 
 **Responsibility:** One declared flow between two ports — `from:

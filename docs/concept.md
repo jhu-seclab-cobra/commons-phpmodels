@@ -70,15 +70,15 @@ declaration looks like. Composed of sections, at least one present.
   ([model.md](model.md)).
 - Relationships: composes a Model; its positional references are Ports.
 
-**Port** — An explicitly named location in a call: one argument position
-(`argument(n)`), the receiver of a method call (`this`), or the call result
-(`return`).
+**Port** — An explicitly named location in a call: an argument (`argument(n)`),
+the method receiver (`this`), the result (`return`), or a parameter or result of
+the subject's call to the callable at `argument(n)` (`callback(argument(n))`).
 - Scope: every positional reference in a model; the meaning is in the port
   name, never in a surrounding field name.
 - Relationships: named by Propagations, source elements, and sink elements.
 
-**Propagation** — One declared flow from one input port — an argument or the
-method receiver — to another port of the same call.
+**Propagation** — One declared flow from one input port — an argument, the
+receiver, or a callback result — to another port of the same call.
 - Scope: written as a `from`/`to` port pair.
 - Relationships: an element of a Model's propagation section; connects two
   Ports.
