@@ -27,12 +27,18 @@ declaration kind, with no nesting of one declaration inside another.
 - **Parameter** — One declared parameter: name, declared type, optional,
   by-reference, variadic. Position is list order; position 0 is the first
   declared parameter.
-- **Declared Type** — A PHP type name from the closed type vocabulary
-  (string, int, float, bool, array, object, callable, resource, mixed, void,
-  null, iterable, or a class name). Stored losslessly; the four-kind returns
-  classification is derived from it at load and never stored beside it.
+- **Declared Type** — A PHP type declaration in the grammar of the PHP
+  manual: a single type, a nullable type (`?T`), a union (`A|B`), an
+  intersection of class names (`A&B`), or a union whose members are single
+  types or parenthesized intersections (`(A&B)|null`). A single type is a
+  keyword type (string, int, float, bool, true, false, array, object,
+  callable, iterable, resource, mixed, void, never, null) or a class name.
+  Read as a union of alternatives, each an intersection of single types: `?T`
+  is `T|null`, a single type is a union of one alternative. Stored
+  losslessly; the four-kind returns classification is derived from it at
+  load and never stored beside it.
 - **Generated Layer** — The lowest configuration layer of a consumer: files
-  emitted by an extraction producer from upstream stub sources. Structurally
+  emitted by an extraction producer from upstream sources. Structurally
   marked by provenance (directory and file header naming source and producer
   version); never hand-edited — a correction is a higher-layer entry
   overriding per (subject, condition, unit).
@@ -58,14 +64,18 @@ are stripped before folding. Any other shape is a load failure.
 ### Return Classification
 
 Derived at load from the declared return type; never stored in a file that
-carries a signature.
+carries a signature. Each alternative classifies by the table; the type
+classifies as the join of its alternatives: the common classification when
+every alternative has it, otherwise any. `int|float` is num; `int|false` and
+`?string` are any. A consumer needing more than the join reads the
+alternatives of the declared type itself.
 
-| Declared return type | Classification |
-|----------------------|----------------|
+| Alternative | Classification |
+|-------------|----------------|
 | string | str |
 | int, float | num |
-| bool | bool |
-| every other type | any |
+| bool, true, false | bool |
+| every other single type, every intersection | any |
 
 ## Relations
 
@@ -91,11 +101,11 @@ carries a signature.
   subject's signature replaces it whole.
 - A signature never produces a taint statement. Sources, sinks, and
   sanitizers are hand-declared assertions in every layer.
-- The type vocabulary for declared types is closed; an unknown type name is
-  a load failure, never a widening default. It covers plain type names
-  only — a nullable (`?type`) or union (`a|b`) spelling is a load failure;
-  the extraction producer simplifies such upstream declarations before they
-  enter a file.
+- The declared-type grammar is closed; a spelling outside it is a load
+  failure, never read as `mixed`. The PHP composition rules hold: `mixed`,
+  `void`, and `never` stand alone; `?` applies to one single type other
+  than `null` and `mixed`; an intersection joins class names only. A file
+  states the upstream declaration as declared, never a simplified form.
 - Assertions attach uniformly: every subject kind admits the sections its
   callability allows — returns/propagation only for function and method;
   sources for any kind that produces a value.

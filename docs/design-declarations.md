@@ -78,25 +78,28 @@ caller.
 
 ### DeclaredType
 
-**Responsibility:** `@JvmInline value class` over the declared type name,
-validated against the closed type vocabulary plus class names
-([model-declarations.md](model-declarations.md)); owns
-`fun toReturnKind(): ReturnKind` — the classification derivation, per the
-table in [model-declarations.md](model-declarations.md), running where the
-consumer materializes the value-semantics unit and never written into a
-file that carries a signature — and `val isVoid: Boolean` — true when the
-declared type is the `void` keyword. Decodes from the bare
-scalar ([impl.md](impl.md)).
+**Responsibility:** `@JvmInline value class` over the declaration as
+spelled (`raw`), validated against the declared-type grammar and its
+composition rules ([model-declarations.md](model-declarations.md)). Lives
+in its own file `DeclaredType.kt` with the grammar's parser, a private
+function the validation and every derived member call.
 
-The closed keyword-type set is a constant in this file — fixed by the PHP
-type system, not configuration.
+- `val alternatives: List<Set<String>>` — the union read of the
+  declaration: one set per alternative, holding the single types it
+  intersects; a keyword lowercased, a class name folded and stripped of
+  its leading namespace slash. `?T` reads as `[{t}, {null}]`.
+- `fun toReturnKind(): ReturnKind` — the classification derivation: each
+  alternative by the table in [model-declarations.md](model-declarations.md),
+  joined with `ReturnKind.join`; it runs where the consumer materializes the
+  value-semantics unit and is never written into a file that carries a
+  signature.
+- `val isVoid: Boolean` — true when the declaration is the `void` keyword.
 
-The vocabulary covers plain type names only: a nullable (`?type`) or union
-(`a|b`) spelling is a load failure, never a widening default — an upstream
-declaration carrying one is simplified by the extraction producer before it
-enters a file. A standalone keyword outside the closed set (`never`,
-`false`, `self`, `static`) matches the class-name spelling and derives to
-`ANY`, which is the correct classification for each.
+Decodes from the bare scalar ([impl.md](impl.md)). The keyword-type set and
+the standalone-only keywords (`mixed`, `void`, `never`) are constants in
+this file, fixed by the PHP type system, not configuration. The relative
+class types `self`, `static`, and `parent` match the class-name spelling
+and derive to `ANY`.
 
 ### Classifier, Visibility
 
