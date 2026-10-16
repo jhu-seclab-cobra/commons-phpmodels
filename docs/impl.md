@@ -128,6 +128,7 @@ opener's resources are released regardless of the decode outcome.
 | `init { require(...) }` violation | Rejected | `ValueInstantiationException` |
 | Unknown enum constant | Rejected — never widens to a default | `InvalidFormatException` |
 | `Regex(pattern)` in a property initializer, invalid pattern | Rejected at decode — `PatternSyntaxException` wrapped | `ValueInstantiationException` |
+| Pattern dialect of every model regular expression (`KeyPattern`, `CharacterClass`) | `kotlin.text.Regex` compiles `java.util.regex.Pattern` syntax; a POSIX bracket expression is a union of literal characters there, not a class: `[[:alpha:]]` matches exactly `:`, `a`, `h`, `l`, `p` | — (silent; `\p{Alpha}` is the class) |
 | `@JsonCreator @JvmStatic fun parse(raw: String)` on a sealed interface companion | Decodes string scalars (`"return"` / `"argument(n)"`) to the sealed subtypes | — |
 | Field typed as the *subtype* (`Port.Argument`) | Does **not** consult the supertype's creator — the subtype needs its own `@JsonCreator` companion factory | `MismatchedInputException` without it |
 | Malformed port string (creator throws `IllegalArgumentException`) | Rejected at decode | `ValueInstantiationException` |

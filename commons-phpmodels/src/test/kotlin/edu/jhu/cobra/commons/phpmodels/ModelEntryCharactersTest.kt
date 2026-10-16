@@ -30,6 +30,16 @@ import kotlin.test.assertTrue
  *   as one Latin-1 character, the high bytes included.
  * - `character classes compare by pattern text` — equality, parse, and
  *   rejection of an invalid pattern.
+ * - `characters with an invalid within is rejected at load` — the decode
+ *   surfaces the pattern failure as a malformed document.
+ * - `characters of the receiver or the result is rejected at load` — `of`
+ *   names argument ports only.
+ * - `character class matching no byte is rejected` — an empty class would
+ *   state an always-empty result.
+ * - `character class follows java regex syntax` — a POSIX bracket
+ *   expression is a union of literal characters, not a class.
+ * - `character class membership outside a byte is rejected` — 256 and -1
+ *   are no byte values.
  */
 internal class ModelEntryCharactersTest {
     @Test
@@ -172,4 +182,49 @@ internal class ModelEntryCharactersTest {
         assertEquals(CharacterClass("[^/]").hashCode(), CharacterClass("[^/]").hashCode())
         assertFailsWith<PatternSyntaxException> { CharacterClass("[") }
     }
+
+    @Test
+    fun `characters with an invalid within is rejected at load`() {
+        assertFailsWith<IllegalArgumentException> { loadModel(basenameWithCharacters("within: \"[\"")) }
+    }
+
+    @Test
+    fun `characters of the receiver or the result is rejected at load`() {
+        assertFailsWith<IllegalArgumentException> { loadModel(basenameWithCharacters("of: [this]")) }
+        assertFailsWith<IllegalArgumentException> { loadModel(basenameWithCharacters("of: [return]")) }
+    }
+
+    @Test
+    fun `character class matching no byte is rejected`() {
+        assertFailsWith<IllegalArgumentException> { CharacterClass("0-9") }
+        assertFailsWith<IllegalArgumentException> { CharacterClass("") }
+    }
+
+    @Test
+    fun `character class follows java regex syntax`() {
+        val posix = CharacterClass("[[:alpha:]]")
+        assertEquals(":ahlp", (0..255).filter { posix.contains(it) }.map { it.toChar() }.joinToString(""))
+        assertTrue(CharacterClass("\\p{Alpha}").contains('b'.code))
+    }
+
+    @Test
+    fun `character class membership outside a byte is rejected`() {
+        val noSlash = CharacterClass("[^/]")
+        assertTrue(noSlash.contains(255))
+        assertFailsWith<IllegalArgumentException> { noSlash.contains(256) }
+        assertFailsWith<IllegalArgumentException> { noSlash.contains(-1) }
+    }
+
+    // A basename entry whose characters section holds the one given line.
+    private fun basenameWithCharacters(line: String): String =
+        """
+        - subject:
+            function: basename
+          returns: str
+          propagation:
+            - from: argument(0)
+              to: return
+          characters:
+            $line
+        """.trimIndent()
 }

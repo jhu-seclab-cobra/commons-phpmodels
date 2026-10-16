@@ -33,7 +33,7 @@ for (entry in set.entries) {
 - `when:` is a YAML sequence of scalars, one per argument position: `when: [_, true]`. `_` is the wildcard; a boolean becomes `BoolVal`, an integer within `Long` becomes `IntVal`, any other number becomes `FloatVal`, `null`/`~` becomes `NullVal`, any other text becomes `StrVal`. Quote a scalar to force the string shape.
 - A pattern must be non-empty and name at least one non-wildcard position; a mapping or sequence element fails the decode.
 - `raises:` is a YAML sequence of bare class names, without the `class:` key: `raises: [ValueError, \JsonException]`. Each folds as a class subject (leading `\` stripped, lowercased); a member spelling fails. `raises: []` is a complete statement, unlike any other empty section.
-- `characters:` is a mapping with `of:` (a sequence of `argument(n)` ports) and `within:` (a quoted regex): `characters: {of: [argument(0)], within: "[^/]"}`. The bytes of a scalar are those of its string form; the bytes of an array are those of its elements.
+- `characters:` is a mapping with `of:` (a sequence of `argument(n)` ports) and `within:` (a quoted regex): `characters: {of: [argument(0)], within: "[^/]"}`. The bytes of an argument are those of the strings the call converts it to: a scalar's string form, an object's `__toString` result, each element's conversion for an array read element by element, and `Array` for a nested array. `of` names `argument(n)` ports only. `within` uses `java.util.regex` syntax and must match at least one byte: write `\p{Alpha}`, not the POSIX `[[:alpha:]]`.
 
 ## Gotchas
 

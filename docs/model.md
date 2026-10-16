@@ -47,8 +47,11 @@ category mapping: [model-sets.md](model-sets.md).
   - *characters* (agent decision CH-1) — the bytes the call result may
     hold: only bytes of the listed argument ports (*of*), only bytes of one
     Character Class (*within*), or both, each bound narrowing the other.
-    The bytes of a scalar value are those of its string form; the bytes of
-    an array value are those of its elements. Third part of the
+    The bytes of an argument are those of the strings the call converts it
+    to: a scalar's string form, an object's `__toString` result, and for an
+    array the call reads element by element, each element's conversion, a
+    nested array converting to `Array` (PHP 8.5.11 gives `Arrayb` for
+    `str_replace(["a"], [["x"]], "ab")`). Third part of the
     value-semantics unit: it requires *returns*, and its absence states no
     bound. `basename` declares *of* `argument(0)` *within* every byte but
     `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
@@ -147,8 +150,13 @@ model, driven by the declarations defined here.
 - A characters section requires a returns section, as propagation does,
   and declares *of*, *within*, or both. An *of* list is non-empty and
   names argument ports only, each the from-port of a declared flow into
-  *return*: a byte copied into the result is a flow into it. A *within*
-  class is a regular expression that compiles.
+  *return*: a byte copied into the result is a flow into it. The call
+  converts an argument to a string, whereas a method reads its receiver's
+  state without converting it, so the receiver has no bytes to name. A
+  *within* class is a regular expression that compiles and matches at
+  least one byte.
+- Every regular expression of a model, a Key Pattern or a Character Class,
+  follows the one dialect [impl.md](impl.md) names.
 - The *returns*, *propagation*, *characters*, and *raises* sections are declared only for
   callable subjects. A class subject declares no assertion section. Every other
   non-callable kind — constant, class constant, property, predefined

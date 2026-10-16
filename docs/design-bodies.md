@@ -75,8 +75,12 @@ membership flag per byte value, evaluated at construction so no uncompiled
 pattern survives the load; equality over the pattern text, as for
 `KeyPattern`. Decoded from the bare pattern scalar.
 
+**Validation (`init`):** the pattern compiles and matches at least one
+byte value; a class of no byte would state an always-empty result.
+
 **Methods:** `fun contains(byte: Int): Boolean` — the pattern matches the
-one-character Latin-1 string of the byte value (0..255).
+one-character Latin-1 string of the byte value; a value outside 0..255 is
+misuse (`IllegalArgumentException`).
 
 ### ModelBody
 

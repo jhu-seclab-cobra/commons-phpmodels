@@ -90,6 +90,7 @@ public data class KeyPattern(
  *
  * @property pattern The declared pattern source: `[^/]`, `[0-9a-f]`.
  * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
+ * @throws IllegalArgumentException If [pattern] matches no byte.
  */
 public data class CharacterClass(
     public val pattern: String,
@@ -98,8 +99,19 @@ public data class CharacterClass(
     private val members: BooleanArray =
         Regex(pattern).let { regex -> BooleanArray(BYTE_VALUES) { regex.matches(it.toChar().toString()) } }
 
-    /** True when the byte value [byte] (0..255) belongs to the class. */
-    public fun contains(byte: Int): Boolean = members[byte]
+    init {
+        require(members.any { it }) { "Character class '$pattern' matches no byte" }
+    }
+
+    /**
+     * True when the byte value [byte] belongs to the class.
+     *
+     * @throws IllegalArgumentException If [byte] lies outside 0..255.
+     */
+    public fun contains(byte: Int): Boolean {
+        require(byte in 0..<BYTE_VALUES) { "Not a byte value: $byte" }
+        return members[byte]
+    }
 
     public companion object {
         private const val BYTE_VALUES = 256
