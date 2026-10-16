@@ -115,7 +115,7 @@ category set.
 
 ### ModelBody
 
-**Responsibility:** The sectioned statement of one model: five optional
+**Responsibility:** The sectioned statement of one model: six optional
 assertion sections. An all-absent body is constructible — a signature-only
 entry has one — and the at-least-one-section rule therefore lives at the
 entry level, where the signature is visible: `ModelEntry` requires a
@@ -123,11 +123,13 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
-`sanitizers: List<SanitizerDecl>?`.
+`sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (each
+element decoded by the `ClassSubject` creator; empty = throws none).
 
 **Validation (`init`):** propagation requires returns (the value-semantics
 unit is asserted whole or not at all — the signature-derived completion
-happens in the entry, before construction); a declared section is non-empty.
+happens in the entry, before construction); a declared section other than
+`raises` is non-empty.
 
 **Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
 `namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;

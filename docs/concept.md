@@ -56,15 +56,15 @@ category mapping (consumer-supplied) ── translates a set's names ───�
 ```
 
 **Model** — The single declarative statement about one subject: what its calls
-return, how values flow through them, its taint effects, and what the
-declaration looks like. Composed of sections, at least one present.
+return, how values flow through them, its taint effects, the exceptions its
+implementation throws, and its declaration. Composed of sections, at least one present.
 - Scope: one model per entry; includes assertion sections and the descriptive
   signature section.
 - Relationships: identifies exactly one Matching Subject; validated whole at
   decode.
 
 **Section** — One aspect of a model: *returns*, *propagation*, *sources*,
-*sinks*, *sanitizers*, or *signature*.
+*sinks*, *sanitizers*, *raises*, or *signature*.
 - Scope: an absent section asserts nothing about that aspect; *returns* and
   *propagation* form one coupled value-semantics statement
   ([model.md](model.md)).

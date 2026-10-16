@@ -39,7 +39,7 @@ document sharing subject and condition ([design.md](design.md)).
 
 **State/Fields:** `val subject: ModelSubject`, `val condition: ArgPattern?`
 (decoded from the optional `when:` field), `val signature: SignatureInfo?`,
-`val body: ModelBody`. The five assertion sections decode flat beside
+`val body: ModelBody`. The six assertion sections decode flat beside
 `subject` — no wrapper key — gathered into the creator through one
 unwrapped parameter of `SectionFields`, which carries the raw sections
 before the signature-derived returns completion and rejects any unknown
@@ -47,7 +47,7 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
 - `subject` admits only the sections its kind allows: a non-callable
-  subject rejects returns, propagation, and the condition; a class subject
+  subject rejects returns, propagation, raises, and the condition; a class subject
   declares nothing besides its signature; every other non-callable kind
   declares only sources.
 - Port admissibility follows the subject kind: a receiver port anywhere in
@@ -76,9 +76,9 @@ present ([impl.md](impl.md)).
 
 ### SectionFields (internal)
 
-**Responsibility:** The five section fields as they decode flat beside
-`subject`: `returns`, `propagation`, `sources`, `sinks`, `sanitizers`, all
-optional. `fun complete(returns: ReturnKind?): ModelBody` builds the body
+**Responsibility:** The six section fields as they decode flat beside
+`subject`: `returns`, `propagation`, `sources`, `sinks`, `sanitizers`,
+`raises`, all optional. `fun complete(returns: ReturnKind?): ModelBody` builds the body
 after the creator's returns completion. A throwing any-setter restores the
 strict unknown-key failure the unwrapped decode path would otherwise
 absorb ([impl.md](impl.md)).

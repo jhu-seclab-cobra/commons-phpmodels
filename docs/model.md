@@ -55,6 +55,14 @@ category mapping: [model-sets.md](model-sets.md).
     Category.
   - *sanitizers* — the subject neutralizes one or more Danger Categories; it
     still carries its input value to its result.
+  - *raises* — the set of exception classes the subject's own
+    implementation may throw. It excludes three kinds of throw, each decided
+    elsewhere: binding the arguments to the declared parameters (the
+    argument count, the declared parameter types), user code the subject
+    calls (a callback, a magic method, a user error handler), and the
+    conversion of a value between PHP types inside the implementation (an
+    object without `__toString` read as a string), decided by the converted
+    value. The empty set states that the implementation throws none.
   - *signature* — the descriptive section:
     [model-declarations.md](model-declarations.md).
 - **Key Pattern** — A regular expression over one array key at a source's
@@ -66,7 +74,7 @@ category mapping: [model-sets.md](model-sets.md).
   Rows sharing an origin accumulate (union of enabled categories).
 - **Override Unit** — The granularity at which one declaration replaces
   another for the same subject: the value-semantics unit (returns together
-  with propagation), sources, sinks, sanitizers, or the signature. A
+  with propagation), sources, sinks, sanitizers, raises, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
@@ -85,6 +93,7 @@ itself an effect.
 | Model (sources) | Origin Color | produces | M:N | The source introduces these colors at its production site |
 | Model (sinks) | Port × Danger Category | consumes under | N:M | The named argument port is sensitive to that category |
 | Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value |
+| Model (raises) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
 | Policy | Origin Color × Danger Category | enables | M:N | This color reaching a sink of this category is a vulnerability |
 | Model / Policy | Vocabulary | references | N:1 | Every named color/category must be declared in the vocabulary |
 
@@ -123,13 +132,16 @@ model, driven by the declarations defined here.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return
   type ([model-declarations.md](model-declarations.md)).
-- The *returns* and *propagation* sections are declared only for callable
-  subjects. A class subject declares no assertion section. Every other
+- The *returns*, *propagation*, and *raises* sections are declared only for
+  callable subjects. A class subject declares no assertion section. Every other
   non-callable kind — constant, class constant, property, predefined
   variable — admits only the *sources* section.
 - A sources section produces a non-empty color set. A sinks section is
   non-empty and each element names one argument port and one category. A
-  sanitizers section neutralizes a non-empty category set.
+  sanitizers section neutralizes a non-empty category set. A raises section
+  is the one section a declared empty value is a statement of: no class,
+  distinct from the absent section, which asserts nothing. Each raises
+  element is a class name, spelled and folded as a class subject.
 - A source element's explicit production site is an argument port of a
   callable subject: explicit *return* is a load failure (the default
   already states it), and a non-callable subject admits no explicit site.
