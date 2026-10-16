@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 /**
  * One model: the subject it identifies and the sectioned statement asserted
  * for it, under an optional condition. The subject is the entry's identity —
- * the form carries no name. The six section fields decode flat beside
+ * the form carries no name. The seven section fields decode flat beside
  * `subject`, with no wrapper key.
  *
  * An entry carrying a `when:` condition holds for the calls its pattern
@@ -174,7 +174,7 @@ public data class ModelEntry(
 }
 
 /**
- * The six section fields as they decode flat beside `subject`, gathered into
+ * The seven section fields as they decode flat beside `subject`, gathered into
  * the creator through one `@JsonUnwrapped` parameter — before the
  * signature-derived returns completion, so [ModelBody]'s
  * propagation-requires-returns rule stays out of the raw decode. Each
@@ -184,13 +184,15 @@ public data class ModelEntry(
 internal data class SectionFields(
     val returns: ReturnKind? = null,
     val propagation: List<Propagation>? = null,
+    val characters: CharacterBound? = null,
     val sources: List<SourceDecl>? = null,
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
     val raises: Set<ClassSubject>? = null,
 ) {
     /** The entry's body, with [returns] completed by the enclosing creator. */
-    fun complete(returns: ReturnKind?): ModelBody = ModelBody(returns, propagation, sources, sinks, sanitizers, raises)
+    fun complete(returns: ReturnKind?): ModelBody =
+        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, raises)
 
     // The unwrapped path funnels every key the creator does not name into this
     // holder and would ignore the unknown ones; this rejector restores the

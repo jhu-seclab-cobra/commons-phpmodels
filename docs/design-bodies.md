@@ -1,0 +1,123 @@
+# PHP Models — Body Design
+
+The sectioned model body and its element types. Vocabulary, policy, and the
+decoder: [design.md](design.md). Ports and propagations:
+[design-subjects.md](design-subjects.md). The entry that carries a body:
+[design-entries.md](design-entries.md).
+
+## Design Overview
+
+- **Classes:** `ModelBody`, `ValueSemantics`, `CharacterBound`,
+  `CharacterClass`, `SourceDecl`, `KeyPattern`, `SinkDecl`, `SanitizerDecl`
+  (data classes)
+- **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
+- **Relationships:** `ModelBody` contains the optional section values;
+  `CharacterBound` contains optional `Port.Argument`s and an optional
+  `CharacterClass`; `SinkDecl` contains one `Port.Argument` and one
+  `VulnClassId`; `SourceDecl` contains an optional `Port.Argument` site
+  override and optional `KeyPattern`s; `ValueSemantics` is built from a
+  `ModelBody`. All arrows one-way into the data types.
+- **Exceptions:** `IllegalArgumentException` from `init` blocks and
+  creators ([design.md](design.md) Exception / Error Types).
+- **Dependency roles:** Data holders: every type here. Decoded by
+  `ModelYaml` ([design.md](design.md)).
+
+Package `edu.jhu.cobra.commons.phpmodels`; every type is public.
+
+## Class / Type Specifications
+
+### SourceDecl
+
+**Responsibility:** One element of the sources section: a non-empty
+produced color set, an optional explicit production site, and optional key
+patterns restricting production to matching array keys.
+
+**State/Fields:** `origin: Set<OriginId>` (YAML key `provenance:`), `at: Port.Argument?`
+(null = the kind-fixed default site, [model.md](model.md)),
+`keys: List<KeyPattern>?`.
+
+**Validation (`init`):** `origin` non-empty; a declared `keys` list
+non-empty. Whether the subject admits an explicit site is entry-level
+validation ([design-entries.md](design-entries.md)).
+
+### KeyPattern
+
+**Responsibility:** One key pattern of a source element: the declared
+pattern with its regex, compiled at construction so no uncompiled pattern
+survives the load; equality over the pattern text (`Regex` carries no value
+equality). Decoded from the bare pattern scalar.
+
+**Methods:** `fun matches(key: String): Boolean` — entire-key,
+case-sensitive match, never a substring match.
+
+### SinkDecl, SanitizerDecl
+
+**Responsibility:** One element of the sinks / sanitizers sections:
+`SinkDecl(port: Port.Argument, vulnClass: VulnClassId)` — one dangerously
+consumed argument port under one category (YAML key `category:`);
+`SanitizerDecl(categories: Set<VulnClassId>)` — a non-empty neutralized
+category set.
+
+### CharacterBound
+
+**Responsibility:** The characters section: `of: Set<Port.Argument>?` — the
+ports whose bytes the result copies; `within: CharacterClass?` — the class
+every result byte belongs to. A null field states no bound of its kind.
+
+**Validation (`init`):** at least one field declared; a declared `of` set
+non-empty. That each `of` port flows into the result is body-level
+validation (ModelBody).
+
+### CharacterClass
+
+**Responsibility:** One declared class of bytes: the pattern text with a
+membership flag per byte value, evaluated at construction so no uncompiled
+pattern survives the load; equality over the pattern text, as for
+`KeyPattern`. Decoded from the bare pattern scalar.
+
+**Methods:** `fun contains(byte: Int): Boolean` — the pattern matches the
+one-character Latin-1 string of the byte value (0..255).
+
+### ModelBody
+
+**Responsibility:** The sectioned statement of one model: seven optional
+assertion sections. An all-absent body is constructible — a signature-only
+entry has one — and the at-least-one-section rule therefore lives at the
+entry level, where the signature is visible: `ModelEntry` requires a
+signature or a non-empty body ([design-entries.md](design-entries.md)).
+
+**State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
+`characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
+`sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (each
+element decoded by the `ClassSubject` creator; empty = throws none).
+
+**Validation (`init`):** propagation and characters each require returns
+(the value-semantics unit is asserted whole or not at all — the
+signature-derived completion happens in the entry, before construction);
+each `characters.of` port is the from-port of a declared flow into
+`Port.Return`; a declared section other than `raises` is non-empty.
+
+**Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
+`namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;
+`declaresExplicitSourceSite: Boolean` — a source element declares `at`
+(the port-admissibility predicates `ModelEntry` reads);
+`fun valueSemantics(): ValueSemantics?` — null when returns is undeclared.
+
+### ValueSemantics
+
+**Responsibility:** The value-semantics unit a lookup serves: the returns
+classification, the exhaustive propagation set, and `characters:
+CharacterBound?`. An absent propagation section in the declaring body
+becomes the empty list — no flow, not unknown flow; an absent characters
+section stays null — no bound.
+
+### ReturnKind
+
+**Responsibility:** Closed classification of the result of a call with no
+interpretable body: `STR`, `NUM`, `BOOL`, `ANY`.
+
+**Methods:** `fun join(other: ReturnKind): ReturnKind` — itself when equal,
+`ANY` otherwise. Mapping into a consumer's value lattice is the consumer's
+extension; this library owns no lattice type.
+
+Domain semantics: [model.md](model.md).

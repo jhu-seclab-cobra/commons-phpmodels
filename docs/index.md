@@ -8,7 +8,8 @@
 | model-conditions.md | Conditional models: argument-pattern condition, match outcome, entry alternatives. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
 | model-sets.md | Document sets, accumulated vocabulary, category mapping, set provenance rank. |
-| design.md | Vocabulary, policy, body types, decoder, loaders. |
+| design.md | Vocabulary, policy, decoder, loaders. |
+| design-bodies.md | The model body, its section element types, the character bound. |
 | design-subjects.md | Subject kinds, ports, and the propagation pair. |
 | design-entries.md | The entry form, its creator, and entry-level validation. |
 | design-conditions.md | The argument pattern type and its match operation. |

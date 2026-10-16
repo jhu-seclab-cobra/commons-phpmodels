@@ -44,6 +44,14 @@ category mapping: [model-sets.md](model-sets.md).
     forms the **value-semantics unit**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
     without *returns* does not exist.
+  - *characters* (agent decision CH-1) — the bytes the call result may
+    hold: only bytes of the listed argument ports (*of*), only bytes of one
+    Character Class (*within*), or both, each bound narrowing the other.
+    The bytes of a scalar value are those of its string form; the bytes of
+    an array value are those of its elements. Third part of the
+    value-semantics unit: it requires *returns*, and its absence states no
+    bound. `basename` declares *of* `argument(0)` *within* every byte but
+    `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
   - *sources* — each element produces a non-empty set of Origin Colors at
     one production site. The site defaults per subject kind — the call
     result for a callable, the variable's value for a predefined variable —
@@ -69,12 +77,15 @@ category mapping: [model-sets.md](model-sets.md).
   production site. Satisfied only when the entire key matches,
   case-sensitively — array keys are runtime data, not identifiers, so no
   case folding applies.
+- **Character Class** — A regular expression matched against one byte read
+  as one Latin-1 character; the class holds every byte it matches: `[^/]`,
+  `[0-9a-f]`.
 - **Policy** — The global relation from each Origin Color to the set of
   Danger Categories it can trigger. One instance for the whole analysis.
   Rows sharing an origin accumulate (union of enabled categories).
 - **Override Unit** — The granularity at which one declaration replaces
   another for the same subject: the value-semantics unit (returns together
-  with propagation), sources, sinks, sanitizers, raises, or the signature. A
+  with propagation and characters), sources, sinks, sanitizers, raises, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
@@ -91,6 +102,7 @@ itself an effect.
 | Model | Matching Subject | identifies | 1:1 | The model states this subject's semantics and taint effects |
 | Propagation | Port × Port | flows | N:— | Colors at the from-port reach the to-port; an undeclared pair carries nothing |
 | Model (sources) | Origin Color | produces | M:N | The source introduces these colors at its production site |
+| Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
 | Model (sinks) | Port × Danger Category | consumes under | N:M | The named argument port is sensitive to that category |
 | Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value |
 | Model (raises) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
@@ -132,7 +144,12 @@ model, driven by the declarations defined here.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return
   type ([model-declarations.md](model-declarations.md)).
-- The *returns*, *propagation*, and *raises* sections are declared only for
+- A characters section requires a returns section, as propagation does,
+  and declares *of*, *within*, or both. An *of* list is non-empty and
+  names argument ports only, each the from-port of a declared flow into
+  *return*: a byte copied into the result is a flow into it. A *within*
+  class is a regular expression that compiles.
+- The *returns*, *propagation*, *characters*, and *raises* sections are declared only for
   callable subjects. A class subject declares no assertion section. Every other
   non-callable kind — constant, class constant, property, predefined
   variable — admits only the *sources* section.

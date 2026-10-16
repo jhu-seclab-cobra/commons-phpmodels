@@ -35,7 +35,8 @@ import kotlin.test.assertNull
  *   agreement; an invalid pattern fails at construction.
  * - `declaresOnlySources reflects the section set` — true for sources alone.
  * - `isEmpty is false once any section is declared` — each of the six
- *   sections alone makes a body.
+ *   independently declarable sections alone makes a body; characters joins
+ *   returns.
  * - `namesReceiverPort reflects the propagation sides` — `this` on either
  *   side of any pair.
  * - `declaresExplicitSourceSite reflects the source at ports` — any source
@@ -173,6 +174,8 @@ internal class ModelBodyTest {
         val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
         assertEquals(false, ModelBody(returns = ReturnKind.ANY).isEmpty)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, propagation = flow).isEmpty)
+        val bound = CharacterBound(within = CharacterClass("[a-z]"))
+        assertEquals(false, ModelBody(returns = ReturnKind.ANY, characters = bound).isEmpty)
         assertEquals(false, ModelBody(sources = sources).isEmpty)
         assertEquals(false, ModelBody(sinks = sinks).isEmpty)
         assertEquals(false, ModelBody(sanitizers = sanitizers).isEmpty)

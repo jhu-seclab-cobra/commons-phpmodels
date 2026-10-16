@@ -16,8 +16,10 @@ for (entry in set.entries) {
 
 - **`ModelEntry(subject: ModelSubject, condition: ArgPattern?, signature: SignatureInfo?, body: ModelBody)`** — One entry: a named subject with its assertions. Several entries for one subject are alternatives; `(subject, condition)` is unique within one document.
 - **`ArgPattern(expected: List<IPrimitiveVal?>)`** — The `when:` condition: one expected commons-value scalar per argument position, `null` for the wildcard `_`. `matches(actual: List<IPrimitiveVal?>): Boolean?` — `false` when the pattern is longer than the call or a known argument differs; `true` when every listed position holds an equal known argument; `null` when an unknown (`null` or `Unsure`) argument decides. `positions: List<Int>` lists the non-wildcard indexes.
-- **`ModelBody`** — Six optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
-- **`ValueSemantics(returns: ReturnKind, propagation: List<Propagation>)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow).
+- **`ModelBody`** — Seven optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
+- **`ValueSemantics(returns: ReturnKind, propagation: List<Propagation>, characters: CharacterBound?)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow); absent characters section stays null (no bound).
+- **`CharacterBound(of: Set<Port.Argument>?, within: CharacterClass?)`** — The bytes a call result may hold: only bytes of the `of` ports' values, only bytes of the `within` class; at least one field declared, a declared `of` non-empty.
+- **`CharacterClass(pattern: String)`** — Regex matched against one byte read as one Latin-1 character; `contains(byte: Int): Boolean` over 0..255. Decoded from a bare string scalar; equality over the pattern text.
 - **`Propagation(from: Port.Input, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.
 - **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Receiver` (spelling `this`), `Port.Return` (spelling `return`). `Port.Input` is the sealed sub-interface of `Argument` and `Receiver`. `Port.parse(raw: String): Port`; `Port.Argument.parseArgument(raw: String): Port.Argument` and `Port.Input.parseInput(raw: String): Port.Input` narrow to the subtype.
 - **`SourceDecl(origin: Set<OriginId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced color set (YAML key `provenance`); optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
@@ -31,11 +33,13 @@ for (entry in set.entries) {
 - `when:` is a YAML sequence of scalars, one per argument position: `when: [_, true]`. `_` is the wildcard; a boolean becomes `BoolVal`, an integer within `Long` becomes `IntVal`, any other number becomes `FloatVal`, `null`/`~` becomes `NullVal`, any other text becomes `StrVal`. Quote a scalar to force the string shape.
 - A pattern must be non-empty and name at least one non-wildcard position; a mapping or sequence element fails the decode.
 - `raises:` is a YAML sequence of bare class names, without the `class:` key: `raises: [ValueError, \JsonException]`. Each folds as a class subject (leading `\` stripped, lowercased); a member spelling fails. `raises: []` is a complete statement, unlike any other empty section.
+- `characters:` is a mapping with `of:` (a sequence of `argument(n)` ports) and `within:` (a quoted regex): `characters: {of: [argument(0)], within: "[^/]"}`. The bytes of a scalar are those of its string form; the bytes of an array are those of its elements.
 
 ## Gotchas
 
 - An entry asserting nothing — no signature, empty body — is rejected at load.
 - `propagation` without `returns` is rejected; the value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
+- `characters` without `returns` is rejected, like `propagation`; beside a callable `signature:` it needs a `propagation` section for `returns` to be derived. Each `of:` port must be the `from:` of a declared flow into `return`.
 - Explicit `returns:` beside a callable `signature:` is rejected — one fact, one source.
 - A callable `signature:` fixes the arity: an argument port (condition position, propagation side, sink, source `at:` site) outside the declared parameter list is rejected, unless the last parameter is variadic. An entry without a signature is not arity-checked.
 - With a callable `signature:`, a written-into argument port — a propagation `to:` side or a source `at:` site — must name a `byRef: true` parameter; a variadic-tail position resolves to the variadic parameter's flag.
@@ -43,6 +47,6 @@ for (entry in set.entries) {
 - A `when:` condition on a non-callable subject is rejected.
 - The receiver port `this` anywhere in the body requires a `method` subject.
 - A source `at:` site requires a callable subject.
-- Section admissibility follows subject kind: `returns`/`propagation`, `raises`, and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
+- Section admissibility follows subject kind: `returns`/`propagation`/`characters`, `raises`, and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
 - Two entries of one document sharing subject and condition are rejected; an unconditional entry beside conditional ones is the subject's default. Which alternative applies to a call is the consumer's decision over `matches`.
 - Equality in `matches` is commons-value equality: `IntVal(1)` and `FloatVal(1.0)` are unequal, as are `BoolVal(true)` and `StrVal("true")`.

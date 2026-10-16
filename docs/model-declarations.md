@@ -120,11 +120,13 @@ alternatives of the declared type itself.
   ([model.md](model.md)); the signature changes only where its returns half
   comes from:
   - Signature present, propagation declared → the unit is asserted: returns
-    derived from the declared return type, flows exactly as declared.
+    derived from the declared return type, flows and characters exactly as
+    declared.
   - Signature present, no propagation → **no value-semantics unit**. Existence
     is asserted; value flow stays at the consumer's conservative default in
     which every argument influences the result. Absence of a flow annotation
-    in the upstream data is not purity.
+    in the upstream data is not purity, so a characters section here is a
+    load failure: it has no returns to complete.
   - Signature present, explicit `returns` → load failure: one fact, one
     source. A purity assertion (returns with an empty flow set) is a
     hand-written statement and belongs in a higher layer without a signature.

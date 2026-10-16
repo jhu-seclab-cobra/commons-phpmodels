@@ -84,6 +84,55 @@ public data class KeyPattern(
 }
 
 /**
+ * The bytes a character bound admits: every byte the declared regular
+ * expression matches, each byte read as one Latin-1 character. Equality is
+ * over the pattern text, as for [KeyPattern].
+ *
+ * @property pattern The declared pattern source: `[^/]`, `[0-9a-f]`.
+ * @throws java.util.regex.PatternSyntaxException If [pattern] does not compile.
+ */
+public data class CharacterClass(
+    public val pattern: String,
+) {
+    // One membership flag per byte value, evaluated once at construction.
+    private val members: BooleanArray =
+        Regex(pattern).let { regex -> BooleanArray(BYTE_VALUES) { regex.matches(it.toChar().toString()) } }
+
+    /** True when the byte value [byte] (0..255) belongs to the class. */
+    public fun contains(byte: Int): Boolean = members[byte]
+
+    public companion object {
+        private const val BYTE_VALUES = 256
+
+        /** Decodes the bare pattern scalar. */
+        @JvmStatic
+        @JsonCreator
+        public fun parse(raw: String): CharacterClass = CharacterClass(raw)
+    }
+}
+
+/**
+ * The characters section: the bytes a call result may hold. Each declared
+ * field bounds the result; both together narrow each other.
+ *
+ * @property of The argument ports whose bytes the result copies, or null
+ *   when the result is not bounded by its arguments.
+ * @property within The class every result byte belongs to, or null when no
+ *   class bounds it.
+ * @throws IllegalArgumentException If neither field is declared, or a
+ *   declared port set is empty.
+ */
+public data class CharacterBound(
+    val of: Set<Port.Argument>? = null,
+    val within: CharacterClass? = null,
+) {
+    init {
+        require(of != null || within != null) { "Characters section declares neither 'of' nor 'within'" }
+        require(of == null || of.isNotEmpty()) { "Characters section declares an empty 'of' set" }
+    }
+}
+
+/**
  * One produced color set of a sources section.
  *
  * @property origin Origin colors the produced value carries; YAML key `provenance`.
@@ -131,12 +180,15 @@ public data class SanitizerDecl(
 }
 
 /**
- * The sectioned statement of one model: six optional assertion sections.
+ * The sectioned statement of one model: seven optional assertion sections.
  *
- * `returns` and `propagation` form one value-semantics unit: declaring `returns`
- * asserts the flow set exhaustively, so an absent propagation section means the
- * result is unrelated to the arguments. Declaring `propagation` alone is a load
- * failure — the unit is asserted whole or not at all.
+ * `returns`, `propagation`, and `characters` form one value-semantics unit:
+ * declaring `returns` asserts the flow set exhaustively, so an absent
+ * propagation section means the result is unrelated to the arguments.
+ * Declaring `propagation` or `characters` alone is a load failure — the unit
+ * is asserted whole or not at all. A byte copied into the result is a flow
+ * into it, so each `characters.of` port is the source of a declared flow into
+ * the result.
  *
  * An all-absent body is constructible — a signature-only entry has one — and
  * the at-least-one-section rule therefore lives at the entry level, where the
@@ -147,12 +199,14 @@ public data class SanitizerDecl(
  * implementation throws no class. Each element is an exact class, spelled and
  * folded as a class subject.
  *
- * @throws IllegalArgumentException If propagation comes without returns, or a
+ * @throws IllegalArgumentException If propagation or characters comes without
+ *   returns, a `characters.of` port has no declared flow into the result, or a
  *   declared section other than `raises` is empty.
  */
 public data class ModelBody(
     val returns: ReturnKind? = null,
     val propagation: List<Propagation>? = null,
+    val characters: CharacterBound? = null,
     val sources: List<SourceDecl>? = null,
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
@@ -162,6 +216,11 @@ public data class ModelBody(
         require(propagation == null || returns != null) {
             "Propagation without returns: the value-semantics unit is asserted whole or not at all"
         }
+        require(characters == null || returns != null) {
+            "Characters without returns: the value-semantics unit is asserted whole or not at all"
+        }
+        val copied = characters?.of.orEmpty() - flowSourcesIntoResult()
+        require(copied.isEmpty()) { "Characters copied from $copied, which has no declared flow into the result" }
         requireDeclaredNonEmpty(propagation, "propagation")
         requireDeclaredNonEmpty(sources, "sources")
         requireDeclaredNonEmpty(sinks, "sinks")
@@ -176,9 +235,14 @@ public data class ModelBody(
         require(section == null || section.isNotEmpty()) { "Declared $name section is empty" }
     }
 
+    private fun flowSourcesIntoResult(): Set<Port.Input> =
+        propagation.orEmpty().filter { it.to == Port.Return }.mapTo(mutableSetOf()) { it.from }
+
     // Every section other than sources is absent.
     private val declaresNothingBesidesSources: Boolean
-        get() = returns == null && propagation == null && sinks == null && sanitizers == null && raises == null
+        get() =
+            returns == null && propagation == null && characters == null &&
+                sinks == null && sanitizers == null && raises == null
 
     /** True when no section is declared. */
     public val isEmpty: Boolean
@@ -200,18 +264,23 @@ public data class ModelBody(
         get() = sources.orEmpty().any { it.at != null }
 
     /** The value-semantics unit this body asserts, or null when returns is undeclared. */
-    public fun valueSemantics(): ValueSemantics? = returns?.let { ValueSemantics(it, propagation.orEmpty()) }
+    public fun valueSemantics(): ValueSemantics? =
+        returns?.let { ValueSemantics(it, propagation.orEmpty(), characters) }
 }
 
 /**
  * The value-semantics unit a lookup serves: the returns classification together
- * with the exhaustive propagation set. An absent propagation section in the
- * declaring body becomes the empty list here — no flow, not unknown flow.
+ * with the exhaustive propagation set and the optional character bound. An
+ * absent propagation section in the declaring body becomes the empty list here
+ * — no flow, not unknown flow; an absent characters section stays null — no
+ * bound.
  *
  * @property returns Classification of the call's result.
  * @property propagation Every declared port-to-port flow.
+ * @property characters The bytes the result may hold, or null when unbounded.
  */
 public data class ValueSemantics(
     val returns: ReturnKind,
     val propagation: List<Propagation>,
+    val characters: CharacterBound? = null,
 )

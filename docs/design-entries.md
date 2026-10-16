@@ -39,7 +39,7 @@ document sharing subject and condition ([design.md](design.md)).
 
 **State/Fields:** `val subject: ModelSubject`, `val condition: ArgPattern?`
 (decoded from the optional `when:` field), `val signature: SignatureInfo?`,
-`val body: ModelBody`. The six assertion sections decode flat beside
+`val body: ModelBody`. The seven assertion sections decode flat beside
 `subject` — no wrapper key — gathered into the creator through one
 unwrapped parameter of `SectionFields`, which carries the raw sections
 before the signature-derived returns completion and rejects any unknown
@@ -47,7 +47,8 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
 - `subject` admits only the sections its kind allows: a non-callable
-  subject rejects returns, propagation, raises, and the condition; a class subject
+  subject rejects returns, propagation, characters, raises, and the
+  condition; a class subject
   declares nothing besides its signature; every other non-callable kind
   declares only sources.
 - Port admissibility follows the subject kind: a receiver port anywhere in
@@ -64,9 +65,12 @@ key ([impl.md](impl.md)); the creator completes them into the body.
   source); a propagation section beside a callable signature is completed
   into the value-semantics unit with the derived classification before body
   construction, so `ModelBody`'s propagation-requires-returns rule holds.
+  A characters section beside a callable signature joins that completion;
+  without a propagation section no returns is derived, so it is rejected.
 - At least one section present: a signature or a non-empty body — an entry
   asserting nothing is a load failure.
-- Body-internal validation lives in `ModelBody` ([design.md](design.md)).
+- Body-internal validation lives in `ModelBody`
+  ([design-bodies.md](design-bodies.md)).
 
 **Decoding:** the companion creator takes `subject`, the optional `when`,
 the raw `signature` node, and the unwrapped sections; it narrows the
@@ -76,10 +80,11 @@ present ([impl.md](impl.md)).
 
 ### SectionFields (internal)
 
-**Responsibility:** The six section fields as they decode flat beside
-`subject`: `returns`, `propagation`, `sources`, `sinks`, `sanitizers`,
-`raises`, all optional. `fun complete(returns: ReturnKind?): ModelBody` builds the body
-after the creator's returns completion. A throwing any-setter restores the
+**Responsibility:** The seven section fields as they decode flat beside
+`subject`: `returns`, `propagation`, `characters`, `sources`, `sinks`,
+`sanitizers`, `raises`, all optional.
+`fun complete(returns: ReturnKind?): ModelBody` builds the body after the
+creator's returns completion. A throwing any-setter restores the
 strict unknown-key failure the unwrapped decode path would otherwise
 absorb ([impl.md](impl.md)).
 

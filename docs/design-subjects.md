@@ -1,7 +1,8 @@
 # PHP Models — Subject and Port Design
 
 The declaration-identity types: subjects, ports, and the propagation pair.
-Vocabulary, policy, body, and loaders: [design.md](design.md). The entry
+Vocabulary, policy, and loaders: [design.md](design.md). Body types:
+[design-bodies.md](design-bodies.md). The entry
 form: [design-entries.md](design-entries.md).
 
 ## Design Overview

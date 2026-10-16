@@ -63,10 +63,10 @@ implementation throws, and its declaration. Composed of sections, at least one p
 - Relationships: identifies exactly one Matching Subject; validated whole at
   decode.
 
-**Section** — One aspect of a model: *returns*, *propagation*, *sources*,
-*sinks*, *sanitizers*, *raises*, or *signature*.
-- Scope: an absent section asserts nothing about that aspect; *returns* and
-  *propagation* form one coupled value-semantics statement
+**Section** — One aspect of a model: *returns*, *propagation*,
+*characters*, *sources*, *sinks*, *sanitizers*, *raises*, or *signature*.
+- Scope: an absent section asserts nothing about that aspect; *returns*,
+  *propagation*, and *characters* form one coupled value-semantics statement
   ([model.md](model.md)).
 - Relationships: composes a Model; its positional references are Ports.
 

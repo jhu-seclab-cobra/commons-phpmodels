@@ -20,7 +20,7 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 
 ## Decoded Types
 
-- [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation.
+- [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation, the character bound.
 - [Subjects and Signatures](llms/subjects.md): The seven subject kinds, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
 - [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, interned identifiers, `TaintPolicy`.
 

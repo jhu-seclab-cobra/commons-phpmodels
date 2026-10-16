@@ -74,6 +74,7 @@ public data class CategoryMapping(
         ModelBody(
             returns = body.returns,
             propagation = body.propagation,
+            characters = body.characters,
             sources = body.sources?.mapNotNull(::apply)?.ifEmpty { null },
             sinks = body.sinks?.mapNotNull(::apply)?.ifEmpty { null },
             sanitizers = body.sanitizers?.mapNotNull(::apply)?.ifEmpty { null },
