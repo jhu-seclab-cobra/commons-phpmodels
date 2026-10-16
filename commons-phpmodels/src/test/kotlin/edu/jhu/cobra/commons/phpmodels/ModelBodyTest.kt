@@ -21,6 +21,8 @@ import kotlin.test.assertNull
  * - `propagation requires returns` — the value-semantics unit is whole.
  * - `declared empty section is rejected` — an empty list is a mistake, not
  *   an absent section.
+ * - `declared empty raises is a statement` — the one section whose empty
+ *   value states something: no class is thrown.
  * - `source element rejects an empty key-pattern set` — declared keys are
  *   non-empty.
  * - `source element rejects an empty provenance set` — a source produces at
@@ -32,7 +34,7 @@ import kotlin.test.assertNull
  * - `key patterns compare by pattern text` — equality and hash-code
  *   agreement; an invalid pattern fails at construction.
  * - `declaresOnlySources reflects the section set` — true for sources alone.
- * - `isEmpty is false once any section is declared` — each of the five
+ * - `isEmpty is false once any section is declared` — each of the six
  *   sections alone makes a body.
  * - `namesReceiverPort reflects the propagation sides` — `this` on either
  *   side of any pair.
@@ -107,6 +109,13 @@ internal class ModelBodyTest {
     }
 
     @Test
+    fun `declared empty raises is a statement`() {
+        val body = ModelBody(raises = emptySet())
+        assertEquals(emptySet(), body.raises)
+        assertEquals(false, body.isEmpty)
+    }
+
+    @Test
     fun `source element rejects an empty key-pattern set`() {
         assertFailsWith<IllegalArgumentException> {
             SourceDecl(setOf(OriginId("remote")), keys = emptyList())
@@ -143,6 +152,7 @@ internal class ModelBodyTest {
         val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
         assertEquals(true, ModelBody(sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, sources = sources).declaresOnlySources)
+        assertEquals(false, ModelBody(sources = sources, raises = emptySet()).declaresOnlySources)
         assertEquals(false, ModelBody().declaresOnlySources)
     }
 
@@ -166,6 +176,7 @@ internal class ModelBodyTest {
         assertEquals(false, ModelBody(sources = sources).isEmpty)
         assertEquals(false, ModelBody(sinks = sinks).isEmpty)
         assertEquals(false, ModelBody(sanitizers = sanitizers).isEmpty)
+        assertEquals(false, ModelBody(raises = setOf(ClassSubject("valueerror"))).isEmpty)
     }
 
     @Test

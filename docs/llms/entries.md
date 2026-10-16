@@ -16,7 +16,7 @@ for (entry in set.entries) {
 
 - **`ModelEntry(subject: ModelSubject, condition: ArgPattern?, signature: SignatureInfo?, body: ModelBody)`** — One entry: a named subject with its assertions. Several entries for one subject are alternatives; `(subject, condition)` is unique within one document.
 - **`ArgPattern(expected: List<IPrimitiveVal?>)`** — The `when:` condition: one expected commons-value scalar per argument position, `null` for the wildcard `_`. `matches(actual: List<IPrimitiveVal?>): Boolean?` — `false` when the pattern is longer than the call or a known argument differs; `true` when every listed position holds an equal known argument; `null` when an unknown (`null` or `Unsure`) argument decides. `positions: List<Int>` lists the non-wildcard indexes.
-- **`ModelBody`** — Five optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`. `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
+- **`ModelBody`** — Six optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
 - **`ValueSemantics(returns: ReturnKind, propagation: List<Propagation>)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow).
 - **`Propagation(from: Port.Input, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.
 - **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Receiver` (spelling `this`), `Port.Return` (spelling `return`). `Port.Input` is the sealed sub-interface of `Argument` and `Receiver`. `Port.parse(raw: String): Port`; `Port.Argument.parseArgument(raw: String): Port.Argument` and `Port.Input.parseInput(raw: String): Port.Input` narrow to the subtype.
@@ -30,6 +30,7 @@ for (entry in set.entries) {
 
 - `when:` is a YAML sequence of scalars, one per argument position: `when: [_, true]`. `_` is the wildcard; a boolean becomes `BoolVal`, an integer within `Long` becomes `IntVal`, any other number becomes `FloatVal`, `null`/`~` becomes `NullVal`, any other text becomes `StrVal`. Quote a scalar to force the string shape.
 - A pattern must be non-empty and name at least one non-wildcard position; a mapping or sequence element fails the decode.
+- `raises:` is a YAML sequence of bare class names, without the `class:` key: `raises: [ValueError, \JsonException]`. Each folds as a class subject (leading `\` stripped, lowercased); a member spelling fails. `raises: []` is a complete statement, unlike any other empty section.
 
 ## Gotchas
 
@@ -42,6 +43,6 @@ for (entry in set.entries) {
 - A `when:` condition on a non-callable subject is rejected.
 - The receiver port `this` anywhere in the body requires a `method` subject.
 - A source `at:` site requires a callable subject.
-- Section admissibility follows subject kind: `returns`/`propagation` and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
+- Section admissibility follows subject kind: `returns`/`propagation`, `raises`, and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
 - Two entries of one document sharing subject and condition are rejected; an unconditional entry beside conditional ones is the subject's default. Which alternative applies to a call is the consumer's decision over `matches`.
 - Equality in `matches` is commons-value equality: `IntVal(1)` and `FloatVal(1.0)` are unequal, as are `BoolVal(true)` and `StrVal("true")`.

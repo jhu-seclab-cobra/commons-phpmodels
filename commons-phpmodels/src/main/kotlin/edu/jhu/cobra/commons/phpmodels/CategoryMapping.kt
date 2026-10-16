@@ -77,6 +77,7 @@ public data class CategoryMapping(
             sources = body.sources?.mapNotNull(::apply)?.ifEmpty { null },
             sinks = body.sinks?.mapNotNull(::apply)?.ifEmpty { null },
             sanitizers = body.sanitizers?.mapNotNull(::apply)?.ifEmpty { null },
+            raises = body.raises,
         )
 
     private fun apply(source: SourceDecl): SourceDecl? {

@@ -131,7 +131,7 @@ public data class SanitizerDecl(
 }
 
 /**
- * The sectioned statement of one model: five optional assertion sections.
+ * The sectioned statement of one model: six optional assertion sections.
  *
  * `returns` and `propagation` form one value-semantics unit: declaring `returns`
  * asserts the flow set exhaustively, so an absent propagation section means the
@@ -143,8 +143,12 @@ public data class SanitizerDecl(
  * signature is visible: `ModelEntry` requires a signature or a non-empty
  * body.
  *
+ * `raises` is the one section whose declared empty value is a statement: the
+ * implementation throws no class. Each element is an exact class, spelled and
+ * folded as a class subject.
+ *
  * @throws IllegalArgumentException If propagation comes without returns, or a
- *   declared section is empty.
+ *   declared section other than `raises` is empty.
  */
 public data class ModelBody(
     val returns: ReturnKind? = null,
@@ -152,6 +156,7 @@ public data class ModelBody(
     val sources: List<SourceDecl>? = null,
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
+    val raises: Set<ClassSubject>? = null,
 ) {
     init {
         require(propagation == null || returns != null) {
@@ -173,7 +178,7 @@ public data class ModelBody(
 
     // Every section other than sources is absent.
     private val declaresNothingBesidesSources: Boolean
-        get() = returns == null && propagation == null && sinks == null && sanitizers == null
+        get() = returns == null && propagation == null && sinks == null && sanitizers == null && raises == null
 
     /** True when no section is declared. */
     public val isEmpty: Boolean

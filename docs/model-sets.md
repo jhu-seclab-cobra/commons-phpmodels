@@ -120,8 +120,9 @@ takes part.
   failure.
 - A mapping never introduces a name: every target is already declared in
   the accumulated vocabulary when the mapped set loads.
-- Translation never changes a subject, a port, a condition, a signature, or the
-  value-semantics unit. Only names on the two vocabulary axes change.
+- Translation never changes a subject, a port, a condition, a signature, the
+  value-semantics unit, or the raises section. Only names on the two
+  vocabulary axes change.
 - Loading a set is a read of stored documents; a set is never written by
   the load, and loading the same set twice yields equal results.
 
