@@ -49,8 +49,11 @@ the raw spelling; the private splitters strip the leading namespace slash,
 split at the first `::`, and require the `$` prefix where the kind's
 spelling mandates it. The splitters are the single authority for member
 spellings; no other code inspects subject strings. Violations throw
-`IllegalArgumentException` inside the creator. Jackson mechanism verified
-in [impl.md](impl.md).
+`IllegalArgumentException` inside the creator. The wrapper key appears only
+where the kind is open, a position typed `ModelSubject`: both sealed bases
+turn off the inherited wrapper, so a position typed by one concrete kind (a
+`raises` element, typed `ClassSubject`) decodes the bare spelling through
+that kind's creator. Jackson mechanism verified in [impl.md](impl.md).
 
 **Subtypes, YAML kind keys, and identity:**
 - `FunctionSubject(name)` — `function:`, folded.

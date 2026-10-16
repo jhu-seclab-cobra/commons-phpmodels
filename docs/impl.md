@@ -109,8 +109,8 @@ opener's resources are released regardless of the decode outcome.
   version bump by running the module's test suite — a behavior change fails
   the pinning tests.
 - `JacksonSubjectProbeTest` pins the one-key subject mapping, the
-  entry-level signature narrowing, and the `@JsonUnwrapped` section
-  gathering, decoding throwaway replicas of the [design.md](design.md)
+  subtype-level wrapper opt-out, the entry-level signature narrowing, and
+  the `@JsonUnwrapped` section gathering, decoding throwaway replicas of the [design.md](design.md)
   hierarchies.
 - The production loader tests pin the `invoke`-as-creator row:
   `ModelLoaderTest` decodes class signatures and propagations through the
@@ -139,6 +139,8 @@ opener's resources are released regardless of the decode outcome.
 | `ArgPattern` `init` failure (empty sequence, all wildcards, nested sequence or mapping element) | Rejected at decode | `ValueInstantiationException` |
 | Sealed interface + `@JsonTypeInfo(Id.NAME, As.WRAPPER_OBJECT)` + `@JsonSubTypes` | One-key mapping (`function: strlen`) routes the wrapper key to the named subtype's delegating string creator | — |
 | Unknown wrapper key (`trait: foo`) | Rejected | `InvalidTypeIdException` |
+| `@JsonTypeInfo(use = Id.NONE)` on a sealed subtype of the wrapper-routed interface | A position typed by the subtype (`Set<ClassSubject>`) decodes the bare scalar through the subtype's delegating creator; a position typed by the interface keeps the wrapper routing | — |
+| `@JsonTypeInfo(use = Id.NONE)` on the property instead (param, field, or getter target) | Unusable: does not override the type info the element class inherits; a bare element fails | `MismatchedInputException` |
 | `require(...)` inside a wrapper-routed delegating creator | Rejected at decode | `ValueInstantiationException` |
 | `init { require(...) }` in a `@JvmInline value class` | Rejected at decode — the value-class unwrapping path wraps the `IllegalArgumentException` in a plain `JsonMappingException`, **not** `ValueInstantiationException` | `JsonMappingException` |
 | Creator parameters `(subject: ModelSubject, signature: JsonNode?)` + `ModelYaml.narrow(node, subtype)` (`treeToValue`) inside the creator | Narrows the signature mapping by the sibling kind, keeping the mapper's strictness | — |

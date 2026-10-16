@@ -17,6 +17,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
  * with their owning class folded. Each subtype folds its identity fields
  * itself rather than trusting its callers, and defines equality over the
  * folded form so a subject is usable as a lookup key.
+ *
+ * The wrapper key appears only where the kind is open: a position typed by
+ * one concrete kind (a raises element is a [ClassSubject]) decodes the bare
+ * spelling through that kind's creator.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
 @JsonSubTypes(
@@ -43,6 +47,7 @@ public sealed interface ModelSubject {
  * @throws IllegalArgumentException If the declared name is blank, carries a
  *   spelling-grammar character, or contains whitespace.
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public sealed class NamedSubject(
     private val kind: String,
     final override val name: String,
@@ -74,6 +79,7 @@ public sealed class NamedSubject(
  * @throws IllegalArgumentException If either declared name is blank, carries
  *   a spelling-grammar character, or contains whitespace.
  */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public sealed class MemberSubject(
     private val kind: String,
     owner: String,

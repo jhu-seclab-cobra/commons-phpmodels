@@ -25,8 +25,9 @@ import kotlin.test.assertIs
  * Pins the Jackson mechanisms the subject decoding of [design.md] relies on:
  * a one-key wrapper mapping (`function: strlen`) routed by
  * `Id.NAME`/`As.WRAPPER_OBJECT` into a subtype whose companion carries a
- * delegating string creator. Throwaway replica types; production types must
- * not leak in.
+ * delegating string creator, and a subtype-level `Id.NONE` that lets a
+ * position typed by the subtype decode the bare spelling. Throwaway replica
+ * types; production types must not leak in.
  */
 internal class JacksonSubjectProbeTest {
     @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)
@@ -36,6 +37,7 @@ internal class JacksonSubjectProbeTest {
     )
     sealed interface ProbeSubject
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
     class ProbeFunction(
         val name: String,
     ) : ProbeSubject {
@@ -46,6 +48,7 @@ internal class JacksonSubjectProbeTest {
         }
     }
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
     class ProbeMethod(
         val owner: String,
         val name: String,
@@ -64,6 +67,7 @@ internal class JacksonSubjectProbeTest {
     data class ProbeEntry(
         val subject: ProbeSubject,
         val note: String? = null,
+        val callees: Set<ProbeFunction>? = null,
     )
 
     private val mapper: ObjectMapper =
@@ -86,6 +90,17 @@ internal class JacksonSubjectProbeTest {
         val subject = assertIs<ProbeMethod>(entry.subject)
         assertEquals("mysqli", subject.owner)
         assertEquals("query", subject.name)
+    }
+
+    @Test
+    fun `subtype-typed position decodes the bare spelling`() {
+        // Id.NONE on the subtype turns off the inherited wrapper only where the
+        // declared type is the subtype; the open position keeps its wrapper.
+        // The same annotation on the property does not override the
+        // class-level type info (Jackson 2.22.2).
+        val entry = decode<ProbeEntry>("subject:\n  function: f\ncallees: [STRLEN]\n")
+        assertEquals(listOf("strlen"), entry.callees.orEmpty().map(ProbeFunction::name))
+        assertIs<ProbeFunction>(entry.subject)
     }
 
     @Test
