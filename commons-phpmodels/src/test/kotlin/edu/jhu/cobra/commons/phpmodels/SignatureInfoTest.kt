@@ -1,22 +1,13 @@
 package edu.jhu.cobra.commons.phpmodels
 
-import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.CsvSource
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
 
 /**
- * Declared-type vocabulary and signature field validation.
+ * Signature field validation.
  *
- * - `declared type accepts keywords and class names` — keyword spellings and
- *   namespaced class names construct.
- * - `declared type rejects other spellings` — punctuation and blanks fail.
- * - `declared type derives its return classification` — the four-kind
- *   derivation table, including void and off-keyword standalone spellings.
- * - `isVoid is true exactly for the void keyword` — the no-result marker the
- *   propagation-into-return rule reads.
  * - `class signature folds parent and interfaces` — inheritance edges compare
  *   case-insensitively.
  * - `class signature rejects blank inheritance names` — a blank parent or
@@ -27,60 +18,11 @@ import kotlin.test.assertNotEquals
  * - `typed signature value defaults to null` — a constant without a literal.
  * - `property signature static defaults to false` — instance is the default.
  * - `callable signature params default to empty` — a nullary callable.
- * - `declared type spells its raw text` — toString is the declared spelling.
  * - `class signatures compare by folded fields` — equality and hash code
  *   over classifier, folded parent, and folded interfaces.
  * - `class signature spells its fields` — the toString form.
  */
 internal class SignatureInfoTest {
-    @Test
-    fun `declared type accepts keywords and class names`() {
-        DeclaredType("string")
-        DeclaredType("mysqli")
-        DeclaredType("\\Foo\\Bar")
-    }
-
-    @Test
-    fun `declared type rejects other spellings`() {
-        assertFailsWith<IllegalArgumentException> { DeclaredType("") }
-        assertFailsWith<IllegalArgumentException> { DeclaredType("int|string") }
-        assertFailsWith<IllegalArgumentException> { DeclaredType("?int") }
-    }
-
-    @ParameterizedTest
-    @CsvSource(
-        "string, STR",
-        "int, NUM",
-        "float, NUM",
-        "bool, BOOL",
-        "array, ANY",
-        "mysqli, ANY",
-        "void, ANY",
-        "never, ANY",
-        "self, ANY",
-        "mixed, ANY",
-        "object, ANY",
-        "callable, ANY",
-        "resource, ANY",
-        "null, ANY",
-        "iterable, ANY",
-        "static, ANY",
-        "false, ANY",
-    )
-    fun `declared type derives its return classification`(
-        raw: String,
-        expected: ReturnKind,
-    ) {
-        assertEquals(expected, DeclaredType(raw).toReturnKind())
-    }
-
-    @Test
-    fun `isVoid is true exactly for the void keyword`() {
-        assertEquals(true, DeclaredType("void").isVoid)
-        assertEquals(false, DeclaredType("string").isVoid)
-        assertEquals(false, DeclaredType("never").isVoid)
-    }
-
     @Test
     fun `class signature folds parent and interfaces`() {
         val signature = SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable"))
@@ -143,10 +85,5 @@ internal class SignatureInfoTest {
     @Test
     fun `callable signature params default to empty`() {
         assertEquals(emptyList(), SignatureInfo.CallableSignature(returnType = DeclaredType("void")).params)
-    }
-
-    @Test
-    fun `declared type spells its raw text`() {
-        assertEquals("\\Foo\\Bar", DeclaredType("\\Foo\\Bar").toString())
     }
 }

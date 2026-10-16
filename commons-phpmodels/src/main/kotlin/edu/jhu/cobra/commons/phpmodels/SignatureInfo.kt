@@ -98,62 +98,6 @@ public data class ParameterInfo(
     }
 }
 
-/**
- * A declared PHP type name: one of the closed keyword-type vocabulary or a
- * class name. Stored losslessly; the four-kind returns classification is
- * derived by [toReturnKind] and never stored beside the declared type.
- *
- * @property raw The type name as declared.
- * @throws IllegalArgumentException If [raw] is neither a keyword type nor a
- *   class-name spelling.
- */
-@JvmInline
-public value class DeclaredType(
-    public val raw: String,
-) {
-    init {
-        require(raw.lowercase() in KEYWORD_RETURN_KINDS || CLASS_NAME_SPELLING.matches(raw)) {
-            "Declared type is neither a keyword type nor a class name: '$raw'"
-        }
-    }
-
-    /** The returns classification this declared type derives to. */
-    public fun toReturnKind(): ReturnKind =
-        // A class name is not in the keyword map; it derives to ANY by design.
-        KEYWORD_RETURN_KINDS[raw.lowercase()] ?: ReturnKind.ANY
-
-    /** True when the declared type is `void`: the callable produces no result. */
-    public val isVoid: Boolean
-        get() = raw.equals(VOID, ignoreCase = true)
-
-    override fun toString(): String = raw
-
-    private companion object {
-        // The keyword naming the absent result type, fixed by the PHP type system.
-        private const val VOID = "void"
-
-        // The keyword-type vocabulary is fixed by the PHP type system, not
-        // configuration. Each keyword carries the returns classification it
-        // derives to; non-scalar keywords derive to ANY.
-        private val KEYWORD_RETURN_KINDS: Map<String, ReturnKind> =
-            mapOf(
-                "string" to ReturnKind.STR,
-                "int" to ReturnKind.NUM,
-                "float" to ReturnKind.NUM,
-                "bool" to ReturnKind.BOOL,
-                "array" to ReturnKind.ANY,
-                "object" to ReturnKind.ANY,
-                "callable" to ReturnKind.ANY,
-                "resource" to ReturnKind.ANY,
-                "mixed" to ReturnKind.ANY,
-                VOID to ReturnKind.ANY,
-                "null" to ReturnKind.ANY,
-                "iterable" to ReturnKind.ANY,
-            )
-        private val CLASS_NAME_SPELLING = Regex("""\\?[A-Za-z_][A-Za-z0-9_]*(\\[A-Za-z_][A-Za-z0-9_]*)*""")
-    }
-}
-
 /** The closed set of class-like declaration kinds. */
 public enum class Classifier { CLASS, INTERFACE, TRAIT, ENUM }
 

@@ -34,8 +34,8 @@ declaration kind, with no nesting of one declaration inside another.
   keyword type (string, int, float, bool, true, false, array, object,
   callable, iterable, resource, mixed, void, never, null) or a class name.
   Read as a union of alternatives, each an intersection of single types: `?T`
-  is `T|null`, a single type is a union of one alternative. Stored
-  losslessly; the four-kind returns classification is derived from it at
+  is `T|null`, a single type is a union of one alternative. Spelled without
+  whitespace, as PHP reflection prints it. Stored losslessly; the four-kind returns classification is derived from it at
   load and never stored beside it.
 - **Generated Layer** — The lowest configuration layer of a consumer: files
   emitted by an extraction producer from upstream sources. Structurally

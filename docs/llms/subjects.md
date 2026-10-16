@@ -30,7 +30,7 @@ model.subject == subject
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
 - **`ParameterInfo(name: String, type: DeclaredType, optional: Boolean, byRef: Boolean, variadic: Boolean)`** — one declared parameter; position is list order.
-- **`DeclaredType(raw: String)`** — Value class over a keyword type or class name; `toReturnKind(): ReturnKind` derives the classification (string → STR; int, float → NUM; bool → BOOL; else ANY); `isVoid: Boolean` is true for the `void` keyword.
+- **`DeclaredType(raw: String)`** — Value class over a PHP type declaration as spelled, without whitespace: a single type, `?T`, a union, an intersection of class names, or a union of single types and parenthesized intersections; `alternatives: List<Set<String>>` is its union read (one set per alternative, names lowercased, a class name without its leading slash; `?T` reads as `[{t}, {null}]`); `toReturnKind(): ReturnKind` classifies each alternative (string → STR; int, float → NUM; bool, true, false → BOOL; else ANY) and joins them (`int|float` → NUM, `int|false` → ANY); `isVoid: Boolean` is true for the `void` keyword.
 - **`Classifier`** — Enum `CLASS`, `INTERFACE`, `TRAIT`, `ENUM`.
 - **`Visibility`** — Enum `PUBLIC`, `PROTECTED`, `PRIVATE`.
 
