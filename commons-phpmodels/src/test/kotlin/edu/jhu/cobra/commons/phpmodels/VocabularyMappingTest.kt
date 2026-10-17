@@ -30,9 +30,9 @@ import kotlin.test.assertTrue
  * - `unlisted name fails` — an unlisted name is a failure, not a pass-through;
  *   the failure names the name, on an entry, a row, and a direct lookup.
  */
-internal class CategoryMappingTest {
+internal class VocabularyMappingTest {
     private val mapping =
-        CategoryMapping(
+        VocabularyMapping(
             vulnTypes =
                 mapOf(
                     VulnTypeId("sql") to VulnTypeId("sqli"),

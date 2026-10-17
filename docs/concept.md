@@ -23,7 +23,7 @@ name, graph resolution, taint queries) belongs to consumers.
 **Data Flow**
 - **Inputs:** YAML documents — vocabulary declarations, policy rows, model
   entries — grouped into document sets under one root each; optionally a
-  category mapping for one set; scalar values from commons-value where a
+  vocabulary mapping for one set; scalar values from commons-value where a
   document states a literal.
 - **Outputs:** validated typed values — the vocabulary, the taint policy,
   decoded model entries, and one loaded document set per root.
@@ -35,7 +35,7 @@ name, graph resolution, taint queries) belongs to consumers.
 - **Owned:** the model format — subjects, ports, sections, signatures,
   conditions, vocabulary, policy; strict YAML decoding; every load-time
   validation rule of the format itself; the document-set convention shared
-  by every producer and consumer; the category mapping that translates one
+  by every producer and consumer; the vocabulary mapping that translates one
   set's names into a consumer's; the set provenance each set declares and
   the precedence over verification kinds ([concept-provenance.md](concept-provenance.md));
   the one operation that matches a condition against a list of argument
@@ -53,7 +53,7 @@ document set root ─┬─ index.txt ──► model files ─┐
                    ├─ vocabulary.yaml ───────────┤──► decode + validate ──► typed values ──► consumer
                    ├─ policy.yaml ───────────────┤        (this library)          ▲
                    └─ provenance.yaml ───────────┘                                │
-category mapping (consumer-supplied) ── translates a set's names ──────────────────┘
+vocabulary mapping (consumer-supplied) ── translates a set's names ──────────────────┘
 ```
 
 **Model** — The single declarative statement about one subject: what its calls
@@ -139,9 +139,9 @@ an optional policy, and an optional provenance, under fixed file names.
   manifest. Its position among sets is the consumer's; its rank against
   another set follows its set provenance ([concept-provenance.md](concept-provenance.md)).
 - Relationships: contains Models, at most one Vocabulary, one Policy, and
-  one Set Provenance; loaded whole; the target of at most one Category Mapping.
+  one Set Provenance; loaded whole; the target of at most one Vocabulary Mapping.
 
-**Category Mapping** — A consumer-supplied translation from the
+**Vocabulary Mapping** — A consumer-supplied translation from the
 vulnerability types and source kinds a Document Set names to the names in
 the consumer's own vocabulary.
 - Scope: total over the set — every name the set uses is either mapped to
@@ -174,7 +174,7 @@ the consumer's own vocabulary.
    against the declared sets.
 4. Resolve a set — read the manifest, load the set's vocabulary against the
    caller's accumulated vocabulary, then its policy, then its documents in
-   manifest order; apply the category mapping when one is supplied.
+   manifest order; apply the vocabulary mapping when one is supplied.
 
 ## Scenarios
 
@@ -190,7 +190,7 @@ the consumer's own vocabulary.
 - **Interaction — mapped upstream taint set.** A producer publishes a
   document set whose vulnerability types name the medium a sink writes to
   (`sql`, `html`, `shell`). A consumer whose vulnerability types name the
-  attack (`sqli`, `xss`, `cmdi`) mounts the set with a category mapping.
+  attack (`sqli`, `xss`, `cmdi`) mounts the set with a vocabulary mapping.
   The set's entries arrive in the consumer's names; a new upstream medium
   absent from the mapping fails the load instead of vanishing.
 - **Boundary — conflicting redeclaration.** Two sets both declare `sqli`;

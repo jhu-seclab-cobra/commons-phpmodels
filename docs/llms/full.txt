@@ -2,10 +2,10 @@
 
 > Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
+Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `VocabularyMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
 
 - Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
-- Pass a `CategoryMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
+- Pass a `VocabularyMapping` when a set's category or color names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Read `set.provenance` and rank sets with `Precedence.DEFAULT` (or a consumer-built `Precedence`) before letting a later set override an earlier one; never rank by mount order alone.
 - Ship `provenance.yaml` beside `index.txt` in every published set; state `verification: generated` for extraction output and `manual` for hand-reviewed entries.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
@@ -16,7 +16,7 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 ## Loading
 
 - [Loaders](llms/loaders.md): The two public loader objects, their inputs, and decode strictness.
-- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `CategoryMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
+- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `VocabularyMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
 
 ## Decoded Types
 
@@ -39,20 +39,20 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 
 # Loaders
 
-> Public decode surface: `DocumentSetLoader` over one document set, `CategoryMappingLoader` over a consumer's mapping document.
+> Public decode surface: `DocumentSetLoader` over one document set, `VocabularyMappingLoader` over a consumer's mapping document.
 
 ## Quick Start
 
 ```kotlin
 val set = DocumentSetLoader.load(opener, context = Vocabulary.EMPTY)
-val mapping = CategoryMappingLoader.load(mappingYaml.byteInputStream())
+val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
 val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mapping = mapping)
 ```
 
 ## API
 
-- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
-- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes a consumer's translation table.
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
+- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes a consumer's translation table.
 
 The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, `ProvenanceLoader`) are internal: a consumer loads a set, never a single document.
 
@@ -73,7 +73,7 @@ The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, 
 
 # Document Sets
 
-> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a category mapping.
+> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a vocabulary mapping.
 
 ## Quick Start
 
@@ -83,7 +83,7 @@ var vocabulary = Vocabulary.EMPTY
 val stubs = DocumentSetLoader.load(opener, vocabulary)
 vocabulary = vocabulary.merge(stubs.vocabulary)
 
-val mapping = CategoryMappingLoader.load(mappingYaml.byteInputStream())
+val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
 val upstream = DocumentSetLoader.load(upstreamOpener, vocabulary, mapping)
 val entries = stubs.entries + upstream.entries
 val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstream.provenance!!.verification) > 0
@@ -92,7 +92,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 ## API
 
 - **`ResourceOpener.open(path: String): InputStream?`** — `fun interface`; the caller's storage. Path is relative to the set root; null when absent.
-- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice, listed document malformed — the decode failure is the cause), `VocabularyException` (conflicting redeclaration, undeclared reference naming the document, undeclared mapping target, unlisted mapped name), `IllegalArgumentException` (malformed vocabulary, policy, or mapping document).
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice, listed document malformed — the decode failure is the cause), `VocabularyException` (conflicting redeclaration, undeclared reference naming the document, undeclared mapping target, unlisted mapped name), `IllegalArgumentException` (malformed vocabulary, policy, or mapping document).
 - **`DocumentSetLoader.MANIFEST`**, **`VOCABULARY`**, **`POLICY`**, **`PROVENANCE`** — The four fixed file names, directly under the root.
 - **`DocumentSet(vocabulary: Vocabulary, policy: List<PolicyRow>, documents: List<Document>, provenance: SetProvenance? = null)`** — `vocabulary` is what this set contributed (empty for a mapped set); `entries` flattens the documents in order; `provenance` is null when `provenance.yaml` is absent.
 - `provenance.yaml` decodes `producer:` and `verification:` inside the set load. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
@@ -100,10 +100,10 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 - **`Verification`** — `GENERATED`, `MANUAL`.
 - **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind)` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
 - **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
-- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes two maps, `vulnTypes:` and `sourceKinds:`, source name to target name or the literal `ignore` (`CategoryMappingLoader.IGNORE`).
-- **`CategoryMapping.category(source)`**, **`origin(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
-- **`CategoryMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
-- **`CategoryMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
+- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes two maps, `vulnTypes:` and `sourceKinds:`, source name to target name or the literal `ignore` (`VocabularyMappingLoader.IGNORE`).
+- **`VocabularyMapping.category(source)`**, **`origin(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
+- **`VocabularyMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
+- **`VocabularyMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
 - **`DocumentSetException(path, detail, cause?)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
 
 ## Configuration

@@ -7,7 +7,7 @@ The types loading one document set and translating its names. Semantics:
 ## Design Overview
 
 - **Classes:** `DocumentSet`, `Document`, `DocumentSetLoader` (object),
-  `CategoryMapping`, `CategoryMappingLoader` (object), `SetProvenance`,
+  `VocabularyMapping`, `VocabularyMappingLoader` (object), `SetProvenance`,
   `Verification` (enum), `Precedence`, `ProvenanceLoader` (internal object)
 - **Abstract:** `ResourceOpener` (`fun interface`; implemented by callers
   over classpath, file system, or archive)
@@ -17,7 +17,7 @@ The types loading one document set and translating its names. Semantics:
   contains a producer string and one `Verification`; `Precedence` orders
   `Verification`; `DocumentSetLoader` uses `ResourceOpener`,
   `VocabularyLoader`, `PolicyLoader`, `ProvenanceLoader`, `ModelLoader`,
-  and `CategoryMapping`; `CategoryMappingLoader` and `ProvenanceLoader`
+  and `VocabularyMapping`; `VocabularyMappingLoader` and `ProvenanceLoader`
   decode through `ModelYaml`. All arrows one-way into the data types.
 - **Exceptions:** `DocumentSetException` extends `IllegalArgumentException`
   (missing manifest or listed document, duplicate manifest line, malformed
@@ -26,13 +26,13 @@ The types loading one document set and translating its names. Semantics:
   unmapped name, mapping target undeclared); `IllegalArgumentException`
   from the vocabulary, policy, provenance, and mapping decodes as before.
 - **Dependency roles:** Data holders: `DocumentSet`, `Document`,
-  `CategoryMapping`, `SetProvenance`, `Precedence`. Orchestrator:
+  `VocabularyMapping`, `SetProvenance`, `Precedence`. Orchestrator:
   `DocumentSetLoader`. Contract: `ResourceOpener`. Loaders:
-  `CategoryMappingLoader` (public: a consumer decodes its own mapping
+  `VocabularyMappingLoader` (public: a consumer decodes its own mapping
   document), `ProvenanceLoader` (internal).
 
 Package `edu.jhu.cobra.commons.phpmodels`. The two public loaders,
-`DocumentSetLoader` and `CategoryMappingLoader`, are the whole decode
+`DocumentSetLoader` and `VocabularyMappingLoader`, are the whole decode
 surface; the single-document loaders they compose are internal
 ([design.md](design.md)).
 
@@ -112,7 +112,7 @@ two scalars, `producer:` and `verification:`. Unknown keys, a missing
 field, a blank producer, and a verification spelling outside the enum fail
 the decode with `IllegalArgumentException`.
 
-### CategoryMapping
+### VocabularyMapping
 
 **Responsibility:** One translation table, both axes.
 
@@ -133,11 +133,11 @@ marks a discarded name.
   at load against the accumulated vocabulary, because the mapping alone
   does not know the consumer's vocabulary.
 
-### CategoryMappingLoader
+### VocabularyMappingLoader
 
 **Responsibility:** Decode one mapping document.
 
-**Methods:** `fun load(input: InputStream): CategoryMapping`. Document
+**Methods:** `fun load(input: InputStream): VocabularyMapping`. Document
 shape: two maps, `vulnTypes:` and `sourceKinds:`, source name to target
 name; the literal target `ignore` marks a discarded name. Unknown keys and
 a `null` value fail the decode. A source name may not be `ignore`.
@@ -150,7 +150,7 @@ optionally through a mapping, in the order the model fixes.
 
 **Methods:**
 - `fun load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY,
-  mapping: CategoryMapping? = null): DocumentSet`
+  mapping: VocabularyMapping? = null): DocumentSet`
   - **Behavior:** read `index.txt` (fail when absent); read
     `provenance.yaml` when present, mapped or not; when `mapping` is
     null: load `vocabulary.yaml` if present and merge into `context`

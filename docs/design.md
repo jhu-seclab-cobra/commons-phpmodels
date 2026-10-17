@@ -7,7 +7,7 @@ single-document loaders. The sectioned model body:
 The entry form: [design-entries.md](design-entries.md). Conditions:
 [design-conditions.md](design-conditions.md). Signatures:
 [design-declarations.md](design-declarations.md). Document sets and
-category mapping: [design-sets.md](design-sets.md).
+vocabulary mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 

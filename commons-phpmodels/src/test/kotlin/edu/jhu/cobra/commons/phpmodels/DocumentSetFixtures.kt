@@ -39,8 +39,8 @@ internal object DocumentSetFixtures {
 
     val context: Vocabulary = VocabularyLoader.load(VOCABULARY.byteInputStream())
 
-    val mapping: CategoryMapping =
-        CategoryMappingLoader.load(
+    val mapping: VocabularyMapping =
+        VocabularyMappingLoader.load(
             "vulnTypes:\n  sql: sqli\n  text: ignore\nsourceKinds:\n  input: user-input\n".byteInputStream(),
         )
 

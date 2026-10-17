@@ -15,8 +15,8 @@ import kotlin.test.assertNull
  * - `rejects …` — null target, missing section, stray key, and a source
  *   spelled `ignore` fail the decode.
  */
-internal class CategoryMappingLoaderTest {
-    private fun load(yaml: String): CategoryMapping = CategoryMappingLoader.load(yaml.byteInputStream())
+internal class VocabularyMappingLoaderTest {
+    private fun load(yaml: String): VocabularyMapping = VocabularyMappingLoader.load(yaml.byteInputStream())
 
     @Test
     fun `decodes both axes with ignore as discard`() {
@@ -39,12 +39,12 @@ internal class CategoryMappingLoaderTest {
 
     @Test
     fun `IGNORE is the discard literal`() {
-        assertEquals("ignore", CategoryMappingLoader.IGNORE)
+        assertEquals("ignore", VocabularyMappingLoader.IGNORE)
     }
 
     @Test
     fun `empty sections decode to empty tables`() {
-        assertEquals(CategoryMapping(emptyMap(), emptyMap()), load("vulnTypes: {}\nsourceKinds: {}\n"))
+        assertEquals(VocabularyMapping(emptyMap(), emptyMap()), load("vulnTypes: {}\nsourceKinds: {}\n"))
     }
 
     @Test

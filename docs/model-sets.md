@@ -1,4 +1,4 @@
-# PHP Models — Document Sets and Category Mapping
+# PHP Models — Document Sets and Vocabulary Mapping
 
 Domain semantics of how models are stored and mounted: the document set a
 producer publishes, the vocabulary accumulated across sets, and the mapping
@@ -39,13 +39,13 @@ Vocabulary, Policy, Source Kind, Vulnerability Type: [model.md](model.md).
   already holds. Admitted when the declaration is identical to the one in
   force; otherwise a load failure naming the set and the name. The set in
   force never changes on admission.
-- **Category Mapping** — A consumer-supplied total function from the names
+- **Vocabulary Mapping** — A consumer-supplied total function from the names
   one set uses to the consumer's names, one relation per axis:
   vulnerability type to vulnerability type, source kind to source kind.
   Each source name is mapped to one declared target name or marked
   discarded. Existence condition: supplied by the consumer for one set;
   never stored with the set it translates.
-- **Mapped Set** — A document set loaded under a category mapping. Its own
+- **Mapped Set** — A document set loaded under a vocabulary mapping. Its own
   vocabulary document, when present, is not read: the names the mapping
   lists are the names the set may use; none of its declarations join the
   accumulated vocabulary. Its
@@ -59,8 +59,8 @@ Vocabulary, Policy, Source Kind, Vulnerability Type: [model.md](model.md).
 | Document Set | Model | contains | 1:N | Every entry of every listed document |
 | Document Set | Vocabulary | declares | 1:0..1 | Declarations join the accumulated vocabulary unless the set is mapped |
 | Document Set | Policy | declares | 1:0..1 | Rows accumulate with the consumer's policy |
-| Category Mapping | Document Set | translates | 1:1 | Applied to exactly one set at its load |
-| Category Mapping | Vulnerability Type / Source Kind | targets | N:1 | Every target is declared in the accumulated vocabulary |
+| Vocabulary Mapping | Document Set | translates | 1:1 | Applied to exactly one set at its load |
+| Vocabulary Mapping | Vulnerability Type / Source Kind | targets | N:1 | Every target is declared in the accumulated vocabulary |
 | Accumulated Vocabulary | Document Set | grows by | 1:N | Set order is declaration order |
 | Document Set | Set Provenance | declares | 1:0..1 | One statement covering every listed entry |
 | Set Provenance | Producer | names | 1:1 | Documentary; never ranked |

@@ -66,7 +66,7 @@ compares with `==`.
 **[jackson]** `Map<String, String>` with a null-valued key (`html:`) decodes
 to a map holding `null` — jackson-module-kotlin enforces non-nullability on
 creator parameters only, never on collection elements or map values
-(`KotlinFeature.StrictNullChecks` is off). `CategoryMappingLoader` decodes
+(`KotlinFeature.StrictNullChecks` is off). `VocabularyMappingLoader` decodes
 into `Map<String, String?>` and rejects the null itself.
 
 **[jackson]** A missing or empty-valued top-level section (`vulnTypes:` with
@@ -114,7 +114,7 @@ opener's resources are released regardless of the decode outcome.
   hierarchies.
 - The production loader tests pin the `invoke`-as-creator row:
   `ModelLoaderTest` decodes class signatures and propagations through the
-  factories. `CategoryMappingLoaderTest` pins the null-map-value and
+  factories. `VocabularyMappingLoaderTest` pins the null-map-value and
   missing-section rows.
 
 ## Design-specific

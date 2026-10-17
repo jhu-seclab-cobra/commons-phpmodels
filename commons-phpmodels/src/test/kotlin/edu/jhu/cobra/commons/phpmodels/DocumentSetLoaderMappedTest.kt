@@ -48,7 +48,7 @@ internal class DocumentSetLoaderMappedTest {
 
     @Test
     fun `mapped set undeclared target fails`() {
-        val stray = CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("xss")), emptyMap())
+        val stray = VocabularyMapping(mapOf(VulnTypeId("sql") to VulnTypeId("xss")), emptyMap())
         val failure =
             assertFailsWith<VocabularyException> {
                 DocumentSetLoader.load(opener("index.txt" to ""), context, stray)
@@ -79,7 +79,7 @@ internal class DocumentSetLoaderMappedTest {
     @Test
     fun `mapped set discarded policy source kind drops the row`() {
         val discarding =
-            CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("sqli")), mapOf(SourceKindId("env") to null))
+            VocabularyMapping(mapOf(VulnTypeId("sql") to VulnTypeId("sqli")), mapOf(SourceKindId("env") to null))
         val set =
             DocumentSetLoader.load(
                 opener("index.txt" to "", "policy.yaml" to "- sourceKind: env\n  enables: [sql]\n"),

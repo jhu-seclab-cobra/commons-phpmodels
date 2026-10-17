@@ -2,7 +2,7 @@ package edu.jhu.cobra.commons.phpmodels
 
 /**
  * Loads one document set under the caller's accumulated vocabulary,
- * optionally through a [CategoryMapping], in the order the model fixes
+ * optionally through a [VocabularyMapping], in the order the model fixes
  * (model-sets.md): manifest, provenance, vocabulary, policy, documents.
  * Composes the single-document loaders; every stream the opener yields is
  * closed here.
@@ -52,7 +52,7 @@ public object DocumentSetLoader {
     public fun load(
         open: ResourceOpener,
         context: Vocabulary = Vocabulary.EMPTY,
-        mapping: CategoryMapping? = null,
+        mapping: VocabularyMapping? = null,
     ): DocumentSet {
         val root = SetRoot(open, manifest(open))
         val provenance = root.open(PROVENANCE)?.use(ProvenanceLoader::load)
@@ -84,7 +84,7 @@ public object DocumentSetLoader {
     private fun loadMapped(
         root: SetRoot,
         context: Vocabulary,
-        mapping: CategoryMapping,
+        mapping: VocabularyMapping,
     ): DocumentSet {
         requireTargetsDeclared(mapping, context)
         // The mapped set's own names are admissible exactly when the mapping
@@ -101,7 +101,7 @@ public object DocumentSetLoader {
     }
 
     private fun requireTargetsDeclared(
-        mapping: CategoryMapping,
+        mapping: VocabularyMapping,
         context: Vocabulary,
     ) {
         mapping.vulnTypes.values.firstUndeclaredIn(context.vulnTypes)?.let { target ->
@@ -116,7 +116,7 @@ public object DocumentSetLoader {
     private fun <K : Any> Collection<K?>.firstUndeclaredIn(declared: Map<K, *>): K? =
         filterNotNull().firstOrNull { it !in declared }
 
-    private fun CategoryMapping.sourceVocabulary(): Vocabulary =
+    private fun VocabularyMapping.sourceVocabulary(): Vocabulary =
         Vocabulary(
             vulnTypes = vulnTypes.keys.associateWith { VulnTypeDecl(it, MAPPED_SOURCE_DESCRIPTION) },
             sourceKinds = sourceKinds.keys.associateWith { SourceKindDecl(it, MAPPED_SOURCE_DESCRIPTION) },

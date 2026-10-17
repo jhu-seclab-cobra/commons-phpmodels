@@ -3,7 +3,7 @@
 Semantics of the assertion axis: sections, subjects, ports, and the
 two-axis taint vocabulary of source kinds and vulnerability types. Declaration axis: [model-declarations.md](model-declarations.md).
 Conditional entries: [model-conditions.md](model-conditions.md). Document sets and
-category mapping: [model-sets.md](model-sets.md).
+vocabulary mapping: [model-sets.md](model-sets.md).
 
 ## Entities
 

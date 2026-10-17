@@ -1,19 +1,19 @@
 # Loaders
 
-> Public decode surface: `DocumentSetLoader` over one document set, `CategoryMappingLoader` over a consumer's mapping document.
+> Public decode surface: `DocumentSetLoader` over one document set, `VocabularyMappingLoader` over a consumer's mapping document.
 
 ## Quick Start
 
 ```kotlin
 val set = DocumentSetLoader.load(opener, context = Vocabulary.EMPTY)
-val mapping = CategoryMappingLoader.load(mappingYaml.byteInputStream())
+val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
 val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mapping = mapping)
 ```
 
 ## API
 
-- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: CategoryMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
-- **`CategoryMappingLoader.load(input: InputStream): CategoryMapping`** — Decodes a consumer's translation table.
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
+- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes a consumer's translation table.
 
 The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, `ProvenanceLoader`) are internal: a consumer loads a set, never a single document.
 

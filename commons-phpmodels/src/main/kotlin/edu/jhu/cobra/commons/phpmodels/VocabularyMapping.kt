@@ -15,7 +15,7 @@ package edu.jhu.cobra.commons.phpmodels
  * @property vulnTypes Mapped-set vulnerability type to the consumer's, or null to discard.
  * @property sourceKinds Mapped-set source kind to the consumer's, or null to discard.
  */
-public data class CategoryMapping(
+public data class VocabularyMapping(
     val vulnTypes: Map<VulnTypeId, VulnTypeId?>,
     val sourceKinds: Map<SourceKindId, SourceKindId?>,
 ) {
