@@ -43,7 +43,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 
 - Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
 - With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
-- Translation never touches subjects, ports, conditions, signatures, value semantics, or the set provenance.
+- Translation never touches subjects, ports, conditions, signatures, value units, or the set provenance.
 - `SetProvenance` is where a set's statements come from; `OriginId` is the origin color of a tainted value. Neither substitutes for the other.
 - The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
 - Every stream the opener yields is closed by the load, whether or not the decode succeeds.

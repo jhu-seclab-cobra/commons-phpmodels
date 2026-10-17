@@ -116,13 +116,13 @@ alternatives of the declared type itself.
   addition to generated files.
 - Generated files are regenerable at any time from upstream sources; no
   information exists only in a generated file.
-- Value-semantics coupling — the unit stays one exhaustive statement
+- Value-unit coupling — the unit stays one exhaustive statement
   ([model.md](model.md)); the signature changes only where its returns half
   comes from:
   - Signature present, propagation declared → the unit is asserted: returns
     derived from the declared return type, flows and characters exactly as
     declared.
-  - Signature present, no propagation → **no value-semantics unit**. Existence
+  - Signature present, no propagation → **no value unit**. Existence
     is asserted; value flow stays at the consumer's conservative default in
     which every argument influences the result. Absence of a flow annotation
     in the upstream data is not purity, so a characters section here is a

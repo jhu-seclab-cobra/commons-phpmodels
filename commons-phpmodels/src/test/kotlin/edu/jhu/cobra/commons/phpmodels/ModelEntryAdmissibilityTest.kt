@@ -12,7 +12,7 @@ import kotlin.test.assertFailsWith
  * - `variable entry declaring a sink is rejected` — sources-only kinds.
  * - `value-producing kinds decode a sources section` — constant, class
  *   constant, property, and variable declare sources.
- * - `non-callable entry declaring returns is rejected` — value semantics
+ * - `non-callable entry declaring returns is rejected` — value units
  *   belong to callables.
  * - `class entry declaring sources is rejected` — a class asserts nothing
  *   besides its signature.

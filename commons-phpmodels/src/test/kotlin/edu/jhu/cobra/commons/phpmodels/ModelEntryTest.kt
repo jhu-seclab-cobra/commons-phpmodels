@@ -31,7 +31,7 @@ import kotlin.test.assertNotEquals
  *   apply to callable subjects only.
  * - `non-callable kinds admit a sources section` — constant, class constant,
  *   property, and variable declare sources.
- * - `non-callable kind rejects returns` — value semantics belong to callables.
+ * - `non-callable kind rejects returns` — value units belong to callables.
  * - `class subject rejects every assertion section` — a class asserts
  *   nothing besides its signature.
  * - `entries compare by value` — equality over subject, condition,

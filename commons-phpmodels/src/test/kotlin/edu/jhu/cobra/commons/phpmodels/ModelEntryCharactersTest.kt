@@ -9,12 +9,12 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * The characters section: its decode, its place in the value-semantics unit,
+ * The characters section: its decode, its place in the value unit,
  * and the character class membership (model.md, design-bodies.md).
  *
  * - `characters decodes of and within` — `basename` copies bytes of
  *   argument(0) and never a `/`.
- * - `characters is served with the value-semantics unit` — the lookup view
+ * - `characters is served with the value unit` — the lookup view
  *   carries the bound; an absent section carries none.
  * - `characters beside a callable signature joins the derived returns` —
  *   the propagation completion covers the whole unit.
@@ -65,12 +65,12 @@ internal class ModelEntryCharactersTest {
     }
 
     @Test
-    fun `characters is served with the value-semantics unit`() {
+    fun `characters is served with the value unit`() {
         val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
         val bound = CharacterBound(of = setOf(Port.Argument(0)))
         val body = ModelBody(returns = ReturnKind.STR, propagation = flow, characters = bound)
-        assertEquals(ValueSemantics(ReturnKind.STR, flow, bound), body.valueSemantics())
-        assertNull(ModelBody(returns = ReturnKind.STR, propagation = flow).valueSemantics()?.characters)
+        assertEquals(ValueUnit(ReturnKind.STR, flow, bound), body.valueUnit())
+        assertNull(ModelBody(returns = ReturnKind.STR, propagation = flow).valueUnit()?.characters)
     }
 
     @Test

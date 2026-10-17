@@ -125,7 +125,7 @@ public data class ModelEntry(
     public companion object {
         // The signature mapping carries no discriminator: its subtype is
         // narrowed here from the subject kind (impl.md). A propagation section
-        // beside a callable signature is completed into the value-semantics
+        // beside a callable signature is completed into the value
         // unit with the derived classification before body construction, so
         // ModelBody's propagation-requires-returns rule holds unchanged.
         @JvmStatic

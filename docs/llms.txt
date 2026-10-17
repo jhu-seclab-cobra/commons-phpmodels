@@ -1,6 +1,6 @@
 # commons-phpmodels
 
-> Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
+> Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
 
 Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
 

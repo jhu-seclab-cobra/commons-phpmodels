@@ -14,7 +14,7 @@ import kotlin.test.assertTrue
  *   name removed, emptied element removed.
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
- * - `value semantics pass through` — returns and propagation are untouched.
+ * - `value units pass through` — returns and propagation are untouched.
  * - `raises passes through` — the raises section names classes, not
  *   vocabulary names, and is untouched.
  * - `subject condition signature and ports pass through` — translation
@@ -114,7 +114,7 @@ internal class CategoryMappingTest {
     }
 
     @Test
-    fun `value semantics pass through`() {
+    fun `value units pass through`() {
         val entry =
             model(
                 """
@@ -128,7 +128,7 @@ internal class CategoryMappingTest {
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
-        assertEquals(entry.body.valueSemantics(), translated.body.valueSemantics())
+        assertEquals(entry.body.valueUnit(), translated.body.valueUnit())
         val sinks = translated.body.sinks.orEmpty()
         assertEquals(listOf(VulnClassId("xss")), sinks.map { it.vulnClass })
     }

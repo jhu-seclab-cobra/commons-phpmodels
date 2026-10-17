@@ -1,6 +1,6 @@
 # commons-phpmodels
 
-> Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
+> Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
 
 Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's category names through a `CategoryMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` is the one condition-match operation over commons-value primitives. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
 
@@ -116,7 +116,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 
 - Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
 - With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
-- Translation never touches subjects, ports, conditions, signatures, value semantics, or the set provenance.
+- Translation never touches subjects, ports, conditions, signatures, value units, or the set provenance.
 - `SetProvenance` is where a set's statements come from; `OriginId` is the origin color of a tainted value. Neither substitutes for the other.
 - The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
 - Every stream the opener yields is closed by the load, whether or not the decode succeeds.
@@ -141,8 +141,8 @@ for (entry in set.entries) {
 
 - **`ModelEntry(subject: ModelSubject, condition: ArgPattern?, signature: SignatureInfo?, body: ModelBody)`** — One entry: a named subject with its assertions. Several entries for one subject are alternatives; `(subject, condition)` is unique within one document.
 - **`ArgPattern(expected: List<IPrimitiveVal?>)`** — The `when:` condition: one expected commons-value scalar per argument position, `null` for the wildcard `_`. `matches(actual: List<IPrimitiveVal?>): Boolean?` — `false` when the pattern is longer than the call or a known argument differs; `true` when every listed position holds an equal known argument; `null` when an unknown (`null` or `Unsure`) argument decides. `positions: List<Int>` lists the non-wildcard indexes.
-- **`ModelBody`** — Seven optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueSemantics(): ValueSemantics?` returns null when `returns` is undeclared.
-- **`ValueSemantics(returns: ReturnKind, propagation: List<Propagation>, characters: CharacterBound?)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow); absent characters section stays null (no bound).
+- **`ModelBody`** — Seven optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueUnit(): ValueUnit?` returns null when `returns` is undeclared.
+- **`ValueUnit(returns: ReturnKind, propagation: List<Propagation>, characters: CharacterBound?)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow); absent characters section stays null (no bound).
 - **`CharacterBound(of: Set<Port.Argument>?, within: CharacterClass?)`** — The bytes a call result may hold: only bytes of the `of` ports' values, only bytes of the `within` class; at least one field declared, a declared `of` non-empty.
 - **`CharacterClass(pattern: String)`** — Regex matched against one byte read as one Latin-1 character; `contains(byte: Int): Boolean` over 0..255. Decoded from a bare string scalar; equality over the pattern text.
 - **`Propagation(from: Port.Input, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.

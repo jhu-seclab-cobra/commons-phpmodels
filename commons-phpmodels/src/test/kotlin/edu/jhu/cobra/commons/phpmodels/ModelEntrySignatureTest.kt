@@ -8,14 +8,14 @@ import kotlin.test.assertNull
 
 /**
  * Signature handling of decoded entries: subtype narrowing per subject kind
- * and the completion of the value-semantics unit from a declared return type.
+ * and the completion of the value unit from a declared return type.
  *
  * - `signature narrows per subject kind` — callable, class, typed (with its
  *   literal value), and property signatures selected by the entry's subject.
  * - `signature-only entry asserts existence` — an empty body beside a
  *   signature loads.
  * - `propagation beside a callable signature derives returns` — the
- *   value-semantics unit completes from the declared return type.
+ *   value unit completes from the declared return type.
  * - `signature without propagation derives no returns` — absence of a flow
  *   annotation is not purity.
  * - `explicit returns beside a callable signature is rejected` — one fact,
@@ -89,7 +89,7 @@ internal class ModelEntrySignatureTest {
                 """.trimIndent(),
             )
         assertEquals(true, model.body.isEmpty)
-        assertNull(model.body.valueSemantics())
+        assertNull(model.body.valueUnit())
     }
 
     @Test

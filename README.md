@@ -2,7 +2,7 @@
 
 > Commons — the shared vocabulary: one declarative model format every Cobra PHP analyzer reads and writes.
 
-Typed decode of declarative PHP models — taint effects, value semantics, and declaration signatures — from YAML.
+Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
 
 ![Kotlin JVM](https://img.shields.io/badge/Kotlin%20JVM-2.4.20%20%7C%20JVM%2021-blue?logo=kotlin)
 [![Release](https://img.shields.io/badge/release-v0.6.1-blue.svg)](https://github.com/jhu-seclab-cobra/commons-phpmodels/releases)
@@ -67,7 +67,7 @@ Decoded types: `ModelEntry` (subject, optional `ArgPattern` condition, optional 
 
 ## Background
 
-Cobra analyzers describe PHP built-ins and user code with declarative models in the style of [Mariana Trench](https://mariana-tren.ch/) and [Pysa](https://pyre-check.org/docs/pysa-basics/): one YAML entry per PHP declaration, asserting taint effects, value semantics, and signatures. This library owns the format — types, strict decoding, and validation — so every producer and consumer shares one definition. Consumers own set ordering, the fold across sets, what a call's arguments are, subject resolution, and every query.
+Cobra analyzers describe PHP built-ins and user code with declarative models in the style of [Mariana Trench](https://mariana-tren.ch/) and [Pysa](https://pyre-check.org/docs/pysa-basics/): one YAML entry per PHP declaration, asserting taint effects, value units, and signatures. This library owns the format — types, strict decoding, and validation — so every producer and consumer shares one definition. Consumers own set ordering, the fold across sets, what a call's arguments are, subject resolution, and every query.
 
 ## Documentation
 

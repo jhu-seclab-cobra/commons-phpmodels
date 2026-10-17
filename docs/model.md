@@ -41,7 +41,7 @@ category mapping: [model-sets.md](model-sets.md).
   - *returns* — the classification of the call result.
   - *propagation* — a set of declared flows, each from one input port to a
     different port of the same call. Together with *returns* it
-    forms the **value-semantics unit**: declaring *returns* asserts the flow
+    forms the **value unit**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
     without *returns* does not exist.
   - *characters* (agent decision CH-1) — the bytes the call result may
@@ -52,7 +52,7 @@ category mapping: [model-sets.md](model-sets.md).
     array the call reads element by element, each element's conversion, a
     nested array converting to `Array` (PHP 8.5.11 gives `Arrayb` for
     `str_replace(["a"], [["x"]], "ab")`). Third part of the
-    value-semantics unit: it requires *returns*, and its absence states no
+    value unit: it requires *returns*, and its absence states no
     bound. `basename` declares *of* `argument(0)` *within* every byte but
     `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
   - *sources* — each element produces a non-empty set of Origin Colors at
@@ -87,7 +87,7 @@ category mapping: [model-sets.md](model-sets.md).
   Danger Categories it can trigger. One instance for the whole analysis.
   Rows sharing an origin accumulate (union of enabled categories).
 - **Override Unit** — The granularity at which one declaration replaces
-  another for the same subject: the value-semantics unit (returns together
+  another for the same subject: the value unit (returns together
   with propagation and characters), sources, sinks, sanitizers, raises, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the

@@ -7,7 +7,7 @@ decoder: [design.md](design.md). Ports and propagations:
 
 ## Design Overview
 
-- **Classes:** `ModelBody`, `ValueSemantics`, `CharacterBound`,
+- **Classes:** `ModelBody`, `ValueUnit`, `CharacterBound`,
   `CharacterClass`, `SourceDecl`, `KeyPattern`, `SinkDecl`, `SanitizerDecl`
   (data classes)
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
@@ -15,7 +15,7 @@ decoder: [design.md](design.md). Ports and propagations:
   `CharacterBound` contains optional `Port.Argument`s and an optional
   `CharacterClass`; `SinkDecl` contains one `Port.Argument` and one
   `VulnClassId`; `SourceDecl` contains an optional `Port.Argument` site
-  override and optional `KeyPattern`s; `ValueSemantics` is built from a
+  override and optional `KeyPattern`s; `ValueUnit` is built from a
   `ModelBody`. All arrows one-way into the data types.
 - **Exceptions:** `IllegalArgumentException` from `init` blocks and
   creators ([design.md](design.md) Exception / Error Types).
@@ -96,7 +96,7 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 element decoded by the `ClassSubject` creator; empty = throws none).
 
 **Validation (`init`):** propagation and characters each require returns
-(the value-semantics unit is asserted whole or not at all — the
+(the value unit is asserted whole or not at all — the
 signature-derived completion happens in the entry, before construction);
 each `characters.of` port is the from-port of a declared flow into
 `Port.Return`; a declared section other than `raises` is non-empty.
@@ -105,11 +105,11 @@ each `characters.of` port is the from-port of a declared flow into
 `namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;
 `declaresExplicitSourceSite: Boolean` — a source element declares `at`
 (the port-admissibility predicates `ModelEntry` reads);
-`fun valueSemantics(): ValueSemantics?` — null when returns is undeclared.
+`fun valueUnit(): ValueUnit?` — null when returns is undeclared.
 
-### ValueSemantics
+### ValueUnit
 
-**Responsibility:** The value-semantics unit a lookup serves: the returns
+**Responsibility:** The value unit a lookup serves: the returns
 classification, the exhaustive propagation set, and `characters:
 CharacterBound?`. An absent propagation section in the declaring body
 becomes the empty list — no flow, not unknown flow; an absent characters

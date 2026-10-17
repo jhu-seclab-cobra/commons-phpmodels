@@ -194,7 +194,7 @@ public data class SanitizerDecl(
 /**
  * The sectioned statement of one model: seven optional assertion sections.
  *
- * `returns`, `propagation`, and `characters` form one value-semantics unit:
+ * `returns`, `propagation`, and `characters` form one value unit:
  * declaring `returns` asserts the flow set exhaustively, so an absent
  * propagation section means the result is unrelated to the arguments.
  * Declaring `propagation` or `characters` alone is a load failure — the unit
@@ -226,10 +226,10 @@ public data class ModelBody(
 ) {
     init {
         require(propagation == null || returns != null) {
-            "Propagation without returns: the value-semantics unit is asserted whole or not at all"
+            "Propagation without returns: the value unit is asserted whole or not at all"
         }
         require(characters == null || returns != null) {
-            "Characters without returns: the value-semantics unit is asserted whole or not at all"
+            "Characters without returns: the value unit is asserted whole or not at all"
         }
         val copied = characters?.of.orEmpty() - flowSourcesIntoResult()
         require(copied.isEmpty()) { "Characters copied from $copied, which has no declared flow into the result" }
@@ -275,13 +275,12 @@ public data class ModelBody(
     public val declaresExplicitSourceSite: Boolean
         get() = sources.orEmpty().any { it.at != null }
 
-    /** The value-semantics unit this body asserts, or null when returns is undeclared. */
-    public fun valueSemantics(): ValueSemantics? =
-        returns?.let { ValueSemantics(it, propagation.orEmpty(), characters) }
+    /** The value unit this body asserts, or null when returns is undeclared. */
+    public fun valueUnit(): ValueUnit? = returns?.let { ValueUnit(it, propagation.orEmpty(), characters) }
 }
 
 /**
- * The value-semantics unit a lookup serves: the returns classification together
+ * The value unit a lookup serves: the returns classification together
  * with the exhaustive propagation set and the optional character bound. An
  * absent propagation section in the declaring body becomes the empty list here
  * — no flow, not unknown flow; an absent characters section stays null — no
@@ -291,7 +290,7 @@ public data class ModelBody(
  * @property propagation Every declared port-to-port flow.
  * @property characters The bytes the result may hold, or null when unbounded.
  */
-public data class ValueSemantics(
+public data class ValueUnit(
     val returns: ReturnKind,
     val propagation: List<Propagation>,
     val characters: CharacterBound? = null,

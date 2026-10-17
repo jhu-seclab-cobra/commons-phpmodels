@@ -63,7 +63,7 @@ key ([impl.md](impl.md)); the creator completes them into the body.
   [design-declarations.md](design-declarations.md).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
   source); a propagation section beside a callable signature is completed
-  into the value-semantics unit with the derived classification before body
+  into the value unit with the derived classification before body
   construction, so `ModelBody`'s propagation-requires-returns rule holds.
   A characters section beside a callable signature joins that completion;
   without a propagation section no returns is derived, so it is rejected.

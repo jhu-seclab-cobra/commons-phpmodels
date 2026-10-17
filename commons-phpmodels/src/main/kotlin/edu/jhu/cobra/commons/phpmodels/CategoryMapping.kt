@@ -5,7 +5,7 @@ package edu.jhu.cobra.commons.phpmodels
  * set whose names are not the consumer's. A `null` target discards the
  * source name: the element naming it is dropped rather than renamed.
  * Translation touches only category and color names; subject, ports,
- * conditions, signatures, and value semantics pass through unchanged.
+ * conditions, signatures, and value units pass through unchanged.
  *
  * Whether each target is declared is checked at load against the
  * accumulated vocabulary ([DocumentSetLoader]); the table alone does not

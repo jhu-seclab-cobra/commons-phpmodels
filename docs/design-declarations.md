@@ -91,7 +91,7 @@ function the validation and every derived member call.
 - `fun toReturnKind(): ReturnKind` — the classification derivation: each
   alternative by the table in [model-declarations.md](model-declarations.md),
   joined with `ReturnKind.join`; it runs where the consumer materializes the
-  value-semantics unit and is never written into a file that carries a
+  value unit and is never written into a file that carries a
   signature.
 - `val isVoid: Boolean` — true when the declaration is the `void` keyword.
 

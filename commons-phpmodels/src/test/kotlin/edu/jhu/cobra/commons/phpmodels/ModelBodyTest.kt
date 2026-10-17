@@ -18,7 +18,7 @@ import kotlin.test.assertNull
  * - `propagation carries the receiver port on either side` — `this` is an
  *   input port and an admissible target.
  * - `empty body is constructible` — a signature-only entry carries one.
- * - `propagation requires returns` — the value-semantics unit is whole.
+ * - `propagation requires returns` — the value unit is whole.
  * - `declared empty section is rejected` — an empty list is a mistake, not
  *   an absent section.
  * - `declared empty raises is a statement` — the one section whose empty
@@ -41,10 +41,10 @@ import kotlin.test.assertNull
  *   side of any pair.
  * - `declaresExplicitSourceSite reflects the source at ports` — any source
  *   naming `at`.
- * - `valueSemantics keeps a declared propagation` — the unit as declared.
+ * - `valueUnit keeps a declared propagation` — the unit as declared.
  * - `key pattern parse equals construction` — the creator and the
  *   constructor agree.
- * - `valueSemantics completes absent propagation to the empty list` — no
+ * - `valueUnit completes absent propagation to the empty list` — no
  *   flow, not unknown flow; null when returns is undeclared.
  * - `equal propagations agree on hash code and spelling` — equality over the
  *   resolved pair, hash-code agreement, and the toString form.
@@ -158,12 +158,12 @@ internal class ModelBodyTest {
     }
 
     @Test
-    fun `valueSemantics completes absent propagation to the empty list`() {
+    fun `valueUnit completes absent propagation to the empty list`() {
         assertEquals(
-            ValueSemantics(ReturnKind.STR, emptyList()),
-            ModelBody(returns = ReturnKind.STR).valueSemantics(),
+            ValueUnit(ReturnKind.STR, emptyList()),
+            ModelBody(returns = ReturnKind.STR).valueUnit(),
         )
-        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote"))))).valueSemantics())
+        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote"))))).valueUnit())
     }
 
     @Test
@@ -203,10 +203,10 @@ internal class ModelBodyTest {
     }
 
     @Test
-    fun `valueSemantics keeps a declared propagation`() {
+    fun `valueUnit keeps a declared propagation`() {
         val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
         val body = ModelBody(returns = ReturnKind.STR, propagation = flow)
-        assertEquals(ValueSemantics(ReturnKind.STR, flow), body.valueSemantics())
+        assertEquals(ValueUnit(ReturnKind.STR, flow), body.valueUnit())
     }
 
     @Test
