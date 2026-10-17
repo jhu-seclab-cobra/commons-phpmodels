@@ -31,7 +31,7 @@ internal object PolicyLoader {
         ModelYaml.decode(input, jacksonTypeRef<List<PolicyRowEntry>>()).map { row ->
             PolicyRow(
                 origin = vocabulary.requireOrigin(row.origin),
-                enables = row.enables.map(vocabulary::requireVulnClass).toSet(),
+                enables = row.enables.map(vocabulary::requireVulnType).toSet(),
             )
         }
 }

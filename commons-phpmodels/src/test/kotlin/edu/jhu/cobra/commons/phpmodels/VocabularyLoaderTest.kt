@@ -23,7 +23,7 @@ import kotlin.test.assertFailsWith
 internal class VocabularyLoaderTest {
     private val document =
         """
-        vulnClasses:
+        vulnTypes:
           - name: sqli
             description: SQL injection
         provenances:
@@ -36,7 +36,7 @@ internal class VocabularyLoaderTest {
     @Test
     fun `vocabulary decodes both sections`() {
         val vocabulary = load(document)
-        assertEquals(setOf(VulnTypeId("sqli")), vocabulary.vulnClasses.keys)
+        assertEquals(setOf(VulnTypeId("sqli")), vocabulary.vulnTypes.keys)
         assertEquals(setOf(OriginId("remote")), vocabulary.origins.keys)
     }
 
@@ -45,7 +45,7 @@ internal class VocabularyLoaderTest {
         assertFailsWith<VocabularyException> {
             load(
                 """
-                vulnClasses:
+                vulnTypes:
                   - name: sqli
                     description: first
                   - name: SQLI
@@ -61,7 +61,7 @@ internal class VocabularyLoaderTest {
         val vocabulary =
             load(
                 """
-                vulnClasses:
+                vulnTypes:
                   - name: header
                     description: Header injection
                 provenances:
@@ -69,7 +69,7 @@ internal class VocabularyLoaderTest {
                     description: Header-borne input
                 """.trimIndent(),
             )
-        assertEquals(setOf(VulnTypeId("header")), vocabulary.vulnClasses.keys)
+        assertEquals(setOf(VulnTypeId("header")), vocabulary.vulnTypes.keys)
         assertEquals(setOf(OriginId("header")), vocabulary.origins.keys)
     }
 
@@ -78,7 +78,7 @@ internal class VocabularyLoaderTest {
         assertFailsWith<IllegalArgumentException> {
             load(
                 """
-                vulnClasses:
+                vulnTypes:
                   - name: sqli
                     description: SQL injection
                     severity: high
@@ -91,27 +91,27 @@ internal class VocabularyLoaderTest {
     @Test
     fun `require methods validate references`() {
         val vocabulary = load(document)
-        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnClass("SQLI"))
+        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnType("SQLI"))
         assertEquals(OriginId("remote"), vocabulary.requireOrigin("remote"))
-        assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
+        assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
         assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
     }
 
     @Test
     fun `missing section is rejected`() {
-        assertFailsWith<IllegalArgumentException> { load("vulnClasses: []\n") }
+        assertFailsWith<IllegalArgumentException> { load("vulnTypes: []\n") }
         assertFailsWith<IllegalArgumentException> { load("provenances: []\n") }
     }
 
     @Test
     fun `descriptions are kept`() {
         val vocabulary = load(document)
-        assertEquals("SQL injection", vocabulary.vulnClasses.getValue(VulnTypeId("sqli")).description)
+        assertEquals("SQL injection", vocabulary.vulnTypes.getValue(VulnTypeId("sqli")).description)
         assertEquals("Remote user input", vocabulary.origins.getValue(OriginId("remote")).description)
     }
 
     @Test
     fun `empty sections decode to the empty vocabulary`() {
-        assertEquals(Vocabulary.EMPTY, load("vulnClasses: []\nprovenances: []\n"))
+        assertEquals(Vocabulary.EMPTY, load("vulnTypes: []\nprovenances: []\n"))
     }
 }

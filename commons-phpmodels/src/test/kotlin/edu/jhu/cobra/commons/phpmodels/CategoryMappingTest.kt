@@ -156,7 +156,7 @@ internal class CategoryMappingTest {
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(entry.body.valueUnit(), translated.body.valueUnit())
         val sinks = translated.body.sinks.orEmpty()
-        assertEquals(listOf(VulnTypeId("xss")), sinks.map { it.vulnClass })
+        assertEquals(listOf(VulnTypeId("xss")), sinks.map { it.vulnType })
     }
 
     @Test

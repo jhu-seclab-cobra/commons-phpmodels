@@ -50,7 +50,7 @@ public value class OriginId private constructor(
  * @property description Human-readable summary; self-documents the vocabulary
  *   file and enriches the undeclared-reference error message.
  */
-public data class VulnClassDecl(
+public data class VulnTypeDecl(
     val id: VulnTypeId,
     val description: String,
 )
@@ -84,11 +84,11 @@ public class VocabularyException(
  * validated by [verify], called by [DocumentSetLoader] or by a caller that
  * decodes single documents.
  *
- * @property vulnClasses Declared danger categories, keyed by interned identity.
+ * @property vulnTypes Declared danger categories, keyed by interned identity.
  * @property origins Declared origin colors, keyed by interned identity.
  */
 public data class Vocabulary(
-    val vulnClasses: Map<VulnTypeId, VulnClassDecl>,
+    val vulnTypes: Map<VulnTypeId, VulnTypeDecl>,
     val origins: Map<OriginId, OriginDecl>,
 ) {
     /**
@@ -98,10 +98,10 @@ public data class Vocabulary(
      * @return The interned identity of the declared category.
      * @throws VocabularyException If [raw] names no declared category.
      */
-    public fun requireVulnClass(raw: String): VulnTypeId {
+    public fun requireVulnType(raw: String): VulnTypeId {
         val id = VulnTypeId(raw)
-        if (id in vulnClasses) return id
-        throw undeclared("vulnerability class", raw, vulnClasses.values.map { "${it.id.id} (${it.description})" })
+        if (id in vulnTypes) return id
+        throw undeclared("vulnerability type", raw, vulnTypes.values.map { "${it.id.id} (${it.description})" })
     }
 
     /**
@@ -128,7 +128,7 @@ public data class Vocabulary(
      */
     public fun merge(other: Vocabulary): Vocabulary =
         Vocabulary(
-            vulnClasses = vulnClasses.merged(other.vulnClasses, "vulnerability class") { it.description },
+            vulnTypes = vulnTypes.merged(other.vulnTypes, "vulnerability type") { it.description },
             origins = origins.merged(other.origins, "origin") { it.description },
         )
 
@@ -141,12 +141,12 @@ public data class Vocabulary(
     public fun verify(entry: ModelEntry) {
         val body = entry.body
         body.sources?.forEach { source -> source.origin.forEach(::requireDeclared) }
-        body.sinks?.forEach { sink -> requireDeclared(sink.vulnClass) }
+        body.sinks?.forEach { sink -> requireDeclared(sink.vulnType) }
         body.sanitizers?.forEach { sanitizer -> sanitizer.categories.forEach(::requireDeclared) }
     }
 
     private fun requireDeclared(id: VulnTypeId) {
-        requireVulnClass(id.id)
+        requireVulnType(id.id)
     }
 
     private fun requireDeclared(id: OriginId) {

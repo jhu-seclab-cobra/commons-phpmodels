@@ -104,7 +104,7 @@ public object DocumentSetLoader {
         mapping: CategoryMapping,
         context: Vocabulary,
     ) {
-        mapping.categories.values.firstUndeclaredIn(context.vulnClasses)?.let { target ->
+        mapping.categories.values.firstUndeclaredIn(context.vulnTypes)?.let { target ->
             throw VocabularyException("Mapping target category '${target.id}' is not declared")
         }
         mapping.origins.values.firstUndeclaredIn(context.origins)?.let { target ->
@@ -118,7 +118,7 @@ public object DocumentSetLoader {
 
     private fun CategoryMapping.sourceVocabulary(): Vocabulary =
         Vocabulary(
-            vulnClasses = categories.keys.associateWith { VulnClassDecl(it, MAPPED_SOURCE_DESCRIPTION) },
+            vulnTypes = categories.keys.associateWith { VulnTypeDecl(it, MAPPED_SOURCE_DESCRIPTION) },
             origins = origins.keys.associateWith { OriginDecl(it, MAPPED_SOURCE_DESCRIPTION) },
         )
 

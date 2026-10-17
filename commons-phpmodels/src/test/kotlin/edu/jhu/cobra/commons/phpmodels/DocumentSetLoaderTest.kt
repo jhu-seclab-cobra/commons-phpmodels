@@ -103,7 +103,7 @@ internal class DocumentSetLoaderTest {
         val files =
             arrayOf(
                 "index.txt" to "a.yaml\n",
-                "vocabulary.yaml" to "vulnClasses:\n  - name: xss\n    description: html\nprovenances: []\n",
+                "vocabulary.yaml" to "vulnTypes:\n  - name: xss\n    description: html\nprovenances: []\n",
                 "policy.yaml" to "- origin: user-input\n  enables: [sqli, xss]\n",
                 "provenance.yaml" to PROVENANCE,
                 "a.yaml" to sink("a", "xss"),

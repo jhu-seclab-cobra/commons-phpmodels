@@ -20,12 +20,12 @@ import kotlin.test.assertTrue
  *   failure names the undeclared reference.
  * - `undeclared reference message carries the declared descriptions` — the
  *   description enriches the undeclared-reference error (design.md
- *   VulnClassDecl / OriginDecl).
+ *   VulnTypeDecl / OriginDecl).
  */
 internal class VocabularyTest {
     private val vocabulary =
         Vocabulary(
-            vulnClasses = mapOf(VulnTypeId("sqli") to VulnClassDecl(VulnTypeId("sqli"), "SQL injection")),
+            vulnTypes = mapOf(VulnTypeId("sqli") to VulnTypeDecl(VulnTypeId("sqli"), "SQL injection")),
             origins = mapOf(OriginId("remote") to OriginDecl(OriginId("remote"), "Remote user input")),
         )
 
@@ -48,13 +48,13 @@ internal class VocabularyTest {
 
     @Test
     fun `require methods intern declared references case-insensitively`() {
-        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnClass("SQLI"))
+        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnType("SQLI"))
         assertEquals(OriginId("remote"), vocabulary.requireOrigin("Remote"))
     }
 
     @Test
     fun `require methods reject undeclared references naming the name`() {
-        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
+        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
         assertTrue("xss" in category.message.orEmpty(), category.message)
         val origin = assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
         assertTrue("local" in origin.message.orEmpty(), origin.message)
@@ -62,7 +62,7 @@ internal class VocabularyTest {
 
     @Test
     fun `undeclared reference message carries the declared descriptions`() {
-        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
+        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
         assertTrue("SQL injection" in category.message.orEmpty(), category.message)
         val origin = assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
         assertTrue("Remote user input" in origin.message.orEmpty(), origin.message)
@@ -85,8 +85,8 @@ internal class VocabularyMergeVerifyTest {
     ): Vocabulary {
         val color = OriginId(provenance.first)
         return Vocabulary(
-            vulnClasses =
-                classes.associate { (name, text) -> VulnTypeId(name) to VulnClassDecl(VulnTypeId(name), text) },
+            vulnTypes =
+                classes.associate { (name, text) -> VulnTypeId(name) to VulnTypeDecl(VulnTypeId(name), text) },
             origins = mapOf(color to OriginDecl(color, provenance.second)),
         )
     }
@@ -94,14 +94,14 @@ internal class VocabularyMergeVerifyTest {
     @Test
     fun `merge unions distinct names in declaration order`() {
         val merged = vocabulary("sqli" to "sql").merge(vocabulary("xss" to "html"))
-        assertEquals(listOf("sqli", "xss"), merged.vulnClasses.keys.map { it.id })
+        assertEquals(listOf("sqli", "xss"), merged.vulnTypes.keys.map { it.id })
         assertEquals(listOf("user-input"), merged.origins.keys.map { it.id })
     }
 
     @Test
     fun `merge admits an identical redeclaration`() {
         val merged = vocabulary("sqli" to "sql").merge(vocabulary("sqli" to "sql"))
-        assertEquals(1, merged.vulnClasses.size)
+        assertEquals(1, merged.vulnTypes.size)
     }
 
     @Test
@@ -131,7 +131,7 @@ internal class VocabularyMergeVerifyTest {
 
     @Test
     fun `EMPTY declares nothing`() {
-        assertEquals(0, Vocabulary.EMPTY.vulnClasses.size + Vocabulary.EMPTY.origins.size)
+        assertEquals(0, Vocabulary.EMPTY.vulnTypes.size + Vocabulary.EMPTY.origins.size)
     }
 
     @Test

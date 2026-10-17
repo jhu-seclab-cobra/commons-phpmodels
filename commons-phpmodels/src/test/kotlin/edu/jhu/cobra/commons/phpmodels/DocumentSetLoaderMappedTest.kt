@@ -32,7 +32,7 @@ internal class DocumentSetLoaderMappedTest {
                 opener(
                     "index.txt" to "a.yaml\n",
                     "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: sqli\n    description: conflicting\nprovenances: []\n",
+                        "vulnTypes:\n  - name: sqli\n    description: conflicting\nprovenances: []\n",
                     "policy.yaml" to "- origin: input\n  enables: [sql, text]\n",
                     "a.yaml" to sink("a", "sql") + sink("b", "text"),
                 ),

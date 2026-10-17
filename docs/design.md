@@ -11,7 +11,7 @@ category mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
-- **Classes:** `VulnTypeId`, `OriginId` (value classes), `VulnClassDecl`,
+- **Classes:** `VulnTypeId`, `OriginId` (value classes), `VulnTypeDecl`,
   `OriginDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `ModelYaml`,
   `VocabularyLoader`, `PolicyLoader`, `ModelLoader` (the last four internal
   objects); the body types: [design-bodies.md](design-bodies.md)
@@ -48,7 +48,7 @@ analyzer.
 Replace raw strings past the load boundary so a name mismatch cannot occur
 downstream. Decode from the bare scalar.
 
-### VulnClassDecl, OriginDecl
+### VulnTypeDecl, OriginDecl
 
 **Responsibility:** One declared vocabulary entry: interned identity plus a
 human description that self-documents the file and enriches the
@@ -59,11 +59,11 @@ undeclared-reference error message.
 **Responsibility:** The two closed declared sets. Sole authority for what
 category and color names exist.
 
-**State/Fields:** `vulnClasses: Map<VulnTypeId, VulnClassDecl>`,
+**State/Fields:** `vulnTypes: Map<VulnTypeId, VulnTypeDecl>`,
 `origins: Map<OriginId, OriginDecl>` (YAML section `provenances:`).
 
 **Methods:**
-- `fun requireVulnClass(raw: String): VulnTypeId` — interns and validates;
+- `fun requireVulnType(raw: String): VulnTypeId` — interns and validates;
   `VocabularyException` when undeclared.
 - `fun requireOrigin(raw: String): OriginId` — same for colors.
 

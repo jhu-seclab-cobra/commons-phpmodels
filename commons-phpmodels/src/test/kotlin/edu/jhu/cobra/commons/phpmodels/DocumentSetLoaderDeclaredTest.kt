@@ -35,13 +35,13 @@ internal class DocumentSetLoaderDeclaredTest {
                 opener(
                     "index.txt" to "a.yaml\n",
                     "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: xss\n    description: html\nprovenances: []\n",
+                        "vulnTypes:\n  - name: xss\n    description: html\nprovenances: []\n",
                     "policy.yaml" to "- origin: user-input\n  enables: [sqli, xss]\n",
                     "a.yaml" to sink("a", "xss"),
                 ),
                 context,
             )
-        val declared = set.vocabulary.vulnClasses.keys
+        val declared = set.vocabulary.vulnTypes.keys
         assertEquals(listOf("xss"), declared.map { it.id })
         assertEquals(setOf(VulnTypeId("sqli"), VulnTypeId("xss")), set.policy.single().enables)
         val entry = assertIs<ModelEntry>(set.entries.single())
@@ -71,7 +71,7 @@ internal class DocumentSetLoaderDeclaredTest {
                 opener(
                     "index.txt" to "",
                     "vocabulary.yaml" to
-                        "vulnClasses:\n  - name: sqli\n    description: different\nprovenances: []\n",
+                        "vulnTypes:\n  - name: sqli\n    description: different\nprovenances: []\n",
                 ),
                 context,
             )
@@ -97,7 +97,7 @@ internal class DocumentSetLoaderDeclaredTest {
     @Test
     fun `declared set malformed vocabulary fails`() {
         assertFailsWith<IllegalArgumentException> {
-            DocumentSetLoader.load(opener("index.txt" to "", "vocabulary.yaml" to "vulnClasses: []\n"), context)
+            DocumentSetLoader.load(opener("index.txt" to "", "vocabulary.yaml" to "vulnTypes: []\n"), context)
         }
     }
 

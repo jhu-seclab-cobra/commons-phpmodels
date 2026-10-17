@@ -22,10 +22,10 @@ import kotlin.test.assertFailsWith
 internal class PolicyLoaderTest {
     private val vocabulary =
         Vocabulary(
-            vulnClasses =
+            vulnTypes =
                 mapOf(
-                    VulnTypeId("sqli") to VulnClassDecl(VulnTypeId("sqli"), "SQL injection"),
-                    VulnTypeId("xss") to VulnClassDecl(VulnTypeId("xss"), "Cross-site scripting"),
+                    VulnTypeId("sqli") to VulnTypeDecl(VulnTypeId("sqli"), "SQL injection"),
+                    VulnTypeId("xss") to VulnTypeDecl(VulnTypeId("xss"), "Cross-site scripting"),
                 ),
             origins =
                 mapOf(

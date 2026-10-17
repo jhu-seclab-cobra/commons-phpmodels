@@ -56,7 +56,7 @@ case-sensitive match, never a substring match.
 ### SinkDecl, SanitizerDecl
 
 **Responsibility:** One element of the sinks / sanitizers sections:
-`SinkDecl(port: Port.Argument, vulnClass: VulnTypeId)` — one dangerously
+`SinkDecl(port: Port.Argument, vulnType: VulnTypeId)` — one dangerously
 consumed argument port under one category (YAML key `category:`);
 `SanitizerDecl(categories: Set<VulnTypeId> = emptySet(), check:
 ArgumentCheck? = null)` — the neutralized category set of the call result,

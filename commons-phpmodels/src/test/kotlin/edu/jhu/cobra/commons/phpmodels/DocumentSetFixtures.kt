@@ -32,7 +32,7 @@ internal class MemoryOpener(
 
 internal object DocumentSetFixtures {
     const val VOCABULARY: String =
-        "vulnClasses:\n  - name: sqli\n    description: sql injection\n" +
+        "vulnTypes:\n  - name: sqli\n    description: sql injection\n" +
             "provenances:\n  - name: user-input\n    description: request data\n"
 
     const val PROVENANCE: String = "producer: review\nverification: manual\n"
@@ -51,5 +51,5 @@ internal object DocumentSetFixtures {
         category: String,
     ): String = "- subject:\n    function: $name\n  sinks:\n    - port: argument(0)\n      category: $category\n"
 
-    fun ModelEntry.sinkCategories(): List<VulnTypeId> = body.sinks.orEmpty().map { it.vulnClass }
+    fun ModelEntry.sinkCategories(): List<VulnTypeId> = body.sinks.orEmpty().map { it.vulnType }
 }

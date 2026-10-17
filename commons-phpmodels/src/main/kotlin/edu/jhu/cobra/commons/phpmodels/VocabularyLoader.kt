@@ -5,7 +5,7 @@ import java.io.InputStream
 
 /** The two declared sections of a vocabulary document, as written in the file. */
 internal data class VocabularyFile(
-    val vulnClasses: List<VocabularyEntry>,
+    val vulnTypes: List<VocabularyEntry>,
     val provenances: List<VocabularyEntry>,
 )
 
@@ -31,10 +31,10 @@ internal object VocabularyLoader {
      */
     fun load(input: InputStream): Vocabulary {
         val file = ModelYaml.decode(input, jacksonTypeRef<VocabularyFile>())
-        val vulnClasses = file.vulnClasses.declaredBy("vulnClasses") { VulnTypeId(it.name) }
+        val vulnTypes = file.vulnTypes.declaredBy("vulnTypes") { VulnTypeId(it.name) }
         val origins = file.provenances.declaredBy("provenances") { OriginId(it.name) }
         return Vocabulary(
-            vulnClasses = vulnClasses.mapValues { (id, entry) -> VulnClassDecl(id, entry.description) },
+            vulnTypes = vulnTypes.mapValues { (id, entry) -> VulnTypeDecl(id, entry.description) },
             origins = origins.mapValues { (id, entry) -> OriginDecl(id, entry.description) },
         )
     }

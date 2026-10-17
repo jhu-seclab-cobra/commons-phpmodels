@@ -86,7 +86,7 @@ public data class CategoryMapping(
         return if (colors.isEmpty()) null else source.copy(origin = colors)
     }
 
-    private fun apply(sink: SinkDecl): SinkDecl? = category(sink.vulnClass)?.let { sink.copy(vulnClass = it) }
+    private fun apply(sink: SinkDecl): SinkDecl? = category(sink.vulnType)?.let { sink.copy(vulnType = it) }
 
     // A check element bounding its argument by a class or a type set outlives its categories.
     private fun apply(sanitizer: SanitizerDecl): SanitizerDecl? {

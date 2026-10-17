@@ -170,11 +170,11 @@ public data class SourceDecl(
  * One dangerously consumed port of a sinks section.
  *
  * @property port The argument port consumed dangerously.
- * @property vulnClass The danger category a color reaching [port] enables; YAML key `category`.
+ * @property vulnType The danger category a color reaching [port] enables; YAML key `category`.
  */
 public data class SinkDecl(
     val port: Port.Argument,
-    @param:JsonProperty("category") @get:JsonProperty("category") val vulnClass: VulnTypeId,
+    @param:JsonProperty("category") @get:JsonProperty("category") val vulnType: VulnTypeId,
 )
 
 /**
