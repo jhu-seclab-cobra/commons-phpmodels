@@ -31,8 +31,8 @@ internal class CategoryMappingLoaderTest {
                   env: ignore
                 """.trimIndent(),
             )
-        assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
-        assertNull(mapping.category(VulnClassId("text")))
+        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
+        assertNull(mapping.category(VulnTypeId("text")))
         assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
         assertNull(mapping.origin(OriginId("env")))
     }
@@ -50,7 +50,7 @@ internal class CategoryMappingLoaderTest {
     @Test
     fun `folds names to lowercase`() {
         val mapping = load("categories:\n  SQL: SQLi\nprovenances: {}\n")
-        assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
+        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
     }
 
     @Test

@@ -169,8 +169,8 @@ internal class ModelBodyTest {
     @Test
     fun `isEmpty is false once any section is declared`() {
         val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
-        val sinks = listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli")))
-        val sanitizers = listOf(SanitizerDecl(setOf(VulnClassId("sqli"))))
+        val sinks = listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli")))
+        val sanitizers = listOf(SanitizerDecl(setOf(VulnTypeId("sqli"))))
         val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
         assertEquals(false, ModelBody(returns = ReturnKind.ANY).isEmpty)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, propagation = flow).isEmpty)

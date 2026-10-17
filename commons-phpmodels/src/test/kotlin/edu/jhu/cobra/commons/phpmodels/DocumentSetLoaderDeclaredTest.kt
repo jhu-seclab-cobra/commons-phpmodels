@@ -43,9 +43,9 @@ internal class DocumentSetLoaderDeclaredTest {
             )
         val declared = set.vocabulary.vulnClasses.keys
         assertEquals(listOf("xss"), declared.map { it.id })
-        assertEquals(setOf(VulnClassId("sqli"), VulnClassId("xss")), set.policy.single().enables)
+        assertEquals(setOf(VulnTypeId("sqli"), VulnTypeId("xss")), set.policy.single().enables)
         val entry = assertIs<ModelEntry>(set.entries.single())
-        assertEquals(listOf(VulnClassId("xss")), entry.sinkCategories())
+        assertEquals(listOf(VulnTypeId("xss")), entry.sinkCategories())
     }
 
     @Test
@@ -61,7 +61,7 @@ internal class DocumentSetLoaderDeclaredTest {
             DocumentSetLoader.load(
                 opener("index.txt" to "a.yaml\n", "vocabulary.yaml" to VOCABULARY, "a.yaml" to sink("a", "sqli")),
             )
-        assertEquals(listOf(VulnClassId("sqli")), assertIs<ModelEntry>(set.entries.single()).sinkCategories())
+        assertEquals(listOf(VulnTypeId("sqli")), assertIs<ModelEntry>(set.entries.single()).sinkCategories())
     }
 
     @Test

@@ -174,7 +174,7 @@ public data class SourceDecl(
  */
 public data class SinkDecl(
     val port: Port.Argument,
-    @param:JsonProperty("category") @get:JsonProperty("category") val vulnClass: VulnClassId,
+    @param:JsonProperty("category") @get:JsonProperty("category") val vulnClass: VulnTypeId,
 )
 
 /**

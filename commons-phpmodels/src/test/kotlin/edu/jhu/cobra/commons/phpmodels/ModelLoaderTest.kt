@@ -52,7 +52,7 @@ internal class ModelLoaderTest {
         assertEquals(ArgPattern(listOf(null, StrVal("string"))), model.condition)
         assertEquals(ReturnKind.STR, model.body.returns)
         assertEquals(listOf(Propagation(from = Port.Argument(0), to = Port.Return)), model.body.propagation)
-        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli"))), model.body.sinks)
     }
 
     @Test
@@ -116,7 +116,7 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(SanitizerDecl(setOf(VulnClassId("sqli"), VulnClassId("xss")))),
+            listOf(SanitizerDecl(setOf(VulnTypeId("sqli"), VulnTypeId("xss")))),
             model.body.sanitizers,
         )
     }
@@ -157,7 +157,7 @@ internal class ModelLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))),
+            listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli"))),
             assertIs<ModelEntry>(entries[0]).body.sinks,
         )
         assertEquals(

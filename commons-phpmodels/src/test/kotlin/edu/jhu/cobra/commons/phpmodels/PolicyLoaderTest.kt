@@ -24,8 +24,8 @@ internal class PolicyLoaderTest {
         Vocabulary(
             vulnClasses =
                 mapOf(
-                    VulnClassId("sqli") to VulnClassDecl(VulnClassId("sqli"), "SQL injection"),
-                    VulnClassId("xss") to VulnClassDecl(VulnClassId("xss"), "Cross-site scripting"),
+                    VulnTypeId("sqli") to VulnClassDecl(VulnTypeId("sqli"), "SQL injection"),
+                    VulnTypeId("xss") to VulnClassDecl(VulnTypeId("xss"), "Cross-site scripting"),
                 ),
             origins =
                 mapOf(
@@ -45,7 +45,7 @@ internal class PolicyLoaderTest {
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(PolicyRow(OriginId("remote"), setOf(VulnClassId("sqli"), VulnClassId("xss")))),
+            listOf(PolicyRow(OriginId("remote"), setOf(VulnTypeId("sqli"), VulnTypeId("xss")))),
             rows,
         )
     }
@@ -95,15 +95,15 @@ internal class PolicyLoaderTest {
                     """.trimIndent(),
                 ),
             )
-        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("sqli")))
-        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnClassId("xss")))
-        assertEquals(false, policy.isDangerous(OriginId("local"), VulnClassId("sqli")))
+        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnTypeId("sqli")))
+        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnTypeId("xss")))
+        assertEquals(false, policy.isDangerous(OriginId("local"), VulnTypeId("sqli")))
     }
 
     @Test
     fun `rows keep file order`() {
         val rows = load("- origin: remote\n  enables: [xss]\n- origin: remote\n  enables: [sqli]\n")
-        assertEquals(listOf(setOf(VulnClassId("xss")), setOf(VulnClassId("sqli"))), rows.map { it.enables })
+        assertEquals(listOf(setOf(VulnTypeId("xss")), setOf(VulnTypeId("sqli"))), rows.map { it.enables })
     }
 
     @Test

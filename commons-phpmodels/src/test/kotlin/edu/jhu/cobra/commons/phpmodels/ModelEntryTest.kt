@@ -131,8 +131,8 @@ internal class ModelEntryTest {
 
     @Test
     fun `class subject rejects every assertion section`() {
-        val sinks = ModelBody(sinks = listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))))
-        val sanitizers = ModelBody(sanitizers = listOf(SanitizerDecl(setOf(VulnClassId("sqli")))))
+        val sinks = ModelBody(sinks = listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli"))))
+        val sanitizers = ModelBody(sanitizers = listOf(SanitizerDecl(setOf(VulnTypeId("sqli")))))
         for (body in listOf(sources, returns, sinks, sanitizers)) {
             assertFailsWith<IllegalArgumentException> {
                 ModelEntry(ClassSubject("c"), signature = classSignature, body = body)

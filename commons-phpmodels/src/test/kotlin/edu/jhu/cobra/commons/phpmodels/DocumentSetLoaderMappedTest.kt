@@ -40,15 +40,15 @@ internal class DocumentSetLoaderMappedTest {
                 mapping,
             )
         assertEquals(Vocabulary.EMPTY, set.vocabulary)
-        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnClassId("sqli")))), set.policy)
+        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnTypeId("sqli")))), set.policy)
         val entry = assertIs<ModelEntry>(set.entries.single())
         assertEquals("a", (entry.subject as FunctionSubject).name)
-        assertEquals(listOf(VulnClassId("sqli")), entry.sinkCategories())
+        assertEquals(listOf(VulnTypeId("sqli")), entry.sinkCategories())
     }
 
     @Test
     fun `mapped set undeclared target fails`() {
-        val stray = CategoryMapping(mapOf(VulnClassId("sql") to VulnClassId("xss")), emptyMap())
+        val stray = CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("xss")), emptyMap())
         val failure =
             assertFailsWith<VocabularyException> {
                 DocumentSetLoader.load(opener("index.txt" to ""), context, stray)
@@ -79,7 +79,7 @@ internal class DocumentSetLoaderMappedTest {
     @Test
     fun `mapped set discarded policy origin drops the row`() {
         val discarding =
-            CategoryMapping(mapOf(VulnClassId("sql") to VulnClassId("sqli")), mapOf(OriginId("env") to null))
+            CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("sqli")), mapOf(OriginId("env") to null))
         val set =
             DocumentSetLoader.load(
                 opener("index.txt" to "", "policy.yaml" to "- origin: env\n  enables: [sql]\n"),

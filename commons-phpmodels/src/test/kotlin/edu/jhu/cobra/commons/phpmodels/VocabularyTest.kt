@@ -25,14 +25,14 @@ import kotlin.test.assertTrue
 internal class VocabularyTest {
     private val vocabulary =
         Vocabulary(
-            vulnClasses = mapOf(VulnClassId("sqli") to VulnClassDecl(VulnClassId("sqli"), "SQL injection")),
+            vulnClasses = mapOf(VulnTypeId("sqli") to VulnClassDecl(VulnTypeId("sqli"), "SQL injection")),
             origins = mapOf(OriginId("remote") to OriginDecl(OriginId("remote"), "Remote user input")),
         )
 
     @Test
     fun `vuln class id folds to lowercase`() {
-        assertEquals("sqli", VulnClassId("SQLI").id)
-        assertEquals(VulnClassId("sqli"), VulnClassId("SqLi"))
+        assertEquals("sqli", VulnTypeId("SQLI").id)
+        assertEquals(VulnTypeId("sqli"), VulnTypeId("SqLi"))
     }
 
     @Test
@@ -48,7 +48,7 @@ internal class VocabularyTest {
 
     @Test
     fun `require methods intern declared references case-insensitively`() {
-        assertEquals(VulnClassId("sqli"), vocabulary.requireVulnClass("SQLI"))
+        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnClass("SQLI"))
         assertEquals(OriginId("remote"), vocabulary.requireOrigin("Remote"))
     }
 
@@ -86,7 +86,7 @@ internal class VocabularyMergeVerifyTest {
         val color = OriginId(provenance.first)
         return Vocabulary(
             vulnClasses =
-                classes.associate { (name, text) -> VulnClassId(name) to VulnClassDecl(VulnClassId(name), text) },
+                classes.associate { (name, text) -> VulnTypeId(name) to VulnClassDecl(VulnTypeId(name), text) },
             origins = mapOf(color to OriginDecl(color, provenance.second)),
         )
     }

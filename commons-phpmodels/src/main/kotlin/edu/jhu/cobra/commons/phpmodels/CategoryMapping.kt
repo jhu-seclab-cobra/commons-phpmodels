@@ -15,7 +15,7 @@ package edu.jhu.cobra.commons.phpmodels
  * @property origins Source color to target color, or null to discard.
  */
 public data class CategoryMapping(
-    val categories: Map<VulnClassId, VulnClassId?>,
+    val categories: Map<VulnTypeId, VulnTypeId?>,
     val origins: Map<OriginId, OriginId?>,
 ) {
     /**
@@ -25,7 +25,7 @@ public data class CategoryMapping(
      * @return The consumer's name, or null when [source] is discarded.
      * @throws VocabularyException If [source] is unlisted.
      */
-    public fun category(source: VulnClassId): VulnClassId? {
+    public fun category(source: VulnTypeId): VulnTypeId? {
         if (source !in categories) throw unmapped("category", source.id)
         return categories[source]
     }

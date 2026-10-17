@@ -20,8 +20,8 @@ import kotlin.test.assertFailsWith
  */
 internal class TaintPolicyTest {
     private val remote = OriginId("remote")
-    private val sqli = VulnClassId("sqli")
-    private val xss = VulnClassId("xss")
+    private val sqli = VulnTypeId("sqli")
+    private val xss = VulnTypeId("xss")
 
     @Test
     fun `row enabling no category is rejected`() {

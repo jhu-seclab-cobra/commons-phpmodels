@@ -116,12 +116,12 @@ the decode with `IllegalArgumentException`.
 
 **Responsibility:** One translation table, both axes.
 
-**State/Fields:** `val categories: Map<VulnClassId, VulnClassId?>`,
+**State/Fields:** `val categories: Map<VulnTypeId, VulnTypeId?>`,
 `val origins: Map<OriginId, OriginId?>` (YAML section `provenances:`) — a
 `null` target marks a discarded name.
 
 **Methods:**
-- `fun category(source: VulnClassId): VulnClassId?` — the target, or `null`
+- `fun category(source: VulnTypeId): VulnTypeId?` — the target, or `null`
   when discarded. **Errors:** `VocabularyException` when `source` is
   unlisted.
 - `fun origin(source: OriginId): OriginId?` — likewise.

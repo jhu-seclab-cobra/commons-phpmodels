@@ -96,7 +96,7 @@ internal class ModelEntryArityTest {
                       category: sqli
                 """.trimIndent(),
             )
-        assertEquals(listOf(SinkDecl(Port.Argument(1), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(1), VulnTypeId("sqli"))), model.body.sinks)
     }
 
     @Test
@@ -112,7 +112,7 @@ internal class ModelEntryArityTest {
                       category: sqli
                 """.trimIndent(),
             )
-        assertEquals(listOf(SinkDecl(Port.Argument(9), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(9), VulnTypeId("sqli"))), model.body.sinks)
     }
 
     @Test
@@ -177,6 +177,6 @@ internal class ModelEntryArityTest {
                       category: sqli
                 """.trimIndent(),
             )
-        assertEquals(listOf(SinkDecl(Port.Argument(5), VulnClassId("sqli"))), model.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(5), VulnTypeId("sqli"))), model.body.sinks)
     }
 }

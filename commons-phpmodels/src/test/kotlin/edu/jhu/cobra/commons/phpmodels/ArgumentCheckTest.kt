@@ -73,7 +73,7 @@ internal class ArgumentCheckTest {
                     accepts: 1
                 """,
             )
-        assertEquals(SanitizerDecl(setOf(VulnClassId("sqli")), ArgumentCheck(Port.Argument(1), IntVal(1))), decl)
+        assertEquals(SanitizerDecl(setOf(VulnTypeId("sqli")), ArgumentCheck(Port.Argument(1), IntVal(1))), decl)
     }
 
     @Test

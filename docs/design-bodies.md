@@ -14,7 +14,7 @@ decoder: [design.md](design.md). Ports and propagations:
 - **Relationships:** `ModelBody` contains the optional section values;
   `CharacterBound` contains optional `Port.Argument`s and an optional
   `CharacterClass`; `SinkDecl` contains one `Port.Argument` and one
-  `VulnClassId`; `SanitizerDecl` contains `VulnClassId`s and an optional
+  `VulnTypeId`; `SanitizerDecl` contains `VulnTypeId`s and an optional
   `ArgumentCheck`, which contains one `Port.Argument`, one `IPrimitiveVal`,
   an optional `CharacterClass` and an optional `DeclaredType`;
   `SourceDecl` contains an optional `Port.Argument` site
@@ -56,9 +56,9 @@ case-sensitive match, never a substring match.
 ### SinkDecl, SanitizerDecl
 
 **Responsibility:** One element of the sinks / sanitizers sections:
-`SinkDecl(port: Port.Argument, vulnClass: VulnClassId)` — one dangerously
+`SinkDecl(port: Port.Argument, vulnClass: VulnTypeId)` — one dangerously
 consumed argument port under one category (YAML key `category:`);
-`SanitizerDecl(categories: Set<VulnClassId> = emptySet(), check:
+`SanitizerDecl(categories: Set<VulnTypeId> = emptySet(), check:
 ArgumentCheck? = null)` — the neutralized category set of the call result,
 or, with a check, of the argument the call accepts (agent decision CK-1,
 [model.md](model.md)).

@@ -149,8 +149,8 @@ for (entry in set.entries) {
 - **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Receiver` (spelling `this`), `Port.Return` (spelling `return`). `Port.Input` is the sealed sub-interface of `Argument` and `Receiver`. `Port.parse(raw: String): Port`; `Port.Argument.parseArgument(raw: String): Port.Argument` and `Port.Input.parseInput(raw: String): Port.Input` narrow to the subtype.
 - **`SourceDecl(origin: Set<OriginId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced color set (YAML key `provenance`); optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
 - **`KeyPattern(pattern: String)`** — Regex over array keys, matched entire-key and case-sensitively; `matches(key: String): Boolean`. Decoded from a bare string scalar.
-- **`SinkDecl(port: Port.Argument, vulnClass: VulnClassId)`** — One dangerously consumed argument under one category (YAML key `category`).
-- **`SanitizerDecl(categories: Set<VulnClassId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized category set of the result (non-empty without a check), or of the argument a check accepts.
+- **`SinkDecl(port: Port.Argument, vulnClass: VulnTypeId)`** — One dangerously consumed argument under one category (YAML key `category`).
+- **`SanitizerDecl(categories: Set<VulnTypeId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized category set of the result (non-empty without a check), or of the argument a check accepts.
 - **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's categories and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
 - **`ReturnKind`** — Enum `STR`, `NUM`, `BOOL`, `ANY`; `join(other: ReturnKind): ReturnKind` gives itself when equal, `ANY` otherwise.
 
@@ -245,17 +245,17 @@ policy.isDangerous(vocabulary.requireOrigin("remote"), vocabulary.requireVulnCla
 
 ## API
 
-- **`Vocabulary(vulnClasses: Map<VulnClassId, VulnClassDecl>, origins: Map<OriginId, OriginDecl>)`** — Sole authority for what category and color names exist.
-- **`Vocabulary.requireVulnClass(raw: String): VulnClassId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary(vulnClasses: Map<VulnTypeId, VulnClassDecl>, origins: Map<OriginId, OriginDecl>)`** — Sole authority for what category and color names exist.
+- **`Vocabulary.requireVulnClass(raw: String): VulnTypeId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.requireOrigin(raw: String): OriginId`** — Interns and validates a color name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
 - **`Vocabulary.verify(entry: ModelEntry)`** — Checks every category and color the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
 - **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
-- **`VulnClassId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
-- **`VulnClassDecl(id: VulnClassId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
-- **`PolicyRow(origin: OriginId, enables: Set<VulnClassId>)`** — One policy statement.
+- **`VulnTypeId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
+- **`VulnClassDecl(id: VulnTypeId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
+- **`PolicyRow(origin: OriginId, enables: Set<VulnTypeId>)`** — One policy statement.
 - **`TaintPolicy(rows: List<PolicyRow>)`** — The folded origin → categories matrix; rows sharing an origin accumulate by union.
-- **`TaintPolicy.isDangerous(color: OriginId, category: VulnClassId): Boolean`** — Whether the origin enables the category.
+- **`TaintPolicy.isDangerous(color: OriginId, category: VulnTypeId): Boolean`** — Whether the origin enables the category.
 
 ## Configuration
 

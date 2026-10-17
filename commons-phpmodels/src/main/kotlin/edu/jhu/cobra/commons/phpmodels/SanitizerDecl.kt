@@ -19,7 +19,7 @@ import edu.jhu.cobra.commons.value.Unsure
  *   or a check element states nothing about the accepted argument.
  */
 public data class SanitizerDecl(
-    val categories: Set<VulnClassId> = emptySet(),
+    val categories: Set<VulnTypeId> = emptySet(),
     val check: ArgumentCheck? = null,
 ) {
     init {

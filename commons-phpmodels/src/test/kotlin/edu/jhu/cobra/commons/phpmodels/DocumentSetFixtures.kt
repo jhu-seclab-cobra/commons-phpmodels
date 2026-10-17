@@ -51,5 +51,5 @@ internal object DocumentSetFixtures {
         category: String,
     ): String = "- subject:\n    function: $name\n  sinks:\n    - port: argument(0)\n      category: $category\n"
 
-    fun ModelEntry.sinkCategories(): List<VulnClassId> = body.sinks.orEmpty().map { it.vulnClass }
+    fun ModelEntry.sinkCategories(): List<VulnTypeId> = body.sinks.orEmpty().map { it.vulnClass }
 }

@@ -35,9 +35,9 @@ internal class CategoryMappingTest {
         CategoryMapping(
             categories =
                 mapOf(
-                    VulnClassId("sql") to VulnClassId("sqli"),
-                    VulnClassId("html") to VulnClassId("xss"),
-                    VulnClassId("text") to null,
+                    VulnTypeId("sql") to VulnTypeId("sqli"),
+                    VulnTypeId("html") to VulnTypeId("xss"),
+                    VulnTypeId("text") to null,
                 ),
             origins = mapOf(OriginId("input") to OriginId("user-input"), OriginId("env") to null),
         )
@@ -58,7 +58,7 @@ internal class CategoryMappingTest {
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
-        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnClassId("sqli"))), translated.body.sinks)
+        assertEquals(listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli"))), translated.body.sinks)
     }
 
     @Test
@@ -72,7 +72,7 @@ internal class CategoryMappingTest {
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
-        assertEquals(listOf(SanitizerDecl(setOf(VulnClassId("sqli")))), translated.body.sanitizers)
+        assertEquals(listOf(SanitizerDecl(setOf(VulnTypeId("sqli")))), translated.body.sanitizers)
     }
 
     @Test
@@ -156,7 +156,7 @@ internal class CategoryMappingTest {
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(entry.body.valueUnit(), translated.body.valueUnit())
         val sinks = translated.body.sinks.orEmpty()
-        assertEquals(listOf(VulnClassId("xss")), sinks.map { it.vulnClass })
+        assertEquals(listOf(VulnTypeId("xss")), sinks.map { it.vulnClass })
     }
 
     @Test
@@ -170,11 +170,11 @@ internal class CategoryMappingTest {
     fun `policy rows translated and emptied rows dropped`() {
         val rows =
             listOf(
-                PolicyRow(OriginId("input"), setOf(VulnClassId("sql"), VulnClassId("text"))),
-                PolicyRow(OriginId("input"), setOf(VulnClassId("text"))),
-                PolicyRow(OriginId("env"), setOf(VulnClassId("sql"))),
+                PolicyRow(OriginId("input"), setOf(VulnTypeId("sql"), VulnTypeId("text"))),
+                PolicyRow(OriginId("input"), setOf(VulnTypeId("text"))),
+                PolicyRow(OriginId("env"), setOf(VulnTypeId("sql"))),
             )
-        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnClassId("sqli")))), mapping.apply(rows))
+        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnTypeId("sqli")))), mapping.apply(rows))
     }
 
     @Test
@@ -214,8 +214,8 @@ internal class CategoryMappingTest {
 
     @Test
     fun `category and origin translate directly`() {
-        assertEquals(VulnClassId("sqli"), mapping.category(VulnClassId("sql")))
-        assertNull(mapping.category(VulnClassId("text")))
+        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
+        assertNull(mapping.category(VulnTypeId("text")))
         assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
         assertNull(mapping.origin(OriginId("env")))
     }
@@ -225,12 +225,12 @@ internal class CategoryMappingTest {
         val entry = model("sinks:\n  - port: argument(0)\n    category: shell")
         val onEntry = assertFailsWith<VocabularyException> { mapping.apply(entry) }
         assertTrue("shell" in onEntry.message.orEmpty(), onEntry.message)
-        val strayOrigin = listOf(PolicyRow(OriginId("remote"), setOf(VulnClassId("sql"))))
+        val strayOrigin = listOf(PolicyRow(OriginId("remote"), setOf(VulnTypeId("sql"))))
         val onRow = assertFailsWith<VocabularyException> { mapping.apply(strayOrigin) }
         assertTrue("remote" in onRow.message.orEmpty(), onRow.message)
-        val strayCategory = listOf(PolicyRow(OriginId("input"), setOf(VulnClassId("shell"))))
+        val strayCategory = listOf(PolicyRow(OriginId("input"), setOf(VulnTypeId("shell"))))
         assertFailsWith<VocabularyException> { mapping.apply(strayCategory) }
-        assertFailsWith<VocabularyException> { mapping.category(VulnClassId("shell")) }
+        assertFailsWith<VocabularyException> { mapping.category(VulnTypeId("shell")) }
         assertFailsWith<VocabularyException> { mapping.origin(OriginId("remote")) }
     }
 }

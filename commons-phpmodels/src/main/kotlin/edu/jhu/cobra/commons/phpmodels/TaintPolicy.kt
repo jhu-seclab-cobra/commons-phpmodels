@@ -11,7 +11,7 @@ package edu.jhu.cobra.commons.phpmodels
  */
 public data class PolicyRow(
     val origin: OriginId,
-    val enables: Set<VulnClassId>,
+    val enables: Set<VulnTypeId>,
 ) {
     init {
         require(enables.isNotEmpty()) { "Policy row for '${origin.id}' enables no category" }
@@ -28,7 +28,7 @@ public data class PolicyRow(
 public class TaintPolicy(
     rows: List<PolicyRow>,
 ) {
-    private val matrix: Map<OriginId, Set<VulnClassId>> =
+    private val matrix: Map<OriginId, Set<VulnTypeId>> =
         rows.groupingBy { it.origin }.fold(emptySet()) { acc, row -> acc + row.enables }
 
     /**
@@ -40,6 +40,6 @@ public class TaintPolicy(
      */
     public fun isDangerous(
         color: OriginId,
-        category: VulnClassId,
+        category: VulnTypeId,
     ): Boolean = matrix[color]?.contains(category) == true
 }

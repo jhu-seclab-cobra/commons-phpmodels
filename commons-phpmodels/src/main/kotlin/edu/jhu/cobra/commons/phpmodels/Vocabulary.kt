@@ -11,14 +11,14 @@ import com.fasterxml.jackson.annotation.JsonCreator
  * @property id Lowercased category name, as declared in the vocabulary.
  */
 @JvmInline
-public value class VulnClassId private constructor(
+public value class VulnTypeId private constructor(
     public val id: String,
 ) {
     public companion object {
         /** Interns [raw], folding it to its lowercased declared form. */
         @JvmStatic
         @JsonCreator
-        public operator fun invoke(raw: String): VulnClassId = VulnClassId(raw.lowercase())
+        public operator fun invoke(raw: String): VulnTypeId = VulnTypeId(raw.lowercase())
     }
 }
 
@@ -51,7 +51,7 @@ public value class OriginId private constructor(
  *   file and enriches the undeclared-reference error message.
  */
 public data class VulnClassDecl(
-    val id: VulnClassId,
+    val id: VulnTypeId,
     val description: String,
 )
 
@@ -88,18 +88,18 @@ public class VocabularyException(
  * @property origins Declared origin colors, keyed by interned identity.
  */
 public data class Vocabulary(
-    val vulnClasses: Map<VulnClassId, VulnClassDecl>,
+    val vulnClasses: Map<VulnTypeId, VulnClassDecl>,
     val origins: Map<OriginId, OriginDecl>,
 ) {
     /**
-     * Interns [raw] to its [VulnClassId], validating it is declared.
+     * Interns [raw] to its [VulnTypeId], validating it is declared.
      *
      * @param raw Category tag from a YAML document (case-insensitive).
      * @return The interned identity of the declared category.
      * @throws VocabularyException If [raw] names no declared category.
      */
-    public fun requireVulnClass(raw: String): VulnClassId {
-        val id = VulnClassId(raw)
+    public fun requireVulnClass(raw: String): VulnTypeId {
+        val id = VulnTypeId(raw)
         if (id in vulnClasses) return id
         throw undeclared("vulnerability class", raw, vulnClasses.values.map { "${it.id.id} (${it.description})" })
     }
@@ -145,7 +145,7 @@ public data class Vocabulary(
         body.sanitizers?.forEach { sanitizer -> sanitizer.categories.forEach(::requireDeclared) }
     }
 
-    private fun requireDeclared(id: VulnClassId) {
+    private fun requireDeclared(id: VulnTypeId) {
         requireVulnClass(id.id)
     }
 

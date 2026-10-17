@@ -13,17 +13,17 @@ policy.isDangerous(vocabulary.requireOrigin("remote"), vocabulary.requireVulnCla
 
 ## API
 
-- **`Vocabulary(vulnClasses: Map<VulnClassId, VulnClassDecl>, origins: Map<OriginId, OriginDecl>)`** — Sole authority for what category and color names exist.
-- **`Vocabulary.requireVulnClass(raw: String): VulnClassId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary(vulnClasses: Map<VulnTypeId, VulnClassDecl>, origins: Map<OriginId, OriginDecl>)`** — Sole authority for what category and color names exist.
+- **`Vocabulary.requireVulnClass(raw: String): VulnTypeId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.requireOrigin(raw: String): OriginId`** — Interns and validates a color name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
 - **`Vocabulary.verify(entry: ModelEntry)`** — Checks every category and color the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
 - **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
-- **`VulnClassId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
-- **`VulnClassDecl(id: VulnClassId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
-- **`PolicyRow(origin: OriginId, enables: Set<VulnClassId>)`** — One policy statement.
+- **`VulnTypeId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
+- **`VulnClassDecl(id: VulnTypeId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
+- **`PolicyRow(origin: OriginId, enables: Set<VulnTypeId>)`** — One policy statement.
 - **`TaintPolicy(rows: List<PolicyRow>)`** — The folded origin → categories matrix; rows sharing an origin accumulate by union.
-- **`TaintPolicy.isDangerous(color: OriginId, category: VulnClassId): Boolean`** — Whether the origin enables the category.
+- **`TaintPolicy.isDangerous(color: OriginId, category: VulnTypeId): Boolean`** — Whether the origin enables the category.
 
 ## Configuration
 

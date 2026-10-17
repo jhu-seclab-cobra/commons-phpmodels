@@ -36,7 +36,7 @@ internal class VocabularyLoaderTest {
     @Test
     fun `vocabulary decodes both sections`() {
         val vocabulary = load(document)
-        assertEquals(setOf(VulnClassId("sqli")), vocabulary.vulnClasses.keys)
+        assertEquals(setOf(VulnTypeId("sqli")), vocabulary.vulnClasses.keys)
         assertEquals(setOf(OriginId("remote")), vocabulary.origins.keys)
     }
 
@@ -69,7 +69,7 @@ internal class VocabularyLoaderTest {
                     description: Header-borne input
                 """.trimIndent(),
             )
-        assertEquals(setOf(VulnClassId("header")), vocabulary.vulnClasses.keys)
+        assertEquals(setOf(VulnTypeId("header")), vocabulary.vulnClasses.keys)
         assertEquals(setOf(OriginId("header")), vocabulary.origins.keys)
     }
 
@@ -91,7 +91,7 @@ internal class VocabularyLoaderTest {
     @Test
     fun `require methods validate references`() {
         val vocabulary = load(document)
-        assertEquals(VulnClassId("sqli"), vocabulary.requireVulnClass("SQLI"))
+        assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnClass("SQLI"))
         assertEquals(OriginId("remote"), vocabulary.requireOrigin("remote"))
         assertFailsWith<VocabularyException> { vocabulary.requireVulnClass("xss") }
         assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
@@ -106,7 +106,7 @@ internal class VocabularyLoaderTest {
     @Test
     fun `descriptions are kept`() {
         val vocabulary = load(document)
-        assertEquals("SQL injection", vocabulary.vulnClasses.getValue(VulnClassId("sqli")).description)
+        assertEquals("SQL injection", vocabulary.vulnClasses.getValue(VulnTypeId("sqli")).description)
         assertEquals("Remote user input", vocabulary.origins.getValue(OriginId("remote")).description)
     }
 

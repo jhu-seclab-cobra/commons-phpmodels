@@ -11,7 +11,7 @@ category mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
-- **Classes:** `VulnClassId`, `OriginId` (value classes), `VulnClassDecl`,
+- **Classes:** `VulnTypeId`, `OriginId` (value classes), `VulnClassDecl`,
   `OriginDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `ModelYaml`,
   `VocabularyLoader`, `PolicyLoader`, `ModelLoader` (the last four internal
   objects); the body types: [design-bodies.md](design-bodies.md)
@@ -41,7 +41,7 @@ analyzer.
 
 ## Class / Type Specifications
 
-### VulnClassId, OriginId
+### VulnTypeId, OriginId
 
 **Responsibility:** Interned reference tokens (`@JvmInline value class` over
 `String`, lowercased) for a declared danger category and origin color.
@@ -59,11 +59,11 @@ undeclared-reference error message.
 **Responsibility:** The two closed declared sets. Sole authority for what
 category and color names exist.
 
-**State/Fields:** `vulnClasses: Map<VulnClassId, VulnClassDecl>`,
+**State/Fields:** `vulnClasses: Map<VulnTypeId, VulnClassDecl>`,
 `origins: Map<OriginId, OriginDecl>` (YAML section `provenances:`).
 
 **Methods:**
-- `fun requireVulnClass(raw: String): VulnClassId` — interns and validates;
+- `fun requireVulnClass(raw: String): VulnTypeId` — interns and validates;
   `VocabularyException` when undeclared.
 - `fun requireOrigin(raw: String): OriginId` — same for colors.
 
