@@ -7,7 +7,7 @@ vocabulary mapping: [model-sets.md](model-sets.md).
 
 ## Entities
 
-- **Source Kind** — A declared category of untrusted provenance. Existence
+- **Source Kind** — A declared kind of untrusted input. Existence
   condition: declared in the vocabulary. Identity is its declared name,
   lowercased. Carries a human description.
 - **Vulnerability Type** — A declared category of vulnerability. Existence

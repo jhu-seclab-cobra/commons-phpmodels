@@ -108,7 +108,7 @@ not matter; the entry holds when every listed position carries its value.
   subject's unconditional statement; several entries for one subject are
   alternatives.
 
-**Source Kind** — A named category of untrusted provenance.
+**Source Kind** — A named kind of untrusted input.
 - Scope: travels with a value along data flow.
 - Relationships: declared in the Vocabulary; produced by sources; mapped by
   the Policy.
