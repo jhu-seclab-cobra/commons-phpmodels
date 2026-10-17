@@ -65,7 +65,7 @@ implementation throws, and its declaration. Composed of sections, at least one p
   decode.
 
 **Section** — One aspect of a model: *returns*, *propagation*,
-*characters*, *sources*, *sinks*, *sanitizers*, *raises*, or *signature*.
+*characters*, *sources*, *sinks*, *sanitizers*, *throws*, or *signature*.
 - Scope: an absent section asserts nothing about that aspect; *returns*,
   *propagation*, and *characters* form one coupled statement, the value unit
   ([model.md](model.md)).

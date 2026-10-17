@@ -21,7 +21,7 @@ import kotlin.test.assertNull
  * - `propagation requires returns` — the value unit is whole.
  * - `declared empty section is rejected` — an empty list is a mistake, not
  *   an absent section.
- * - `declared empty raises is a statement` — the one section whose empty
+ * - `declared empty throws is a statement` — the one section whose empty
  *   value states something: no class is thrown.
  * - `source element rejects an empty key-pattern set` — declared keys are
  *   non-empty.
@@ -110,9 +110,9 @@ internal class ModelBodyTest {
     }
 
     @Test
-    fun `declared empty raises is a statement`() {
-        val body = ModelBody(raises = emptySet())
-        assertEquals(emptySet(), body.raises)
+    fun `declared empty throws is a statement`() {
+        val body = ModelBody(throws = emptySet())
+        assertEquals(emptySet(), body.throws)
         assertEquals(false, body.isEmpty)
     }
 
@@ -153,7 +153,7 @@ internal class ModelBodyTest {
         val sources = listOf(SourceDecl(setOf(SourceKindId("remote"))))
         assertEquals(true, ModelBody(sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, sources = sources).declaresOnlySources)
-        assertEquals(false, ModelBody(sources = sources, raises = emptySet()).declaresOnlySources)
+        assertEquals(false, ModelBody(sources = sources, throws = emptySet()).declaresOnlySources)
         assertEquals(false, ModelBody().declaresOnlySources)
     }
 
@@ -179,7 +179,7 @@ internal class ModelBodyTest {
         assertEquals(false, ModelBody(sources = sources).isEmpty)
         assertEquals(false, ModelBody(sinks = sinks).isEmpty)
         assertEquals(false, ModelBody(sanitizers = sanitizers).isEmpty)
-        assertEquals(false, ModelBody(raises = setOf(ClassSubject("valueerror"))).isEmpty)
+        assertEquals(false, ModelBody(throws = setOf(ClassSubject("valueerror"))).isEmpty)
     }
 
     @Test

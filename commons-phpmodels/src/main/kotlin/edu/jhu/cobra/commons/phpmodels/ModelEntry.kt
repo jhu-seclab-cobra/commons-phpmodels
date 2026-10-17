@@ -179,7 +179,7 @@ public data class ModelEntry(
  * the creator through one `@JsonUnwrapped` parameter — before the
  * signature-derived returns completion, so [ModelBody]'s
  * propagation-requires-returns rule stays out of the raw decode. Each
- * `raises` element is a bare class-name scalar decoded by the [ClassSubject]
+ * `throws` element is a bare class-name scalar decoded by the [ClassSubject]
  * creator (impl.md).
  */
 internal data class SectionFields(
@@ -189,11 +189,11 @@ internal data class SectionFields(
     val sources: List<SourceDecl>? = null,
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
-    val raises: Set<ClassSubject>? = null,
+    val throws: Set<ClassSubject>? = null,
 ) {
     /** The entry's body, with [returns] completed by the enclosing creator. */
     fun complete(returns: ReturnKind?): ModelBody =
-        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, raises)
+        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, throws)
 
     // The unwrapped path funnels every key the creator does not name into this
     // holder and would ignore the unknown ones; this rejector restores the

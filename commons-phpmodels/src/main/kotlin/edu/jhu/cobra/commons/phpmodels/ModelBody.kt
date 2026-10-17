@@ -192,13 +192,13 @@ public data class SinkDecl(
  * signature is visible: `ModelEntry` requires a signature or a non-empty
  * body.
  *
- * `raises` is the one section whose declared empty value is a statement: the
+ * `throws` is the one section whose declared empty value is a statement: the
  * implementation throws no class. Each element is an exact class, spelled and
  * folded as a class subject.
  *
  * @throws IllegalArgumentException If propagation or characters comes without
  *   returns, a `characters.of` port has no declared flow into the result, or a
- *   declared section other than `raises` is empty.
+ *   declared section other than `throws` is empty.
  */
 public data class ModelBody(
     val returns: ReturnKind? = null,
@@ -207,7 +207,7 @@ public data class ModelBody(
     val sources: List<SourceDecl>? = null,
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
-    val raises: Set<ClassSubject>? = null,
+    val throws: Set<ClassSubject>? = null,
 ) {
     init {
         require(propagation == null || returns != null) {
@@ -239,7 +239,7 @@ public data class ModelBody(
     private val declaresNothingBesidesSources: Boolean
         get() =
             returns == null && propagation == null && characters == null &&
-                sinks == null && sanitizers == null && raises == null
+                sinks == null && sanitizers == null && throws == null
 
     /** True when no section is declared. */
     public val isEmpty: Boolean

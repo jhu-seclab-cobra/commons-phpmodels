@@ -70,7 +70,7 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     with the vulnerability types the accepted argument is free of, the Character
     Class its bytes belong to, or the type set it holds; a type set also
     rules out the accepting value for an argument of any other type.
-  - *raises* — the set of exception classes the subject's own
+  - *throws* — the set of exception classes the subject's own
     implementation may throw. It excludes three kinds of throw, each decided
     elsewhere: binding the arguments to the declared parameters (the
     argument count, the declared parameter types), user code the subject
@@ -91,7 +91,7 @@ vocabulary mapping: [model-sets.md](model-sets.md).
   Rows sharing a source kind accumulate by union.
 - **Override Unit** — The granularity at which one declaration replaces
   another for the same subject: the value unit (returns together
-  with propagation and characters), sources, sinks, sanitizers, raises, or the signature. A
+  with propagation and characters), sources, sinks, sanitizers, throws, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
@@ -111,7 +111,7 @@ itself an effect.
 | Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
 | Model (sinks) | Port × Vulnerability Type | consumes under | N:M | The named argument port is sensitive to that vulnerability type |
 | Model (sanitizers) | Vulnerability Type | neutralizes | M:N | These vulnerability types removed from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
-| Model (raises) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
+| Model (throws) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
 | Policy | Source Kind × Vulnerability Type | enables | M:N | This source kind reaching a sink of this vulnerability type is a vulnerability |
 | Model / Policy | Vocabulary | references | N:1 | Every named source kind and vulnerability type must be declared in the vocabulary |
 
@@ -159,7 +159,7 @@ model, driven by the declarations defined here.
   least one byte.
 - Every regular expression of a model, a Key Pattern or a Character Class,
   follows the one dialect [impl.md](impl.md) names.
-- The *returns*, *propagation*, *characters*, and *raises* sections are declared only for
+- The *returns*, *propagation*, *characters*, and *throws* sections are declared only for
   callable subjects. A class subject declares no assertion section. Every other
   non-callable kind — constant, class constant, property, predefined
   variable — admits only the *sources* section.
@@ -167,10 +167,10 @@ model, driven by the declarations defined here.
   is non-empty and each element names one argument port and one
   vulnerability type. A sanitizers element names a non-empty vulnerability
   type set, or a check: one argument port, a scalar accepting value, and
-  vulnerability types, a class, or a type set other than `void`. A raises
+  vulnerability types, a class, or a type set other than `void`. A throws
   section is the one section a declared empty value is a statement of: no
   class, distinct from the absent section, which asserts nothing. Each
-  raises element is a class name, spelled and folded as a class subject.
+  throws element is a class name, spelled and folded as a class subject.
 - A source element's explicit production site is an argument port of a
   callable subject: explicit *return* is a load failure (the default
   already states it), and a non-callable subject admits no explicit site.

@@ -79,7 +79,7 @@ public data class VocabularyMapping(
             sources = body.sources?.mapNotNull(::apply)?.ifEmpty { null },
             sinks = body.sinks?.mapNotNull(::apply)?.ifEmpty { null },
             sanitizers = body.sanitizers?.mapNotNull(::apply)?.ifEmpty { null },
-            raises = body.raises,
+            throws = body.throws,
         )
 
     private fun apply(source: SourceDecl): SourceDecl? {

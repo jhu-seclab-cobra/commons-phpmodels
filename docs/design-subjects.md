@@ -53,7 +53,7 @@ spellings; no other code inspects subject strings. Violations throw
 `IllegalArgumentException` inside the creator. The wrapper key appears only
 where the kind is open, a position typed `ModelSubject`: both sealed bases
 turn off the inherited wrapper, so a position typed by one concrete kind (a
-`raises` element, typed `ClassSubject`) decodes the bare spelling through
+`throws` element, typed `ClassSubject`) decodes the bare spelling through
 that kind's creator. Jackson mechanism verified in [impl.md](impl.md).
 
 **Subtypes, YAML kind keys, and identity:**

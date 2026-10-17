@@ -19,7 +19,7 @@ import kotlin.test.assertTrue
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
  * - `value units pass through` — returns and propagation are untouched.
- * - `raises passes through` — the raises section names classes, not
+ * - `throws passes through` — the throws section names classes, not
  *   vocabulary names, and is untouched.
  * - `subject condition signature and ports pass through` — translation
  *   touches names only.
@@ -160,10 +160,10 @@ internal class VocabularyMappingTest {
     }
 
     @Test
-    fun `raises passes through`() {
-        val entry = model("raises: [ValueError]\nsinks:\n  - port: argument(0)\n    vulnType: text")
+    fun `throws passes through`() {
+        val entry = model("throws: [ValueError]\nsinks:\n  - port: argument(0)\n    vulnType: text")
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
-        assertEquals(setOf(ClassSubject("valueerror")), translated.body.raises)
+        assertEquals(setOf(ClassSubject("valueerror")), translated.body.throws)
     }
 
     @Test

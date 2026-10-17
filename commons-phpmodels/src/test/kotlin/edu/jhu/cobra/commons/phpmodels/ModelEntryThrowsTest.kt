@@ -6,53 +6,53 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 
 /**
- * The raises section: decoding of its class-name elements and its subject-kind
+ * The throws section: decoding of its class-name elements and its subject-kind
  * admissibility (design-entries.md).
  *
- * - `raises decodes bare class names folded` — each element is a bare scalar
+ * - `throws decodes bare class names folded` — each element is a bare scalar
  *   decoded by the class subject creator: lowercased, leading slash stripped,
  *   with no wrapper key.
- * - `empty raises is a statement` — `raises: []` decodes to an empty set and
+ * - `empty throws is a statement` — `throws: []` decodes to an empty set and
  *   the body is not empty.
- * - `absent raises asserts nothing` — the section stays null.
- * - `raises on a method entry decodes` — every callable kind admits it.
- * - `raises on a non-callable subject is rejected` — constant, property, and
+ * - `absent throws asserts nothing` — the section stays null.
+ * - `throws on a method entry decodes` — every callable kind admits it.
+ * - `throws on a non-callable subject is rejected` — constant, property, and
  *   class subjects throw nothing.
- * - `raises element outside the class-name spelling is rejected` — a member
+ * - `throws element outside the class-name spelling is rejected` — a member
  *   spelling is no class.
- * - `raises element in wrapper form is rejected` — the element is a bare
+ * - `throws element in wrapper form is rejected` — the element is a bare
  *   scalar, never a one-key subject mapping.
  */
-internal class ModelEntryRaisesTest {
+internal class ModelEntryThrowsTest {
     @Test
-    fun `raises decodes bare class names folded`() {
+    fun `throws decodes bare class names folded`() {
         val entry =
             loadModel(
                 """
                 - subject:
                     function: json_decode
-                  raises: [ValueError, \JsonException]
+                  throws: [ValueError, \JsonException]
                 """.trimIndent(),
             )
-        assertEquals(setOf(ClassSubject("valueerror"), ClassSubject("jsonexception")), entry.body.raises)
+        assertEquals(setOf(ClassSubject("valueerror"), ClassSubject("jsonexception")), entry.body.throws)
     }
 
     @Test
-    fun `empty raises is a statement`() {
+    fun `empty throws is a statement`() {
         val entry =
             loadModel(
                 """
                 - subject:
                     function: strlen
-                  raises: []
+                  throws: []
                 """.trimIndent(),
             )
-        assertEquals(emptySet(), entry.body.raises)
+        assertEquals(emptySet(), entry.body.throws)
         assertFalse(entry.body.isEmpty)
     }
 
     @Test
-    fun `absent raises asserts nothing`() {
+    fun `absent throws asserts nothing`() {
         val entry =
             loadModel(
                 """
@@ -63,42 +63,42 @@ internal class ModelEntryRaisesTest {
                       vulnType: sqli
                 """.trimIndent(),
             )
-        assertEquals(null, entry.body.raises)
+        assertEquals(null, entry.body.throws)
     }
 
     @Test
-    fun `raises on a method entry decodes`() {
+    fun `throws on a method entry decodes`() {
         val entry =
             loadModel(
                 """
                 - subject:
                     method: mysqli::query
-                  raises: [mysqli_sql_exception]
+                  throws: [mysqli_sql_exception]
                 """.trimIndent(),
             )
-        assertEquals(setOf(ClassSubject("mysqli_sql_exception")), entry.body.raises)
+        assertEquals(setOf(ClassSubject("mysqli_sql_exception")), entry.body.throws)
     }
 
     @Test
-    fun `raises on a non-callable subject is rejected`() {
+    fun `throws on a non-callable subject is rejected`() {
         listOf("constant: PHP_EOL", "property: mysqli::${'$'}insert_id", "class: mysqli").forEach { subject ->
             assertFailsWith<IllegalArgumentException>(subject) {
-                load("- subject:\n    $subject\n  raises: [ValueError]\n")
+                load("- subject:\n    $subject\n  throws: [ValueError]\n")
             }
         }
     }
 
     @Test
-    fun `raises element outside the class-name spelling is rejected`() {
+    fun `throws element outside the class-name spelling is rejected`() {
         assertFailsWith<IllegalArgumentException> {
-            load("- subject:\n    function: strlen\n  raises: [Foo::bar]\n")
+            load("- subject:\n    function: strlen\n  throws: [Foo::bar]\n")
         }
     }
 
     @Test
-    fun `raises element in wrapper form is rejected`() {
+    fun `throws element in wrapper form is rejected`() {
         assertFailsWith<IllegalArgumentException> {
-            load("- subject:\n    function: strlen\n  raises:\n    - class: ValueError\n")
+            load("- subject:\n    function: strlen\n  throws:\n    - class: ValueError\n")
         }
     }
 }

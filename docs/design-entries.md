@@ -47,7 +47,7 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
 - `subject` admits only the sections its kind allows: a non-callable
-  subject rejects returns, propagation, characters, raises, and the
+  subject rejects returns, propagation, characters, throws, and the
   condition; a class subject
   declares nothing besides its signature; every other non-callable kind
   declares only sources.
@@ -82,7 +82,7 @@ present ([impl.md](impl.md)).
 
 **Responsibility:** The seven section fields as they decode flat beside
 `subject`: `returns`, `propagation`, `characters`, `sources`, `sinks`,
-`sanitizers`, `raises`, all optional.
+`sanitizers`, `throws`, all optional.
 `fun complete(returns: ReturnKind?): ModelBody` builds the body after the
 creator's returns completion. A throwing any-setter restores the
 strict unknown-key failure the unwrapped decode path would otherwise

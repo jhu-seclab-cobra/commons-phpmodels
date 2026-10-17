@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
  * folded form so a subject is usable as a lookup key.
  *
  * The wrapper key appears only where the kind is open: a position typed by
- * one concrete kind (a raises element is a [ClassSubject]) decodes the bare
+ * one concrete kind (a throws element is a [ClassSubject]) decodes the bare
  * spelling through that kind's creator.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.WRAPPER_OBJECT)

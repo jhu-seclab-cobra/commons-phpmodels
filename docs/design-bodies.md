@@ -114,14 +114,14 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
-`sanitizers: List<SanitizerDecl>?`, `raises: Set<ClassSubject>?` (each
+`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (each
 element decoded by the `ClassSubject` creator; empty = throws none).
 
 **Validation (`init`):** propagation and characters each require returns
 (the value unit is asserted whole or not at all — the
 signature-derived completion happens in the entry, before construction);
 each `characters.of` port is the from-port of a declared flow into
-`Port.Return`; a declared section other than `raises` is non-empty.
+`Port.Return`; a declared section other than `throws` is non-empty.
 
 **Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
 `namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;
