@@ -21,7 +21,7 @@ subprojects {
     apply(plugin = "io.gitlab.arturbosch.detekt")
 
     group = "edu.jhu.cobra"
-    version = "0.8.0"
+    version = "0.9.0"
 
     repositories {
         mavenCentral()
