@@ -4,7 +4,7 @@
 |------|---------|
 | concept.md | Problem, scope, terminology, data flow, scenarios. |
 | concept-provenance.md | Set provenance: producer, verification kind, precedence over sets. |
-| model.md | Model sections, subjects, color model, relations, invariants. |
+| model.md | Model sections, subjects, taint vocabulary, relations, invariants. |
 | model-conditions.md | Conditional models: argument-pattern condition, match outcome, entry alternatives. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
 | model-sets.md | Document sets, accumulated vocabulary, category mapping, set provenance rank. |

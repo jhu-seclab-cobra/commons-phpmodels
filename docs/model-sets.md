@@ -3,7 +3,7 @@
 Domain semantics of how models are stored and mounted: the document set a
 producer publishes, the vocabulary accumulated across sets, and the mapping
 that translates one set's names into a consumer's. Base entities — Model,
-Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
+Vocabulary, Policy, Source Kind, Vulnerability Type: [model.md](model.md).
 
 ## Entities
 
@@ -40,11 +40,11 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
   force; otherwise a load failure naming the set and the name. The set in
   force never changes on admission.
 - **Category Mapping** — A consumer-supplied total function from the names
-  one set uses to the consumer's names, one relation per axis: danger
-  category to danger category, origin color to origin color. Each source
-  name is mapped to one declared target name or marked discarded. Existence
-  condition: supplied by the consumer for one set; never stored with the
-  set it translates.
+  one set uses to the consumer's names, one relation per axis:
+  vulnerability type to vulnerability type, source kind to source kind.
+  Each source name is mapped to one declared target name or marked
+  discarded. Existence condition: supplied by the consumer for one set;
+  never stored with the set it translates.
 - **Mapped Set** — A document set loaded under a category mapping. Its own
   vocabulary document, when present, is not read: the names the mapping
   lists are the names the set may use; none of its declarations join the
@@ -60,7 +60,7 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
 | Document Set | Vocabulary | declares | 1:0..1 | Declarations join the accumulated vocabulary unless the set is mapped |
 | Document Set | Policy | declares | 1:0..1 | Rows accumulate with the consumer's policy |
 | Category Mapping | Document Set | translates | 1:1 | Applied to exactly one set at its load |
-| Category Mapping | Danger Category / Origin Color | targets | N:1 | Every target is declared in the accumulated vocabulary |
+| Category Mapping | Vulnerability Type / Source Kind | targets | N:1 | Every target is declared in the accumulated vocabulary |
 | Accumulated Vocabulary | Document Set | grows by | 1:N | Set order is declaration order |
 | Document Set | Set Provenance | declares | 1:0..1 | One statement covering every listed entry |
 | Set Provenance | Producer | names | 1:1 | Documentary; never ranked |
@@ -83,10 +83,10 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
 
 | Element | Mapped name | Discarded name | Unlisted name |
 |---------|-------------|----------------|---------------|
-| sink element | category replaced | element removed | load failure |
-| sanitizer element | category replaced | category removed; an element left with no category and no other statement of its check is removed | load failure |
-| source element | color replaced | color removed; an emptied element is removed | load failure |
-| policy row | origin and categories replaced | row or category removed; an emptied row is removed | load failure |
+| sink element | vulnerability type replaced | element removed | load failure |
+| sanitizer element | vulnerability type replaced | vulnerability type removed; an element left with no vulnerability type and no other statement of its check is removed | load failure |
+| source element | source kind replaced | source kind removed; an emptied element is removed | load failure |
+| policy row | source kind and vulnerability types replaced | row or vulnerability type removed; an emptied row is removed | load failure |
 
 An entry whose translation removes its last section, and which carries no
 signature, is removed from the set. Removal is not a failure: the set said
@@ -134,7 +134,7 @@ takes part.
 - **Vocabulary authority is unchanged.** The accumulated vocabulary is the
   sole authority for what names exist; a mapping only spells entries in
   those names.
-- **Set provenance is not an origin color.** The origin color a source
+- **Set provenance is not a source kind.** The source kind a source
   gives a tainted value ([model.md](model.md)) says where data comes from
   at run time; the set provenance says where the *statement* comes from.
   Neither is read for the other.

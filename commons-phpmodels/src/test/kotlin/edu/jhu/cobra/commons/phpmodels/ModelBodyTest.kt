@@ -25,10 +25,10 @@ import kotlin.test.assertNull
  *   value states something: no class is thrown.
  * - `source element rejects an empty key-pattern set` — declared keys are
  *   non-empty.
- * - `source element rejects an empty provenance set` — a source produces at
- *   least one origin color.
- * - `sanitizer element rejects an empty category set` — a sanitizer
- *   neutralizes at least one category.
+ * - `source element rejects an empty source kind set` — a source produces at
+ *   least one source kind.
+ * - `sanitizer element rejects an empty vulnerability type set` — a
+ *   sanitizer neutralizes at least one vulnerability type.
  * - `key pattern matches the entire key case-sensitively` — array keys are
  *   runtime data, not identifiers.
  * - `key patterns compare by pattern text` — equality and hash-code
@@ -119,17 +119,17 @@ internal class ModelBodyTest {
     @Test
     fun `source element rejects an empty key-pattern set`() {
         assertFailsWith<IllegalArgumentException> {
-            SourceDecl(setOf(OriginId("remote")), keys = emptyList())
+            SourceDecl(setOf(SourceKindId("remote")), keys = emptyList())
         }
     }
 
     @Test
-    fun `source element rejects an empty provenance set`() {
+    fun `source element rejects an empty source kind set`() {
         assertFailsWith<IllegalArgumentException> { SourceDecl(emptySet()) }
     }
 
     @Test
-    fun `sanitizer element rejects an empty category set`() {
+    fun `sanitizer element rejects an empty vulnerability type set`() {
         assertFailsWith<IllegalArgumentException> { SanitizerDecl(emptySet()) }
     }
 
@@ -150,7 +150,7 @@ internal class ModelBodyTest {
 
     @Test
     fun `declaresOnlySources reflects the section set`() {
-        val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
+        val sources = listOf(SourceDecl(setOf(SourceKindId("remote"))))
         assertEquals(true, ModelBody(sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody(returns = ReturnKind.ANY, sources = sources).declaresOnlySources)
         assertEquals(false, ModelBody(sources = sources, raises = emptySet()).declaresOnlySources)
@@ -163,12 +163,12 @@ internal class ModelBodyTest {
             ValueUnit(ReturnKind.STR, emptyList()),
             ModelBody(returns = ReturnKind.STR).valueUnit(),
         )
-        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote"))))).valueUnit())
+        assertNull(ModelBody(sources = listOf(SourceDecl(setOf(SourceKindId("remote"))))).valueUnit())
     }
 
     @Test
     fun `isEmpty is false once any section is declared`() {
-        val sources = listOf(SourceDecl(setOf(OriginId("remote"))))
+        val sources = listOf(SourceDecl(setOf(SourceKindId("remote"))))
         val sinks = listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli")))
         val sanitizers = listOf(SanitizerDecl(setOf(VulnTypeId("sqli"))))
         val flow = listOf(Propagation(from = Port.Argument(0), to = Port.Return))
@@ -195,8 +195,8 @@ internal class ModelBodyTest {
 
     @Test
     fun `declaresExplicitSourceSite reflects the source at ports`() {
-        val sited = listOf(SourceDecl(setOf(OriginId("remote")), at = Port.Argument(1)))
-        val implicit = listOf(SourceDecl(setOf(OriginId("remote"))))
+        val sited = listOf(SourceDecl(setOf(SourceKindId("remote")), at = Port.Argument(1)))
+        val implicit = listOf(SourceDecl(setOf(SourceKindId("remote"))))
         assertEquals(true, ModelBody(sources = sited).declaresExplicitSourceSite)
         assertEquals(false, ModelBody(sources = implicit).declaresExplicitSourceSite)
         assertEquals(false, ModelBody().declaresExplicitSourceSite)

@@ -3,12 +3,12 @@ package edu.jhu.cobra.commons.phpmodels
 import com.fasterxml.jackson.annotation.JsonCreator
 
 /**
- * Interned reference token for a declared danger category. Replaces raw
+ * Interned reference token for a declared vulnerability type. Replaces raw
  * strings past the load boundary, so a name mismatch cannot occur downstream.
  * Construction folds any spelling to lowercase, so a mixed-case reference
  * cannot miss a vocabulary lookup.
  *
- * @property id Lowercased category name, as declared in the vocabulary.
+ * @property id Lowercased vulnerability type name, as declared in the vocabulary.
  */
 @JvmInline
 public value class VulnTypeId private constructor(
@@ -23,30 +23,30 @@ public value class VulnTypeId private constructor(
 }
 
 /**
- * Interned reference token for a declared origin color (provenance). Travels
- * with a tainted value from its source. Construction folds any spelling to
+ * Interned reference token for a declared source kind. Travels with a
+ * tainted value from its source. Construction folds any spelling to
  * lowercase, so a mixed-case reference cannot miss a vocabulary lookup;
- * membership in the declared set is checked by [Vocabulary.requireOrigin],
+ * membership in the declared set is checked by [Vocabulary.requireSourceKind],
  * never by construction.
  *
- * @property id Lowercased origin-color name, as declared in the vocabulary.
+ * @property id Lowercased source kind name, as declared in the vocabulary.
  */
 @JvmInline
-public value class OriginId private constructor(
+public value class SourceKindId private constructor(
     public val id: String,
 ) {
     public companion object {
         /** Interns [raw], folding it to its lowercased declared form. */
         @JvmStatic
         @JsonCreator
-        public operator fun invoke(raw: String): OriginId = OriginId(raw.lowercase())
+        public operator fun invoke(raw: String): SourceKindId = SourceKindId(raw.lowercase())
     }
 }
 
 /**
- * One declared danger-category entry.
+ * One declared vulnerability type entry.
  *
- * @property id Interned category identity.
+ * @property id Interned vulnerability type identity.
  * @property description Human-readable summary; self-documents the vocabulary
  *   file and enriches the undeclared-reference error message.
  */
@@ -56,21 +56,21 @@ public data class VulnTypeDecl(
 )
 
 /**
- * One declared origin-color entry.
+ * One declared source kind entry.
  *
- * @property id Interned origin-color identity.
+ * @property id Interned source kind identity.
  * @property description Human-readable summary; self-documents the vocabulary
  *   file and enriches the undeclared-reference error message.
  */
-public data class OriginDecl(
-    val id: OriginId,
+public data class SourceKindDecl(
+    val id: SourceKindId,
     val description: String,
 )
 
 /**
- * Raised at load time when a color or category reference is not declared in
- * the [Vocabulary], or when a vocabulary entry repeats. Never raised past the
- * load boundary.
+ * Raised at load time when a vulnerability type or source kind reference is
+ * not declared in the [Vocabulary], or when a vocabulary entry repeats. Never
+ * raised past the load boundary.
  */
 public class VocabularyException(
     message: String,
@@ -78,25 +78,25 @@ public class VocabularyException(
 ) : IllegalArgumentException(message, cause)
 
 /**
- * The two closed declared sets — danger categories and origin colors. Sole
- * authority for what category and color names exist. Policy rows are
+ * The two closed declared sets — vulnerability types and source kinds. Sole
+ * authority for what vulnerability type and source kind names exist. Policy rows are
  * validated against it at load ([PolicyLoader]); model-entry references are
  * validated by [verify], called by [DocumentSetLoader] or by a caller that
  * decodes single documents.
  *
- * @property vulnTypes Declared danger categories, keyed by interned identity.
- * @property origins Declared origin colors, keyed by interned identity.
+ * @property vulnTypes Declared vulnerability types, keyed by interned identity.
+ * @property sourceKinds Declared source kinds, keyed by interned identity.
  */
 public data class Vocabulary(
     val vulnTypes: Map<VulnTypeId, VulnTypeDecl>,
-    val origins: Map<OriginId, OriginDecl>,
+    val sourceKinds: Map<SourceKindId, SourceKindDecl>,
 ) {
     /**
      * Interns [raw] to its [VulnTypeId], validating it is declared.
      *
-     * @param raw Category tag from a YAML document (case-insensitive).
-     * @return The interned identity of the declared category.
-     * @throws VocabularyException If [raw] names no declared category.
+     * @param raw Vulnerability type tag from a YAML document (case-insensitive).
+     * @return The interned identity of the declared vulnerability type.
+     * @throws VocabularyException If [raw] names no declared vulnerability type.
      */
     public fun requireVulnType(raw: String): VulnTypeId {
         val id = VulnTypeId(raw)
@@ -105,16 +105,16 @@ public data class Vocabulary(
     }
 
     /**
-     * Interns [raw] to its [OriginId], validating it is declared.
+     * Interns [raw] to its [SourceKindId], validating it is declared.
      *
-     * @param raw Origin-color tag from a YAML document (case-insensitive).
-     * @return The interned identity of the declared origin color.
-     * @throws VocabularyException If [raw] names no declared origin color.
+     * @param raw Source kind tag from a YAML document (case-insensitive).
+     * @return The interned identity of the declared source kind.
+     * @throws VocabularyException If [raw] names no declared source kind.
      */
-    public fun requireOrigin(raw: String): OriginId {
-        val id = OriginId(raw)
-        if (id in origins) return id
-        throw undeclared("origin", raw, origins.values.map { "${it.id.id} (${it.description})" })
+    public fun requireSourceKind(raw: String): SourceKindId {
+        val id = SourceKindId(raw)
+        if (id in sourceKinds) return id
+        throw undeclared("source kind", raw, sourceKinds.values.map { "${it.id.id} (${it.description})" })
     }
 
     /**
@@ -129,28 +129,28 @@ public data class Vocabulary(
     public fun merge(other: Vocabulary): Vocabulary =
         Vocabulary(
             vulnTypes = vulnTypes.merged(other.vulnTypes, "vulnerability type") { it.description },
-            origins = origins.merged(other.origins, "origin") { it.description },
+            sourceKinds = sourceKinds.merged(other.sourceKinds, "source kind") { it.description },
         )
 
     /**
-     * Checks that every category and color [entry] references is declared.
+     * Checks that every vulnerability type and source kind [entry] references is declared.
      *
      * @param entry A model entry; its sources, sinks, and sanitizers are read.
      * @throws VocabularyException If a referenced name is undeclared.
      */
     public fun verify(entry: ModelEntry) {
         val body = entry.body
-        body.sources?.forEach { source -> source.origin.forEach(::requireDeclared) }
+        body.sources?.forEach { source -> source.sourceKinds.forEach(::requireDeclared) }
         body.sinks?.forEach { sink -> requireDeclared(sink.vulnType) }
-        body.sanitizers?.forEach { sanitizer -> sanitizer.categories.forEach(::requireDeclared) }
+        body.sanitizers?.forEach { sanitizer -> sanitizer.vulnTypes.forEach(::requireDeclared) }
     }
 
     private fun requireDeclared(id: VulnTypeId) {
         requireVulnType(id.id)
     }
 
-    private fun requireDeclared(id: OriginId) {
-        requireOrigin(id.id)
+    private fun requireDeclared(id: SourceKindId) {
+        requireSourceKind(id.id)
     }
 
     private fun <K, V> Map<K, V>.merged(

@@ -7,13 +7,14 @@ import kotlin.test.assertFailsWith
 /**
  * Decode and vocabulary validation of the policy document.
  *
- * - `policy rows decode and intern their tags` — origin and enabled
- *   categories validated against the vocabulary.
- * - `undeclared reference is rejected` — an unknown color or category is a
+ * - `policy rows decode and intern their tags` — source kind and enabled
+ *   vulnerability types validated against the vocabulary.
+ * - `undeclared reference is rejected` — an unknown source kind or
+ *   vulnerability type is a
  *   [VocabularyException].
- * - `policy folds rows sharing an origin` — [TaintPolicy] unions enabled
- *   categories.
- * - `row enabling no category is rejected` — an empty enables set asserts
+ * - `policy folds rows sharing a source kind` — [TaintPolicy] unions enabled
+ *   vulnerability types.
+ * - `row enabling no vulnerability type is rejected` — an empty enables set asserts
  *   nothing, like every other empty declared section.
  * - `rows keep file order` — the consumer appends rows in order.
  * - `stray key is rejected` — strict decode.
@@ -27,9 +28,9 @@ internal class PolicyLoaderTest {
                     VulnTypeId("sqli") to VulnTypeDecl(VulnTypeId("sqli"), "SQL injection"),
                     VulnTypeId("xss") to VulnTypeDecl(VulnTypeId("xss"), "Cross-site scripting"),
                 ),
-            origins =
+            sourceKinds =
                 mapOf(
-                    OriginId("remote") to OriginDecl(OriginId("remote"), "Remote user input"),
+                    SourceKindId("remote") to SourceKindDecl(SourceKindId("remote"), "Remote user input"),
                 ),
         )
 
@@ -40,12 +41,12 @@ internal class PolicyLoaderTest {
         val rows =
             load(
                 """
-                - origin: remote
+                - sourceKind: remote
                   enables: [sqli, xss]
                 """.trimIndent(),
             )
         assertEquals(
-            listOf(PolicyRow(OriginId("remote"), setOf(VulnTypeId("sqli"), VulnTypeId("xss")))),
+            listOf(PolicyRow(SourceKindId("remote"), setOf(VulnTypeId("sqli"), VulnTypeId("xss")))),
             rows,
         )
     }
@@ -55,7 +56,7 @@ internal class PolicyLoaderTest {
         assertFailsWith<VocabularyException> {
             load(
                 """
-                - origin: local
+                - sourceKind: local
                   enables: [sqli]
                 """.trimIndent(),
             )
@@ -63,7 +64,7 @@ internal class PolicyLoaderTest {
         assertFailsWith<VocabularyException> {
             load(
                 """
-                - origin: remote
+                - sourceKind: remote
                   enables: [rce]
                 """.trimIndent(),
             )
@@ -71,11 +72,11 @@ internal class PolicyLoaderTest {
     }
 
     @Test
-    fun `row enabling no category is rejected`() {
+    fun `row enabling no vulnerability type is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load(
                 """
-                - origin: remote
+                - sourceKind: remote
                   enables: []
                 """.trimIndent(),
             )
@@ -83,32 +84,32 @@ internal class PolicyLoaderTest {
     }
 
     @Test
-    fun `policy folds rows sharing an origin`() {
+    fun `policy folds rows sharing a source kind`() {
         val policy =
             TaintPolicy(
                 load(
                     """
-                    - origin: remote
+                    - sourceKind: remote
                       enables: [sqli]
-                    - origin: remote
+                    - sourceKind: remote
                       enables: [xss]
                     """.trimIndent(),
                 ),
             )
-        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnTypeId("sqli")))
-        assertEquals(true, policy.isDangerous(OriginId("remote"), VulnTypeId("xss")))
-        assertEquals(false, policy.isDangerous(OriginId("local"), VulnTypeId("sqli")))
+        assertEquals(true, policy.isDangerous(SourceKindId("remote"), VulnTypeId("sqli")))
+        assertEquals(true, policy.isDangerous(SourceKindId("remote"), VulnTypeId("xss")))
+        assertEquals(false, policy.isDangerous(SourceKindId("local"), VulnTypeId("sqli")))
     }
 
     @Test
     fun `rows keep file order`() {
-        val rows = load("- origin: remote\n  enables: [xss]\n- origin: remote\n  enables: [sqli]\n")
+        val rows = load("- sourceKind: remote\n  enables: [xss]\n- sourceKind: remote\n  enables: [sqli]\n")
         assertEquals(listOf(setOf(VulnTypeId("xss")), setOf(VulnTypeId("sqli"))), rows.map { it.enables })
     }
 
     @Test
     fun `stray key is rejected`() {
-        assertFailsWith<IllegalArgumentException> { load("- origin: remote\n  enables: [sqli]\n  note: x\n") }
+        assertFailsWith<IllegalArgumentException> { load("- sourceKind: remote\n  enables: [sqli]\n  note: x\n") }
     }
 
     @Test

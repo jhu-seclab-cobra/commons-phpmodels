@@ -4,7 +4,7 @@ import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.context
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.mapping
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.opener
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sink
-import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sinkCategories
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sinkVulnTypes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
  *   context; the failure names the target.
  * - `mapped set unlisted name fails` — in an entry and in a policy row; the
  *   failure names the name.
- * - `mapped set discarded policy origin drops the row` — a row whose origin
+ * - `mapped set discarded policy source kind drops the row` — a row whose source kind
  *   maps to null.
  */
 internal class DocumentSetLoaderMappedTest {
@@ -32,18 +32,18 @@ internal class DocumentSetLoaderMappedTest {
                 opener(
                     "index.txt" to "a.yaml\n",
                     "vocabulary.yaml" to
-                        "vulnTypes:\n  - name: sqli\n    description: conflicting\nprovenances: []\n",
-                    "policy.yaml" to "- origin: input\n  enables: [sql, text]\n",
+                        "vulnTypes:\n  - name: sqli\n    description: conflicting\nsourceKinds: []\n",
+                    "policy.yaml" to "- sourceKind: input\n  enables: [sql, text]\n",
                     "a.yaml" to sink("a", "sql") + sink("b", "text"),
                 ),
                 context,
                 mapping,
             )
         assertEquals(Vocabulary.EMPTY, set.vocabulary)
-        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnTypeId("sqli")))), set.policy)
+        assertEquals(listOf(PolicyRow(SourceKindId("user-input"), setOf(VulnTypeId("sqli")))), set.policy)
         val entry = assertIs<ModelEntry>(set.entries.single())
         assertEquals("a", (entry.subject as FunctionSubject).name)
-        assertEquals(listOf(VulnTypeId("sqli")), entry.sinkCategories())
+        assertEquals(listOf(VulnTypeId("sqli")), entry.sinkVulnTypes())
     }
 
     @Test
@@ -69,7 +69,7 @@ internal class DocumentSetLoaderMappedTest {
         assertTrue("shell" in failure.message.orEmpty(), failure.message)
         assertFailsWith<VocabularyException> {
             DocumentSetLoader.load(
-                opener("index.txt" to "", "policy.yaml" to "- origin: remote\n  enables: [sql]\n"),
+                opener("index.txt" to "", "policy.yaml" to "- sourceKind: remote\n  enables: [sql]\n"),
                 context,
                 mapping,
             )
@@ -77,12 +77,12 @@ internal class DocumentSetLoaderMappedTest {
     }
 
     @Test
-    fun `mapped set discarded policy origin drops the row`() {
+    fun `mapped set discarded policy source kind drops the row`() {
         val discarding =
-            CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("sqli")), mapOf(OriginId("env") to null))
+            CategoryMapping(mapOf(VulnTypeId("sql") to VulnTypeId("sqli")), mapOf(SourceKindId("env") to null))
         val set =
             DocumentSetLoader.load(
-                opener("index.txt" to "", "policy.yaml" to "- origin: env\n  enables: [sql]\n"),
+                opener("index.txt" to "", "policy.yaml" to "- sourceKind: env\n  enables: [sql]\n"),
                 context,
                 discarding,
             )

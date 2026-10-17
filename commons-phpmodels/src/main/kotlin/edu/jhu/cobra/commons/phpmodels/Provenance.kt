@@ -16,8 +16,8 @@ public enum class Verification {
 /**
  * One document set's declared provenance: where its entries come from. Stated
  * once per set in `provenance.yaml` and attached to the loaded [DocumentSet];
- * it applies to every entry the set lists. Distinct from the origin color a
- * source gives a tainted value ([OriginId]).
+ * it applies to every entry the set lists. Distinct from the source kind a
+ * source gives a tainted value ([SourceKindId]).
  *
  * @property producer Non-blank identifier of the process or party that emitted the set; documentary, never ranked.
  * @property verification How the set's entries were checked; the input to a consumer's [Precedence].

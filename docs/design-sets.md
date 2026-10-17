@@ -116,15 +116,15 @@ the decode with `IllegalArgumentException`.
 
 **Responsibility:** One translation table, both axes.
 
-**State/Fields:** `val categories: Map<VulnTypeId, VulnTypeId?>`,
-`val origins: Map<OriginId, OriginId?>` (YAML section `provenances:`) — a
-`null` target marks a discarded name.
+**State/Fields:** `val vulnTypes: Map<VulnTypeId, VulnTypeId?>`,
+`val sourceKinds: Map<SourceKindId, SourceKindId?>` — a `null` target
+marks a discarded name.
 
 **Methods:**
-- `fun category(source: VulnTypeId): VulnTypeId?` — the target, or `null`
+- `fun vulnType(source: VulnTypeId): VulnTypeId?` — the target, or `null`
   when discarded. **Errors:** `VocabularyException` when `source` is
   unlisted.
-- `fun origin(source: OriginId): OriginId?` — likewise.
+- `fun sourceKind(source: SourceKindId): SourceKindId?` — likewise.
 - `fun apply(entry: ModelEntry): ModelEntry?` — the entry translated per
   [model-sets.md](model-sets.md); `null` when translation empties it.
 - `fun apply(rows: List<PolicyRow>): List<PolicyRow>` — rows translated,
@@ -138,7 +138,7 @@ the decode with `IllegalArgumentException`.
 **Responsibility:** Decode one mapping document.
 
 **Methods:** `fun load(input: InputStream): CategoryMapping`. Document
-shape: two maps, `categories:` and `provenances:`, source name to target
+shape: two maps, `vulnTypes:` and `sourceKinds:`, source name to target
 name; the literal target `ignore` marks a discarded name. Unknown keys and
 a `null` value fail the decode. A source name may not be `ignore`.
 `const val IGNORE = "ignore"` — the discard literal.
@@ -179,8 +179,9 @@ optionally through a mapping, in the order the model fixes.
 **Methods added:** `fun merge(other: Vocabulary): Vocabulary` — union;
 `VocabularyException` on a name declared in both with different
 description. `companion val EMPTY`. `fun verify(entry: ModelEntry)` —
-every category and color the entry references is declared; moves the check
-consumers currently write by hand into the authority that owns the sets.
+every vulnerability type and source kind the entry references is
+declared; moves the check consumers currently write by hand into the
+authority that owns the sets.
 
 ## Exception / Error Types
 

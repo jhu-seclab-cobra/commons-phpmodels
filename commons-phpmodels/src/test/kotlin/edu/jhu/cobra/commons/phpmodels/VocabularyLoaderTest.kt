@@ -7,7 +7,7 @@ import kotlin.test.assertFailsWith
 /**
  * Decode and interning of the vocabulary document.
  *
- * - `vocabulary decodes both sections` — categories and colors keyed by
+ * - `vocabulary decodes both sections` — vulnerability types and source kinds keyed by
  *   interned lowercase identity.
  * - `duplicate entry within a section is rejected` — one of the two
  *   declarations would be lost.
@@ -26,7 +26,7 @@ internal class VocabularyLoaderTest {
         vulnTypes:
           - name: sqli
             description: SQL injection
-        provenances:
+        sourceKinds:
           - name: remote
             description: Remote user input
         """.trimIndent()
@@ -37,7 +37,7 @@ internal class VocabularyLoaderTest {
     fun `vocabulary decodes both sections`() {
         val vocabulary = load(document)
         assertEquals(setOf(VulnTypeId("sqli")), vocabulary.vulnTypes.keys)
-        assertEquals(setOf(OriginId("remote")), vocabulary.origins.keys)
+        assertEquals(setOf(SourceKindId("remote")), vocabulary.sourceKinds.keys)
     }
 
     @Test
@@ -50,7 +50,7 @@ internal class VocabularyLoaderTest {
                     description: first
                   - name: SQLI
                     description: second
-                provenances: []
+                sourceKinds: []
                 """.trimIndent(),
             )
         }
@@ -64,13 +64,13 @@ internal class VocabularyLoaderTest {
                 vulnTypes:
                   - name: header
                     description: Header injection
-                provenances:
+                sourceKinds:
                   - name: header
                     description: Header-borne input
                 """.trimIndent(),
             )
         assertEquals(setOf(VulnTypeId("header")), vocabulary.vulnTypes.keys)
-        assertEquals(setOf(OriginId("header")), vocabulary.origins.keys)
+        assertEquals(setOf(SourceKindId("header")), vocabulary.sourceKinds.keys)
     }
 
     @Test
@@ -82,7 +82,7 @@ internal class VocabularyLoaderTest {
                   - name: sqli
                     description: SQL injection
                     severity: high
-                provenances: []
+                sourceKinds: []
                 """.trimIndent(),
             )
         }
@@ -92,26 +92,26 @@ internal class VocabularyLoaderTest {
     fun `require methods validate references`() {
         val vocabulary = load(document)
         assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnType("SQLI"))
-        assertEquals(OriginId("remote"), vocabulary.requireOrigin("remote"))
+        assertEquals(SourceKindId("remote"), vocabulary.requireSourceKind("remote"))
         assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
-        assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
+        assertFailsWith<VocabularyException> { vocabulary.requireSourceKind("local") }
     }
 
     @Test
     fun `missing section is rejected`() {
         assertFailsWith<IllegalArgumentException> { load("vulnTypes: []\n") }
-        assertFailsWith<IllegalArgumentException> { load("provenances: []\n") }
+        assertFailsWith<IllegalArgumentException> { load("sourceKinds: []\n") }
     }
 
     @Test
     fun `descriptions are kept`() {
         val vocabulary = load(document)
         assertEquals("SQL injection", vocabulary.vulnTypes.getValue(VulnTypeId("sqli")).description)
-        assertEquals("Remote user input", vocabulary.origins.getValue(OriginId("remote")).description)
+        assertEquals("Remote user input", vocabulary.sourceKinds.getValue(SourceKindId("remote")).description)
     }
 
     @Test
     fun `empty sections decode to the empty vocabulary`() {
-        assertEquals(Vocabulary.EMPTY, load("vulnTypes: []\nprovenances: []\n"))
+        assertEquals(Vocabulary.EMPTY, load("vulnTypes: []\nsourceKinds: []\n"))
     }
 }

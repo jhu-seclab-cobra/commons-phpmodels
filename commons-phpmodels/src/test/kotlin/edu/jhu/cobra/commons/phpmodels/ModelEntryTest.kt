@@ -38,7 +38,7 @@ import kotlin.test.assertNotEquals
  *   signature, and body.
  */
 internal class ModelEntryTest {
-    private val sources = ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote")))))
+    private val sources = ModelBody(sources = listOf(SourceDecl(setOf(SourceKindId("remote")))))
     private val returns = ModelBody(returns = ReturnKind.ANY)
     private val callable = CallableSignature(returnType = DeclaredType("string"))
     private val classSignature = ClassSignature(Classifier.CLASS)
@@ -103,7 +103,7 @@ internal class ModelEntryTest {
 
     @Test
     fun `explicit source site on a non-callable subject is rejected`() {
-        val sited = ModelBody(sources = listOf(SourceDecl(setOf(OriginId("remote")), at = Port.Argument(0))))
+        val sited = ModelBody(sources = listOf(SourceDecl(setOf(SourceKindId("remote")), at = Port.Argument(0))))
         assertFailsWith<IllegalArgumentException> { ModelEntry(VariableSubject("_GET"), body = sited) }
         assertFailsWith<IllegalArgumentException> { ModelEntry(PropertySubject("c", "p"), body = sited) }
     }

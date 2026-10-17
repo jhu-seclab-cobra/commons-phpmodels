@@ -4,7 +4,7 @@ import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.VOCABULARY
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.context
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.opener
 import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sink
-import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sinkCategories
+import edu.jhu.cobra.commons.phpmodels.DocumentSetFixtures.sinkVulnTypes
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -35,8 +35,8 @@ internal class DocumentSetLoaderDeclaredTest {
                 opener(
                     "index.txt" to "a.yaml\n",
                     "vocabulary.yaml" to
-                        "vulnTypes:\n  - name: xss\n    description: html\nprovenances: []\n",
-                    "policy.yaml" to "- origin: user-input\n  enables: [sqli, xss]\n",
+                        "vulnTypes:\n  - name: xss\n    description: html\nsourceKinds: []\n",
+                    "policy.yaml" to "- sourceKind: user-input\n  enables: [sqli, xss]\n",
                     "a.yaml" to sink("a", "xss"),
                 ),
                 context,
@@ -45,7 +45,7 @@ internal class DocumentSetLoaderDeclaredTest {
         assertEquals(listOf("xss"), declared.map { it.id })
         assertEquals(setOf(VulnTypeId("sqli"), VulnTypeId("xss")), set.policy.single().enables)
         val entry = assertIs<ModelEntry>(set.entries.single())
-        assertEquals(listOf(VulnTypeId("xss")), entry.sinkCategories())
+        assertEquals(listOf(VulnTypeId("xss")), entry.sinkVulnTypes())
     }
 
     @Test
@@ -61,7 +61,7 @@ internal class DocumentSetLoaderDeclaredTest {
             DocumentSetLoader.load(
                 opener("index.txt" to "a.yaml\n", "vocabulary.yaml" to VOCABULARY, "a.yaml" to sink("a", "sqli")),
             )
-        assertEquals(listOf(VulnTypeId("sqli")), assertIs<ModelEntry>(set.entries.single()).sinkCategories())
+        assertEquals(listOf(VulnTypeId("sqli")), assertIs<ModelEntry>(set.entries.single()).sinkVulnTypes())
     }
 
     @Test
@@ -71,7 +71,7 @@ internal class DocumentSetLoaderDeclaredTest {
                 opener(
                     "index.txt" to "",
                     "vocabulary.yaml" to
-                        "vulnTypes:\n  - name: sqli\n    description: different\nprovenances: []\n",
+                        "vulnTypes:\n  - name: sqli\n    description: different\nsourceKinds: []\n",
                 ),
                 context,
             )
@@ -88,7 +88,7 @@ internal class DocumentSetLoaderDeclaredTest {
     fun `declared set policy undeclared reference fails`() {
         assertFailsWith<VocabularyException> {
             DocumentSetLoader.load(
-                opener("index.txt" to "", "policy.yaml" to "- origin: user-input\n  enables: [xss]\n"),
+                opener("index.txt" to "", "policy.yaml" to "- sourceKind: user-input\n  enables: [xss]\n"),
                 context,
             )
         }
@@ -104,7 +104,7 @@ internal class DocumentSetLoaderDeclaredTest {
     @Test
     fun `declared set malformed policy fails`() {
         assertFailsWith<IllegalArgumentException> {
-            DocumentSetLoader.load(opener("index.txt" to "", "policy.yaml" to "- origin: user-input\n"), context)
+            DocumentSetLoader.load(opener("index.txt" to "", "policy.yaml" to "- sourceKind: user-input\n"), context)
         }
     }
 }

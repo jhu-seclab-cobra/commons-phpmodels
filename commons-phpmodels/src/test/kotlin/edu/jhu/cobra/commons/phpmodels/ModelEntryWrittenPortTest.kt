@@ -40,7 +40,7 @@ internal class ModelEntryWrittenPortTest {
                         variadic: true
                     returnType: bool
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(5)
                 """.trimIndent(),
             )
@@ -67,7 +67,7 @@ internal class ModelEntryWrittenPortTest {
                     - from: argument(0)
                       to: argument(1)
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(1)
                 """.trimIndent(),
             )
@@ -110,7 +110,7 @@ internal class ModelEntryWrittenPortTest {
                         type: array
                     returnType: bool
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(0)
                 """.trimIndent(),
             )
@@ -133,7 +133,7 @@ internal class ModelEntryWrittenPortTest {
                         variadic: true
                     returnType: bool
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(5)
                 """.trimIndent(),
             )

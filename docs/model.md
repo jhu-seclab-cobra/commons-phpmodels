@@ -1,21 +1,21 @@
 # PHP Models — Domain Model
 
-Semantics of the assertion axis: sections, subjects, ports, and the two-axis
-color model. Declaration axis: [model-declarations.md](model-declarations.md).
+Semantics of the assertion axis: sections, subjects, ports, and the
+two-axis taint vocabulary of source kinds and vulnerability types. Declaration axis: [model-declarations.md](model-declarations.md).
 Conditional entries: [model-conditions.md](model-conditions.md). Document sets and
 category mapping: [model-sets.md](model-sets.md).
 
 ## Entities
 
-- **Origin Color** — A declared category of untrusted provenance. Existence
+- **Source Kind** — A declared category of untrusted provenance. Existence
   condition: declared in the vocabulary. Identity is its declared name,
   lowercased. Carries a human description.
-- **Danger Category** — A declared category of vulnerability. Existence
+- **Vulnerability Type** — A declared category of vulnerability. Existence
   condition: declared in the vocabulary. Identity is its declared name,
   lowercased. Sink-side only.
-- **Vocabulary** — The two closed sets: all declared Origin Colors and all
-  declared Danger Categories. Every color or category referenced by a policy
-  row or a model must belong to it. Sole authority for what names exist.
+- **Vocabulary** — The two closed sets: all declared Source Kinds and all
+  declared Vulnerability Types. Every source kind or vulnerability type
+  referenced by a policy row or a model must belong to it. Sole authority for what names exist.
 - **Matching Subject** — The PHP declaration a model identifies. Existence
   condition: a declared subject kind together with exactly the identity
   fields that kind requires. Seven kinds with PHP-native spellings:
@@ -55,19 +55,19 @@ category mapping: [model-sets.md](model-sets.md).
     value unit: it requires *returns*, and its absence states no
     bound. `basename` declares *of* `argument(0)` *within* every byte but
     `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
-  - *sources* — each element produces a non-empty set of Origin Colors at
+  - *sources* — each element produces a non-empty set of Source Kinds at
     one production site. The site defaults per subject kind — the call
     result for a callable, the variable's value for a predefined variable —
     and a callable's element may instead name one argument port as its site
     (a by-reference out-parameter). An element may restrict production to
     the array elements whose key satisfies one of its Key Patterns; absent
     key patterns mean the whole value.
-  - *sinks* — each element names one argument port consumed under one Danger
-    Category.
-  - *sanitizers* — each element neutralizes Danger Categories in the call
+  - *sinks* — each element names one argument port consumed under one
+    Vulnerability Type.
+  - *sanitizers* — each element neutralizes Vulnerability Types in the call
     result, which still carries its input value, or is a *check* (agent
     decision CK-1): one argument port and the result value accepting it,
-    with the categories the accepted argument is free of, the Character
+    with the vulnerability types the accepted argument is free of, the Character
     Class its bytes belong to, or the type set it holds; a type set also
     rules out the accepting value for an argument of any other type.
   - *raises* — the set of exception classes the subject's own
@@ -86,9 +86,9 @@ category mapping: [model-sets.md](model-sets.md).
   case folding applies.
 - **Character Class** — A regular expression matched against one byte read as one
   Latin-1 character; the class holds every byte it matches: `[^/]`, `[0-9a-f]`.
-- **Policy** — The global relation from each Origin Color to the set of
-  Danger Categories it can trigger. One instance for the whole analysis.
-  Rows sharing an origin accumulate (union of enabled categories).
+- **Policy** — The global relation from each Source Kind to the set of
+  Vulnerability Types it can trigger. One instance for the whole analysis.
+  Rows sharing a source kind accumulate by union.
 - **Override Unit** — The granularity at which one declaration replaces
   another for the same subject: the value unit (returns together
   with propagation and characters), sources, sinks, sanitizers, raises, or the signature. A
@@ -106,14 +106,14 @@ itself an effect.
 | From | To | Relation | Cardinality | Meaning |
 |------|----|----------|-------------|---------|
 | Model | Matching Subject | identifies | 1:1 | The model states this subject's semantics and taint effects |
-| Propagation | Port × Port | flows | N:— | Colors at the from-port reach the to-port; an undeclared pair carries nothing |
-| Model (sources) | Origin Color | produces | M:N | The source introduces these colors at its production site |
+| Propagation | Port × Port | flows | N:— | Source kinds at the from-port reach the to-port; an undeclared pair carries nothing |
+| Model (sources) | Source Kind | produces | M:N | The source introduces these source kinds at its production site |
 | Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
-| Model (sinks) | Port × Danger Category | consumes under | N:M | The named argument port is sensitive to that category |
-| Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
+| Model (sinks) | Port × Vulnerability Type | consumes under | N:M | The named argument port is sensitive to that vulnerability type |
+| Model (sanitizers) | Vulnerability Type | neutralizes | M:N | These vulnerability types removed from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
 | Model (raises) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
-| Policy | Origin Color × Danger Category | enables | M:N | This color reaching a sink of this category is a vulnerability |
-| Model / Policy | Vocabulary | references | N:1 | Every named color/category must be declared in the vocabulary |
+| Policy | Source Kind × Vulnerability Type | enables | M:N | This source kind reaching a sink of this vulnerability type is a vulnerability |
+| Model / Policy | Vocabulary | references | N:1 | Every named source kind and vulnerability type must be declared in the vocabulary |
 
 ## State Model
 
@@ -125,7 +125,7 @@ itself an effect.
 | Declared | vocabulary parsed | interned, referenceable |
 | Referenced | policy row or model names it | validated against Declared |
 
-What a color set does along a value's flow — production, propagation,
+What a source kind set does along a value's flow — production, propagation,
 sanitization, the vulnerability verdict — is the consuming analysis's state
 model, driven by the declarations defined here.
 
@@ -163,14 +163,14 @@ model, driven by the declarations defined here.
   callable subjects. A class subject declares no assertion section. Every other
   non-callable kind — constant, class constant, property, predefined
   variable — admits only the *sources* section.
-- A sources section produces a non-empty color set. A sinks section is
-  non-empty and each element names one argument port and one category. A
-  sanitizers element names a non-empty category set, or a check: one
-  argument port, a scalar accepting value, and categories, a class, or a
-  type set other than `void`. A raises section is the one section a
-  declared empty value is a statement of: no class, distinct from the
-  absent section, which asserts nothing. Each raises element is a class
-  name, spelled and folded as a class subject.
+- A sources section produces a non-empty source kind set. A sinks section
+  is non-empty and each element names one argument port and one
+  vulnerability type. A sanitizers element names a non-empty vulnerability
+  type set, or a check: one argument port, a scalar accepting value, and
+  vulnerability types, a class, or a type set other than `void`. A raises
+  section is the one section a declared empty value is a statement of: no
+  class, distinct from the absent section, which asserts nothing. Each
+  raises element is a class name, spelled and folded as a class subject.
 - A source element's explicit production site is an argument port of a
   callable subject: explicit *return* is a load failure (the default
   already states it), and a non-callable subject admits no explicit site.
@@ -181,20 +181,20 @@ model, driven by the declarations defined here.
   consuming analysis, never of a model.
 - Every closed-vocabulary field admits only its declared members. An
   unrecognized value is a load failure, never a widening default.
-- Every Origin Color and Danger Category referenced by any policy row or
+- Every Source Kind and Vulnerability Type referenced by any policy row or
   model is declared in the vocabulary. An undeclared reference is a load
   failure.
-- Policy enables relates only declared colors to declared categories.
+- Policy enables relates only declared source kinds to declared vulnerability types.
 
 ## Cross-Structure Contracts
 
 - **Superglobal ≡ sources section over a variable subject.** An
   external-input superglobal is an ordinary model whose sources section
-  produces the user-input Origin Color, differing from a function source
+  produces the user-input Source Kind, differing from a function source
   only in its declared subject kind.
-- **Interned identity.** After load, colors and categories are referenced by
-  interned identity, not by raw string, so a name mismatch cannot occur past
-  the load boundary.
+- **Interned identity.** After load, source kinds and vulnerability types
+  are referenced by interned identity, not by raw string, so a name
+  mismatch cannot occur past the load boundary.
 
 Concept and rationale: [concept.md](concept.md). Software structure:
 [design.md](design.md), [design-subjects.md](design-subjects.md).

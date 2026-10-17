@@ -28,5 +28,5 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 
 - [Concepts](concept.md): Problem, scope, terminology, data flow, scenarios.
 - [Set provenance](concept-provenance.md): Producer, verification kind, precedence between sets.
-- [Domain model](model.md): Model sections, subjects, color model, invariants.
+- [Domain model](model.md): Model sections, subjects, taint vocabulary, invariants.
 - [Design](design.md): Full type specifications and validation rules.

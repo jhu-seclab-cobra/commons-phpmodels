@@ -20,8 +20,8 @@ The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, 
 ## Configuration
 
 - No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
-- Vocabulary document keys: `vulnTypes`, `provenances` — both required (`[]` when empty); each entry carries `name` and `description`.
-- Policy row keys: `origin` (one origin-color name), `enables` (list of vuln-class names).
+- Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`.
+- Policy row keys: `sourceKind` (one source kind name), `enables` (list of vulnerability type names).
 
 ## Gotchas
 

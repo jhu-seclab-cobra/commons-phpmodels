@@ -3,9 +3,8 @@
 Extends [concept.md](concept.md) with the one concern it does not cover:
 where a document set's entries come from, and how a consumer ranks two
 sets that state the same subject. Document Set, Model, Vocabulary, and
-Category Mapping are defined there and used here unchanged. The origin
-color of a tainted value, which the format also calls a provenance, is a
-different concept and is not touched here.
+Category Mapping are defined there and used here unchanged. The source
+kind of a tainted value is a different concept and is not touched here.
 
 ## 1. Context
 

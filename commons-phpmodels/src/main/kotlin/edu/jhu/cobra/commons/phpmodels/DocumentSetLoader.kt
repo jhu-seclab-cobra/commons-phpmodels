@@ -104,11 +104,11 @@ public object DocumentSetLoader {
         mapping: CategoryMapping,
         context: Vocabulary,
     ) {
-        mapping.categories.values.firstUndeclaredIn(context.vulnTypes)?.let { target ->
-            throw VocabularyException("Mapping target category '${target.id}' is not declared")
+        mapping.vulnTypes.values.firstUndeclaredIn(context.vulnTypes)?.let { target ->
+            throw VocabularyException("Mapping target vulnerability type '${target.id}' is not declared")
         }
-        mapping.origins.values.firstUndeclaredIn(context.origins)?.let { target ->
-            throw VocabularyException("Mapping target origin '${target.id}' is not declared")
+        mapping.sourceKinds.values.firstUndeclaredIn(context.sourceKinds)?.let { target ->
+            throw VocabularyException("Mapping target source kind '${target.id}' is not declared")
         }
     }
 
@@ -118,8 +118,8 @@ public object DocumentSetLoader {
 
     private fun CategoryMapping.sourceVocabulary(): Vocabulary =
         Vocabulary(
-            vulnTypes = categories.keys.associateWith { VulnTypeDecl(it, MAPPED_SOURCE_DESCRIPTION) },
-            origins = origins.keys.associateWith { OriginDecl(it, MAPPED_SOURCE_DESCRIPTION) },
+            vulnTypes = vulnTypes.keys.associateWith { VulnTypeDecl(it, MAPPED_SOURCE_DESCRIPTION) },
+            sourceKinds = sourceKinds.keys.associateWith { SourceKindDecl(it, MAPPED_SOURCE_DESCRIPTION) },
         )
 
     // A set lists many documents; a failure inside one names it.

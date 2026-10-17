@@ -9,9 +9,9 @@ import kotlin.test.assertTrue
 /**
  * Normalization of the interned identity tokens and the reference checks.
  *
- * - `vuln class id folds to lowercase` — any spelling constructs the
+ * - `vuln type id folds to lowercase` — any spelling constructs the
  *   lowercased identity, so no reference misses a vocabulary lookup.
- * - `origin id folds to lowercase` — same folding for origin colors.
+ * - `source kind id folds to lowercase` — same folding for source kinds.
  * - `vocabulary exception is an IllegalArgumentException` — one failure
  *   family at the load boundary.
  * - `require methods intern declared references case-insensitively` — a
@@ -20,25 +20,25 @@ import kotlin.test.assertTrue
  *   failure names the undeclared reference.
  * - `undeclared reference message carries the declared descriptions` — the
  *   description enriches the undeclared-reference error (design.md
- *   VulnTypeDecl / OriginDecl).
+ *   VulnTypeDecl / SourceKindDecl).
  */
 internal class VocabularyTest {
     private val vocabulary =
         Vocabulary(
             vulnTypes = mapOf(VulnTypeId("sqli") to VulnTypeDecl(VulnTypeId("sqli"), "SQL injection")),
-            origins = mapOf(OriginId("remote") to OriginDecl(OriginId("remote"), "Remote user input")),
+            sourceKinds = mapOf(SourceKindId("remote") to SourceKindDecl(SourceKindId("remote"), "Remote user input")),
         )
 
     @Test
-    fun `vuln class id folds to lowercase`() {
+    fun `vuln type id folds to lowercase`() {
         assertEquals("sqli", VulnTypeId("SQLI").id)
         assertEquals(VulnTypeId("sqli"), VulnTypeId("SqLi"))
     }
 
     @Test
-    fun `origin id folds to lowercase`() {
-        assertEquals("remote", OriginId("REMOTE").id)
-        assertEquals(OriginId("remote"), OriginId("Remote"))
+    fun `source kind id folds to lowercase`() {
+        assertEquals("remote", SourceKindId("REMOTE").id)
+        assertEquals(SourceKindId("remote"), SourceKindId("Remote"))
     }
 
     @Test
@@ -49,23 +49,23 @@ internal class VocabularyTest {
     @Test
     fun `require methods intern declared references case-insensitively`() {
         assertEquals(VulnTypeId("sqli"), vocabulary.requireVulnType("SQLI"))
-        assertEquals(OriginId("remote"), vocabulary.requireOrigin("Remote"))
+        assertEquals(SourceKindId("remote"), vocabulary.requireSourceKind("Remote"))
     }
 
     @Test
     fun `require methods reject undeclared references naming the name`() {
-        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
-        assertTrue("xss" in category.message.orEmpty(), category.message)
-        val origin = assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
-        assertTrue("local" in origin.message.orEmpty(), origin.message)
+        val vulnType = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
+        assertTrue("xss" in vulnType.message.orEmpty(), vulnType.message)
+        val sourceKind = assertFailsWith<VocabularyException> { vocabulary.requireSourceKind("local") }
+        assertTrue("local" in sourceKind.message.orEmpty(), sourceKind.message)
     }
 
     @Test
     fun `undeclared reference message carries the declared descriptions`() {
-        val category = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
-        assertTrue("SQL injection" in category.message.orEmpty(), category.message)
-        val origin = assertFailsWith<VocabularyException> { vocabulary.requireOrigin("local") }
-        assertTrue("Remote user input" in origin.message.orEmpty(), origin.message)
+        val vulnType = assertFailsWith<VocabularyException> { vocabulary.requireVulnType("xss") }
+        assertTrue("SQL injection" in vulnType.message.orEmpty(), vulnType.message)
+        val sourceKind = assertFailsWith<VocabularyException> { vocabulary.requireSourceKind("local") }
+        assertTrue("Remote user input" in sourceKind.message.orEmpty(), sourceKind.message)
     }
 }
 
@@ -75,19 +75,19 @@ internal class VocabularyTest {
  * - `merge …` — union in declaration order; an identical redeclaration is
  *   one declaration, a differing description is a conflict naming the name
  *   and both descriptions; `EMPTY` is the identity.
- * - `verify …` — every category and color on the three taint sections of an
+ * - `verify …` — every vulnerability type and source kind on the three taint sections of an
  *   entry is declared; an entry without taint sections passes.
  */
 internal class VocabularyMergeVerifyTest {
     private fun vocabulary(
-        vararg classes: Pair<String, String>,
-        provenance: Pair<String, String> = "user-input" to "request data",
+        vararg vulnTypes: Pair<String, String>,
+        sourceKind: Pair<String, String> = "user-input" to "request data",
     ): Vocabulary {
-        val color = OriginId(provenance.first)
+        val sourceKindId = SourceKindId(sourceKind.first)
         return Vocabulary(
             vulnTypes =
-                classes.associate { (name, text) -> VulnTypeId(name) to VulnTypeDecl(VulnTypeId(name), text) },
-            origins = mapOf(color to OriginDecl(color, provenance.second)),
+                vulnTypes.associate { (name, text) -> VulnTypeId(name) to VulnTypeDecl(VulnTypeId(name), text) },
+            sourceKinds = mapOf(sourceKindId to SourceKindDecl(sourceKindId, sourceKind.second)),
         )
     }
 
@@ -95,7 +95,7 @@ internal class VocabularyMergeVerifyTest {
     fun `merge unions distinct names in declaration order`() {
         val merged = vocabulary("sqli" to "sql").merge(vocabulary("xss" to "html"))
         assertEquals(listOf("sqli", "xss"), merged.vulnTypes.keys.map { it.id })
-        assertEquals(listOf("user-input"), merged.origins.keys.map { it.id })
+        assertEquals(listOf("user-input"), merged.sourceKinds.keys.map { it.id })
     }
 
     @Test
@@ -116,9 +116,9 @@ internal class VocabularyMergeVerifyTest {
     }
 
     @Test
-    fun `merge rejects a differing provenance description`() {
+    fun `merge rejects a differing source kind description`() {
         assertFailsWith<VocabularyException> {
-            vocabulary(provenance = "user-input" to "a").merge(vocabulary(provenance = "user-input" to "b"))
+            vocabulary(sourceKind = "user-input" to "a").merge(vocabulary(sourceKind = "user-input" to "b"))
         }
     }
 
@@ -131,7 +131,7 @@ internal class VocabularyMergeVerifyTest {
 
     @Test
     fun `EMPTY declares nothing`() {
-        assertEquals(0, Vocabulary.EMPTY.vulnTypes.size + Vocabulary.EMPTY.origins.size)
+        assertEquals(0, Vocabulary.EMPTY.vulnTypes.size + Vocabulary.EMPTY.sourceKinds.size)
     }
 
     @Test
@@ -142,12 +142,12 @@ internal class VocabularyMergeVerifyTest {
                 - subject:
                     function: query
                   sources:
-                    - provenance: [user-input]
+                    - sourceKinds: [user-input]
                   sinks:
                     - port: argument(0)
-                      category: sqli
+                      vulnType: sqli
                   sanitizers:
-                    - categories: [sqli]
+                    - vulnTypes: [sqli]
                 """.trimIndent(),
             )
         vocabulary("sqli" to "sql").verify(entry)
@@ -159,21 +159,21 @@ internal class VocabularyMergeVerifyTest {
     }
 
     @Test
-    fun `verify rejects an undeclared sink category`() {
+    fun `verify rejects an undeclared sink vulnerability type`() {
         val entry =
-            loadModel("- subject:\n    function: query\n  sinks:\n    - port: argument(0)\n      category: xss\n")
+            loadModel("- subject:\n    function: query\n  sinks:\n    - port: argument(0)\n      vulnType: xss\n")
         assertFailsWith<VocabularyException> { vocabulary("sqli" to "sql").verify(entry) }
     }
 
     @Test
-    fun `verify rejects an undeclared source color`() {
-        val entry = loadModel("- subject:\n    variable: \$_GET\n  sources:\n    - provenance: [remote]\n")
+    fun `verify rejects an undeclared source kind`() {
+        val entry = loadModel("- subject:\n    variable: \$_GET\n  sources:\n    - sourceKinds: [remote]\n")
         assertFailsWith<VocabularyException> { vocabulary("sqli" to "sql").verify(entry) }
     }
 
     @Test
-    fun `verify rejects an undeclared sanitizer category`() {
-        val entry = loadModel("- subject:\n    function: esc_html\n  sanitizers:\n    - categories: [xss]\n")
+    fun `verify rejects an undeclared sanitizer vulnerability type`() {
+        val entry = loadModel("- subject:\n    function: esc_html\n  sanitizers:\n    - vulnTypes: [xss]\n")
         assertFailsWith<VocabularyException> { vocabulary("sqli" to "sql").verify(entry) }
     }
 }

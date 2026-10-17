@@ -10,13 +10,13 @@ import java.io.InputStream
  * non-nullability (impl.md); the loader rejects the null itself.
  */
 internal data class CategoryMappingFile(
-    val categories: Map<String, String?>,
-    val provenances: Map<String, String?>,
+    val vulnTypes: Map<String, String?>,
+    val sourceKinds: Map<String, String?>,
 )
 
 /**
  * Decodes a [CategoryMapping] from a YAML document of two maps,
- * `categories:` and `provenances:`, each source name to a target name or to
+ * `vulnTypes:` and `sourceKinds:`, each source name to a target name or to
  * the literal `ignore`. Where the document lives is the caller's value
  * placement, not this library's.
  */
@@ -35,8 +35,8 @@ public object CategoryMappingLoader {
     public fun load(input: InputStream): CategoryMapping {
         val file = ModelYaml.decode(input, jacksonTypeRef<CategoryMappingFile>())
         return CategoryMapping(
-            categories = file.categories.translated("categories") { VulnTypeId(it) },
-            origins = file.provenances.translated("provenances") { OriginId(it) },
+            vulnTypes = file.vulnTypes.translated("vulnTypes") { VulnTypeId(it) },
+            sourceKinds = file.sourceKinds.translated("sourceKinds") { SourceKindId(it) },
         )
     }
 

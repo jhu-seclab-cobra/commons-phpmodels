@@ -37,7 +37,7 @@ internal class ModelEntryArityTest {
                     returnType: bool
                   sinks:
                     - port: argument(1)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         }
@@ -70,7 +70,7 @@ internal class ModelEntryArityTest {
                   when: [_, true]
                   sinks:
                     - port: argument(0)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         }
@@ -93,7 +93,7 @@ internal class ModelEntryArityTest {
                   when: [_, 1]
                   sinks:
                     - port: argument(1)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         assertEquals(listOf(SinkDecl(Port.Argument(1), VulnTypeId("sqli"))), model.body.sinks)
@@ -109,7 +109,7 @@ internal class ModelEntryArityTest {
                   when: [_, _, _, _, _, _, _, _, _, true]
                   sinks:
                     - port: argument(9)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         assertEquals(listOf(SinkDecl(Port.Argument(9), VulnTypeId("sqli"))), model.body.sinks)
@@ -128,7 +128,7 @@ internal class ModelEntryArityTest {
                         type: string
                     returnType: bool
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(1)
                 """.trimIndent(),
             )
@@ -174,7 +174,7 @@ internal class ModelEntryArityTest {
                     returnType: string
                   sinks:
                     - port: argument(5)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         assertEquals(listOf(SinkDecl(Port.Argument(5), VulnTypeId("sqli"))), model.body.sinks)

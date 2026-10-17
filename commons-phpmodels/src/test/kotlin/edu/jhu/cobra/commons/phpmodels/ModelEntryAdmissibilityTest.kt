@@ -42,7 +42,7 @@ internal class ModelEntryAdmissibilityTest {
                     variable: ${'$'}_GET
                   sinks:
                     - port: argument(0)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         }
@@ -56,19 +56,19 @@ internal class ModelEntryAdmissibilityTest {
                 - subject:
                     constant: PHP_EOL
                   sources:
-                    - provenance: [environment]
+                    - sourceKinds: [environment]
                 - subject:
                     class_constant: mysqli::MYSQLI_REPORT_ERROR
                   sources:
-                    - provenance: [environment]
+                    - sourceKinds: [environment]
                 - subject:
                     property: mysqli::${'$'}insert_id
                   sources:
-                    - provenance: [environment]
+                    - sourceKinds: [environment]
                 - subject:
                     variable: ${'$'}_GET
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                 """.trimIndent(),
             )
         assertEquals(4, entries.size)
@@ -107,7 +107,7 @@ internal class ModelEntryAdmissibilityTest {
                   signature:
                     classifier: class
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                 """.trimIndent(),
             )
         }
@@ -171,7 +171,7 @@ internal class ModelEntryAdmissibilityTest {
                 - subject:
                     function: parse_str
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(1)
                       keys: ["user_.*"]
                 """.trimIndent(),
@@ -189,7 +189,7 @@ internal class ModelEntryAdmissibilityTest {
                 - subject:
                     variable: ${'$'}_GET
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                       at: argument(0)
                 """.trimIndent(),
             )
@@ -205,7 +205,7 @@ internal class ModelEntryAdmissibilityTest {
                     function: shell_exec
                   sinks:
                     - port: return
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         }
@@ -220,7 +220,7 @@ internal class ModelEntryAdmissibilityTest {
                     method: mysqli::query
                   sinks:
                     - port: this
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         }
@@ -234,7 +234,7 @@ internal class ModelEntryAdmissibilityTest {
                 - subject:
                     function: getenv
                   sources:
-                    - provenance: [environment]
+                    - sourceKinds: [environment]
                       at: return
                 """.trimIndent(),
             )

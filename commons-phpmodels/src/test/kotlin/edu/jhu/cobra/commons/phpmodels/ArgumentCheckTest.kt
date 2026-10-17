@@ -15,7 +15,8 @@ import kotlin.test.assertFailsWith
  * - `check with a class decodes` — argument port, accepting value, and
  *   `within` class.
  * - `check with a type set decodes` — `types` reads as a declared type.
- * - `check with only categories decodes` — categories hold on the accepted
+ * - `check with only vulnerability types decodes` — vulnerability types hold on
+ *   the accepted
  *   argument.
  * - `accepting value narrows as a condition scalar` — integer, boolean, and
  *   the explicit null scalar read as the commons-value primitives.
@@ -63,11 +64,11 @@ internal class ArgumentCheckTest {
     }
 
     @Test
-    fun `check with only categories decodes`() {
+    fun `check with only vulnerability types decodes`() {
         val decl =
             sanitizer(
                 """
-                - categories: [sqli]
+                - vulnTypes: [sqli]
                   check:
                     argument: argument(1)
                     accepts: 1
@@ -79,7 +80,7 @@ internal class ArgumentCheckTest {
     @Test
     fun `accepting value narrows as a condition scalar`() {
         fun accepts(scalar: String) =
-            sanitizer("- categories: [sqli]\n  check:\n    argument: argument(0)\n    accepts: $scalar")
+            sanitizer("- vulnTypes: [sqli]\n  check:\n    argument: argument(0)\n    accepts: $scalar")
                 .check
                 ?.accepts
         assertEquals(IntVal(0), accepts("0"))
@@ -90,14 +91,14 @@ internal class ArgumentCheckTest {
     @Test
     fun `absent accepting value is rejected`() {
         assertFailsWith<IllegalArgumentException> {
-            sanitizer("- categories: [sqli]\n  check:\n    argument: argument(0)")
+            sanitizer("- vulnTypes: [sqli]\n  check:\n    argument: argument(0)")
         }
     }
 
     @Test
     fun `non-scalar accepting value is rejected`() {
         assertFailsWith<IllegalArgumentException> {
-            sanitizer("- categories: [sqli]\n  check:\n    argument: argument(0)\n    accepts: [true]")
+            sanitizer("- vulnTypes: [sqli]\n  check:\n    argument: argument(0)\n    accepts: [true]")
         }
     }
 

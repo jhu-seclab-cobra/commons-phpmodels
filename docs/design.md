@@ -11,8 +11,8 @@ category mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
-- **Classes:** `VulnTypeId`, `OriginId` (value classes), `VulnTypeDecl`,
-  `OriginDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `ModelYaml`,
+- **Classes:** `VulnTypeId`, `SourceKindId` (value classes), `VulnTypeDecl`,
+  `SourceKindDecl`, `Vocabulary`, `PolicyRow`, `TaintPolicy`, `ModelYaml`,
   `VocabularyLoader`, `PolicyLoader`, `ModelLoader` (the last four internal
   objects); the body types: [design-bodies.md](design-bodies.md)
 - **Sealed hierarchies:** `ModelSubject` and `Port` — specified in
@@ -41,14 +41,14 @@ analyzer.
 
 ## Class / Type Specifications
 
-### VulnTypeId, OriginId
+### VulnTypeId, SourceKindId
 
 **Responsibility:** Interned reference tokens (`@JvmInline value class` over
-`String`, lowercased) for a declared danger category and origin color.
+`String`, lowercased) for a declared vulnerability type and source kind.
 Replace raw strings past the load boundary so a name mismatch cannot occur
 downstream. Decode from the bare scalar.
 
-### VulnTypeDecl, OriginDecl
+### VulnTypeDecl, SourceKindDecl
 
 **Responsibility:** One declared vocabulary entry: interned identity plus a
 human description that self-documents the file and enriches the
@@ -57,26 +57,27 @@ undeclared-reference error message.
 ### Vocabulary
 
 **Responsibility:** The two closed declared sets. Sole authority for what
-category and color names exist.
+vulnerability type and source kind names exist.
 
 **State/Fields:** `vulnTypes: Map<VulnTypeId, VulnTypeDecl>`,
-`origins: Map<OriginId, OriginDecl>` (YAML section `provenances:`).
+`sourceKinds: Map<SourceKindId, SourceKindDecl>`.
 
 **Methods:**
 - `fun requireVulnType(raw: String): VulnTypeId` — interns and validates;
   `VocabularyException` when undeclared.
-- `fun requireOrigin(raw: String): OriginId` — same for colors.
+- `fun requireSourceKind(raw: String): SourceKindId` — same for source
+  kinds.
 
 ### PolicyRow, TaintPolicy
 
-**Responsibility:** `PolicyRow` — one statement: an origin color and the
-danger categories it enables. `TaintPolicy` — the folded origin→categories
-matrix; rows sharing an origin accumulate by union.
+**Responsibility:** `PolicyRow` — one statement: a source kind and the
+vulnerability types it enables. `TaintPolicy` — the folded source kind →
+vulnerability types matrix; rows sharing a source kind accumulate by union.
 
-**Validation (`init`):** `enables` non-empty — a row enabling no category
-asserts nothing, like every other empty declared section.
+**Validation (`init`):** `enables` non-empty — a row enabling no
+vulnerability type asserts nothing, like every other empty declared section.
 
-**Methods:** `TaintPolicy.isDangerous(color, category): Boolean`.
+**Methods:** `TaintPolicy.isDangerous(sourceKind, vulnType): Boolean`.
 
 ### ModelYaml (internal)
 
@@ -109,13 +110,13 @@ a single document, so the set loader is the only place these run.
   entries ([design-entries.md](design-entries.md)); construction-time
   validation runs during the decode; two entries sharing subject and
   condition are rejected (`IllegalArgumentException` naming the subject).
-  Vocabulary verification of the entries' color and category references
-  runs in the set loader, which owns the cross-document load order.
+  Vocabulary verification of the entries' source kind and vulnerability
+  type references runs in the set loader, which owns the cross-document load order.
 
 ## Exception / Error Types
 
 - `VocabularyException` (extends `IllegalArgumentException`) — undeclared
-  color/category reference, duplicate vocabulary entry. Never raised past
+  source kind or vulnerability type reference, duplicate vocabulary entry. Never raised past
   the load boundary.
 - `IllegalArgumentException` — every other format violation, raised in
   `init` blocks and creators while Jackson instantiates, so one catch at the

@@ -9,7 +9,7 @@ import kotlin.test.assertNull
  * Decoding of the mapping document shape (design-sets.md, impl.md).
  *
  * - `decodes both axes with ignore as discard` — the literal maps to null,
- *   on the category axis and on the provenance axis.
+ *   on the vulnerability type axis and on the source kind axis.
  * - `IGNORE is the discard literal` — the constant the format names.
  * - `empty sections decode to empty tables` — `{}` lists nothing.
  * - `rejects …` — null target, missing section, stray key, and a source
@@ -23,18 +23,18 @@ internal class CategoryMappingLoaderTest {
         val mapping =
             load(
                 """
-                categories:
+                vulnTypes:
                   sql: sqli
                   text: ignore
-                provenances:
+                sourceKinds:
                   input: user-input
                   env: ignore
                 """.trimIndent(),
             )
-        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
-        assertNull(mapping.category(VulnTypeId("text")))
-        assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
-        assertNull(mapping.origin(OriginId("env")))
+        assertEquals(VulnTypeId("sqli"), mapping.vulnType(VulnTypeId("sql")))
+        assertNull(mapping.vulnType(VulnTypeId("text")))
+        assertEquals(SourceKindId("user-input"), mapping.sourceKind(SourceKindId("input")))
+        assertNull(mapping.sourceKind(SourceKindId("env")))
     }
 
     @Test
@@ -44,32 +44,32 @@ internal class CategoryMappingLoaderTest {
 
     @Test
     fun `empty sections decode to empty tables`() {
-        assertEquals(CategoryMapping(emptyMap(), emptyMap()), load("categories: {}\nprovenances: {}\n"))
+        assertEquals(CategoryMapping(emptyMap(), emptyMap()), load("vulnTypes: {}\nsourceKinds: {}\n"))
     }
 
     @Test
     fun `folds names to lowercase`() {
-        val mapping = load("categories:\n  SQL: SQLi\nprovenances: {}\n")
-        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
+        val mapping = load("vulnTypes:\n  SQL: SQLi\nsourceKinds: {}\n")
+        assertEquals(VulnTypeId("sqli"), mapping.vulnType(VulnTypeId("sql")))
     }
 
     @Test
     fun `rejects a null target`() {
-        assertFailsWith<IllegalArgumentException> { load("categories:\n  sql:\nprovenances: {}\n") }
+        assertFailsWith<IllegalArgumentException> { load("vulnTypes:\n  sql:\nsourceKinds: {}\n") }
     }
 
     @Test
     fun `rejects a missing section`() {
-        assertFailsWith<IllegalArgumentException> { load("categories:\n  sql: sqli\n") }
+        assertFailsWith<IllegalArgumentException> { load("vulnTypes:\n  sql: sqli\n") }
     }
 
     @Test
     fun `rejects a stray key`() {
-        assertFailsWith<IllegalArgumentException> { load("categories: {}\nprovenances: {}\ncolors: {}\n") }
+        assertFailsWith<IllegalArgumentException> { load("vulnTypes: {}\nsourceKinds: {}\nstray: {}\n") }
     }
 
     @Test
     fun `rejects ignore as a source name`() {
-        assertFailsWith<IllegalArgumentException> { load("categories:\n  ignore: sqli\nprovenances: {}\n") }
+        assertFailsWith<IllegalArgumentException> { load("vulnTypes:\n  ignore: sqli\nsourceKinds: {}\n") }
     }
 }

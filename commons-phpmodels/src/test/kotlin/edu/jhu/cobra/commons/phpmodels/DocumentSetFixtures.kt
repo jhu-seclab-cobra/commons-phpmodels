@@ -33,7 +33,7 @@ internal class MemoryOpener(
 internal object DocumentSetFixtures {
     const val VOCABULARY: String =
         "vulnTypes:\n  - name: sqli\n    description: sql injection\n" +
-            "provenances:\n  - name: user-input\n    description: request data\n"
+            "sourceKinds:\n  - name: user-input\n    description: request data\n"
 
     const val PROVENANCE: String = "producer: review\nverification: manual\n"
 
@@ -41,15 +41,15 @@ internal object DocumentSetFixtures {
 
     val mapping: CategoryMapping =
         CategoryMappingLoader.load(
-            "categories:\n  sql: sqli\n  text: ignore\nprovenances:\n  input: user-input\n".byteInputStream(),
+            "vulnTypes:\n  sql: sqli\n  text: ignore\nsourceKinds:\n  input: user-input\n".byteInputStream(),
         )
 
     fun opener(vararg files: Pair<String, String>): MemoryOpener = MemoryOpener(files.toMap())
 
     fun sink(
         name: String,
-        category: String,
-    ): String = "- subject:\n    function: $name\n  sinks:\n    - port: argument(0)\n      category: $category\n"
+        vulnType: String,
+    ): String = "- subject:\n    function: $name\n  sinks:\n    - port: argument(0)\n      vulnType: $vulnType\n"
 
-    fun ModelEntry.sinkCategories(): List<VulnTypeId> = body.sinks.orEmpty().map { it.vulnType }
+    fun ModelEntry.sinkVulnTypes(): List<VulnTypeId> = body.sinks.orEmpty().map { it.vulnType }
 }

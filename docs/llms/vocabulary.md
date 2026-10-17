@@ -1,6 +1,6 @@
 # Vocabulary and Policy
 
-> The two closed declared sets — danger categories and origin colors — and the origin → categories taint policy.
+> The two closed declared sets — vulnerability types and source kinds — and the source kind → vulnerability types taint policy.
 
 ## Quick Start
 
@@ -8,27 +8,27 @@
 val set = DocumentSetLoader.load(opener)
 val vocabulary = set.vocabulary
 val policy = TaintPolicy(set.policy)
-policy.isDangerous(vocabulary.requireOrigin("remote"), vocabulary.requireVulnType("sqli"))
+policy.isDangerous(vocabulary.requireSourceKind("remote"), vocabulary.requireVulnType("sqli"))
 ```
 
 ## API
 
-- **`Vocabulary(vulnTypes: Map<VulnTypeId, VulnTypeDecl>, origins: Map<OriginId, OriginDecl>)`** — Sole authority for what category and color names exist.
-- **`Vocabulary.requireVulnType(raw: String): VulnTypeId`** — Interns and validates a category name. Raises `VocabularyException` when undeclared.
-- **`Vocabulary.requireOrigin(raw: String): OriginId`** — Interns and validates a color name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary(vulnTypes: Map<VulnTypeId, VulnTypeDecl>, sourceKinds: Map<SourceKindId, SourceKindDecl>)`** — Sole authority for what vulnerability type and source kind names exist.
+- **`Vocabulary.requireVulnType(raw: String): VulnTypeId`** — Interns and validates a vulnerability type name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary.requireSourceKind(raw: String): SourceKindId`** — Interns and validates a source kind name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
-- **`Vocabulary.verify(entry: ModelEntry)`** — Checks every category and color the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
+- **`Vocabulary.verify(entry: ModelEntry)`** — Checks every vulnerability type and source kind the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
 - **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
-- **`VulnTypeId(raw: String)`**, **`OriginId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
-- **`VulnTypeDecl(id: VulnTypeId, description: String)`**, **`OriginDecl(id: OriginId, description: String)`** — One declared vocabulary entry.
-- **`PolicyRow(origin: OriginId, enables: Set<VulnTypeId>)`** — One policy statement.
-- **`TaintPolicy(rows: List<PolicyRow>)`** — The folded origin → categories matrix; rows sharing an origin accumulate by union.
-- **`TaintPolicy.isDangerous(color: OriginId, category: VulnTypeId): Boolean`** — Whether the origin enables the category.
+- **`VulnTypeId(raw: String)`**, **`SourceKindId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
+- **`VulnTypeDecl(id: VulnTypeId, description: String)`**, **`SourceKindDecl(id: SourceKindId, description: String)`** — One declared vocabulary entry.
+- **`PolicyRow(sourceKind: SourceKindId, enables: Set<VulnTypeId>)`** — One policy statement.
+- **`TaintPolicy(rows: List<PolicyRow>)`** — The folded source kind → vulnerability types matrix; rows sharing a source kind accumulate by union.
+- **`TaintPolicy.isDangerous(sourceKind: SourceKindId, vulnType: VulnTypeId): Boolean`** — Whether the source kind enables the vulnerability type.
 
 ## Configuration
 
-- Vocabulary document: two sections `vulnTypes` and `provenances` (YAML keys unchanged; the second decodes to `origins`), each a list of `{name, description}` entries.
-- Policy document: a list of `{origin, enables}` rows.
+- Vocabulary document: two sections `vulnTypes` and `sourceKinds`, each a list of `{name, description}` entries.
+- Policy document: a list of `{sourceKind, enables}` rows.
 
 ## Gotchas
 

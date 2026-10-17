@@ -73,7 +73,7 @@ Cobra analyzers describe PHP built-ins and user code with declarative models in 
 
 - [Concepts](docs/concept.md) — problem, scope, terminology, data flow, scenarios
 - [Set Provenance Concepts](docs/concept-provenance.md) — producer, verification kind, precedence between sets
-- [Domain model](docs/model.md) — model sections, subjects, color model, invariants
+- [Domain model](docs/model.md) — model sections, subjects, taint vocabulary, invariants
 - [Design](docs/design.md) — type model, loaders, decoder strictness
 - [Index](docs/index.md) — all documents, one line each
 

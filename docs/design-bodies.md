@@ -32,14 +32,14 @@ Package `edu.jhu.cobra.commons.phpmodels`; every type is public.
 ### SourceDecl
 
 **Responsibility:** One element of the sources section: a non-empty
-produced color set, an optional explicit production site, and optional key
+produced source kind set, an optional explicit production site, and optional key
 patterns restricting production to matching array keys.
 
-**State/Fields:** `origin: Set<OriginId>` (YAML key `provenance:`), `at: Port.Argument?`
+**State/Fields:** `sourceKinds: Set<SourceKindId>`, `at: Port.Argument?`
 (null = the kind-fixed default site, [model.md](model.md)),
 `keys: List<KeyPattern>?`.
 
-**Validation (`init`):** `origin` non-empty; a declared `keys` list
+**Validation (`init`):** `sourceKinds` non-empty; a declared `keys` list
 non-empty. Whether the subject admits an explicit site is entry-level
 validation ([design-entries.md](design-entries.md)).
 
@@ -57,14 +57,14 @@ case-sensitive match, never a substring match.
 
 **Responsibility:** One element of the sinks / sanitizers sections:
 `SinkDecl(port: Port.Argument, vulnType: VulnTypeId)` — one dangerously
-consumed argument port under one category (YAML key `category:`);
-`SanitizerDecl(categories: Set<VulnTypeId> = emptySet(), check:
-ArgumentCheck? = null)` — the neutralized category set of the call result,
-or, with a check, of the argument the call accepts (agent decision CK-1,
-[model.md](model.md)).
+consumed argument port under one vulnerability type;
+`SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check:
+ArgumentCheck? = null)` — the neutralized vulnerability type set of the
+call result, or, with a check, of the argument the call accepts (agent
+decision CK-1, [model.md](model.md)).
 
-**Validation (`init`):** without a check, `categories` non-empty; with a
-check, `categories`, `check.within`, or `check.types` declared.
+**Validation (`init`):** without a check, `vulnTypes` non-empty; with a
+check, `vulnTypes`, `check.within`, or `check.types` declared.
 
 ### ArgumentCheck
 

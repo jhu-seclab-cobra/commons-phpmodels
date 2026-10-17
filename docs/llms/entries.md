@@ -22,11 +22,11 @@ for (entry in set.entries) {
 - **`CharacterClass(pattern: String)`** — Regex matched against one byte read as one Latin-1 character; `contains(byte: Int): Boolean` over 0..255. Decoded from a bare string scalar; equality over the pattern text.
 - **`Propagation(from: Port.Input, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.
 - **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Receiver` (spelling `this`), `Port.Return` (spelling `return`). `Port.Input` is the sealed sub-interface of `Argument` and `Receiver`. `Port.parse(raw: String): Port`; `Port.Argument.parseArgument(raw: String): Port.Argument` and `Port.Input.parseInput(raw: String): Port.Input` narrow to the subtype.
-- **`SourceDecl(origin: Set<OriginId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced color set (YAML key `provenance`); optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
+- **`SourceDecl(sourceKinds: Set<SourceKindId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced source kind set; optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
 - **`KeyPattern(pattern: String)`** — Regex over array keys, matched entire-key and case-sensitively; `matches(key: String): Boolean`. Decoded from a bare string scalar.
-- **`SinkDecl(port: Port.Argument, vulnType: VulnTypeId)`** — One dangerously consumed argument under one category (YAML key `category`).
-- **`SanitizerDecl(categories: Set<VulnTypeId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized category set of the result (non-empty without a check), or of the argument a check accepts.
-- **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's categories and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
+- **`SinkDecl(port: Port.Argument, vulnType: VulnTypeId)`** — One dangerously consumed argument under one vulnerability type.
+- **`SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized vulnerability type set of the result (non-empty without a check), or of the argument a check accepts.
+- **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's vulnerability types and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
 - **`ReturnKind`** — Enum `STR`, `NUM`, `BOOL`, `ANY`; `join(other: ReturnKind): ReturnKind` gives itself when equal, `ANY` otherwise.
 
 ## Configuration

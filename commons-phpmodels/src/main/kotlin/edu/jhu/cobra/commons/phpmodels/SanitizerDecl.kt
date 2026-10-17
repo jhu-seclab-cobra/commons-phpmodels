@@ -7,24 +7,24 @@ import edu.jhu.cobra.commons.value.IPrimitiveVal
 import edu.jhu.cobra.commons.value.Unsure
 
 /**
- * One element of a sanitizers section (agent decision CK-1): the danger
- * categories neutralized in the call result, or, with a [check], the
+ * One element of a sanitizers section (agent decision CK-1): the
+ * vulnerability types neutralized in the call result, or, with a [check], the
  * statement a call returning the accepting value makes about one argument.
  *
- * @property categories Danger categories neutralized: in the call result
+ * @property vulnTypes Vulnerability types neutralized: in the call result
  *   without a check, in the accepted argument with one.
  * @property check The checked argument and its accepting value, or null for
  *   a result element.
- * @throws IllegalArgumentException If a result element declares no category,
+ * @throws IllegalArgumentException If a result element declares no vulnerability type,
  *   or a check element states nothing about the accepted argument.
  */
 public data class SanitizerDecl(
-    val categories: Set<VulnTypeId> = emptySet(),
+    val vulnTypes: Set<VulnTypeId> = emptySet(),
     val check: ArgumentCheck? = null,
 ) {
     init {
-        require(categories.isNotEmpty() || check?.statesBound == true) {
-            "Sanitizers element declares no category, and no check 'within' class or 'types' set"
+        require(vulnTypes.isNotEmpty() || check?.statesBound == true) {
+            "Sanitizers element declares no vulnerability type, and no check 'within' class or 'types' set"
         }
     }
 }

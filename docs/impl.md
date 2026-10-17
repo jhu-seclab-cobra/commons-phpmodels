@@ -69,9 +69,9 @@ creator parameters only, never on collection elements or map values
 (`KotlinFeature.StrictNullChecks` is off). `CategoryMappingLoader` decodes
 into `Map<String, String?>` and rejects the null itself.
 
-**[jackson]** A missing or empty-valued top-level section (`categories:` with
+**[jackson]** A missing or empty-valued top-level section (`vulnTypes:` with
 no mapping) fails as a missing non-nullable creator parameter
-(`MismatchedInputException`); an empty section is spelled `categories: {}`.
+(`MismatchedInputException`); an empty section is spelled `vulnTypes: {}`.
 
 **[jackson]** `enum class Verification` decodes from the lowercase scalars
 `generated`/`manual` through `ACCEPT_CASE_INSENSITIVE_ENUMS`, the same

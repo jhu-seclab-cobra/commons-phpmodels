@@ -60,7 +60,7 @@ internal class ModelEntryRaisesTest {
                     function: strlen
                   sinks:
                     - port: argument(0)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         assertEquals(null, entry.body.raises)

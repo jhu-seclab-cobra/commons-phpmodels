@@ -14,8 +14,8 @@ import kotlin.test.assertTrue
  * - `sink …`, `sanitizer …`, `source …` — mapped name replaced, discarded
  *   name removed, emptied element removed.
  * - `sanitizer check …` — a check element bounding its argument by a class
- *   or a type set stays when its categories empty; one stating only
- *   categories is removed.
+ *   or a type set stays when its vulnerability types empty; one stating
+ *   only vulnerability types is removed.
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
  * - `value units pass through` — returns and propagation are untouched.
@@ -23,9 +23,9 @@ import kotlin.test.assertTrue
  *   vocabulary names, and is untouched.
  * - `subject condition signature and ports pass through` — translation
  *   touches names only.
- * - `category and origin translate directly` — mapped name, discarded
+ * - `vulnerability type and source kind translate directly` — mapped name, discarded
  *   name as null.
- * - `policy …` — origin and categories replaced; discarded origin or
+ * - `policy …` — source kind and vulnerability types replaced; discarded source kind or
  *   emptied enables drops the row.
  * - `unlisted name fails` — an unlisted name is a failure, not a pass-through;
  *   the failure names the name, on an entry, a row, and a direct lookup.
@@ -33,28 +33,28 @@ import kotlin.test.assertTrue
 internal class CategoryMappingTest {
     private val mapping =
         CategoryMapping(
-            categories =
+            vulnTypes =
                 mapOf(
                     VulnTypeId("sql") to VulnTypeId("sqli"),
                     VulnTypeId("html") to VulnTypeId("xss"),
                     VulnTypeId("text") to null,
                 ),
-            origins = mapOf(OriginId("input") to OriginId("user-input"), OriginId("env") to null),
+            sourceKinds = mapOf(SourceKindId("input") to SourceKindId("user-input"), SourceKindId("env") to null),
         )
 
     private fun model(sections: String): ModelEntry =
         loadModel("- subject:\n    function: f\n" + sections.trimIndent().prependIndent("  ") + "\n")
 
     @Test
-    fun `sink category replaced and discarded sink removed`() {
+    fun `sink vulnerability type replaced and discarded sink removed`() {
         val entry =
             model(
                 """
                 sinks:
                   - port: argument(0)
-                    category: sql
+                    vulnType: sql
                   - port: argument(1)
-                    category: text
+                    vulnType: text
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
@@ -62,13 +62,13 @@ internal class CategoryMappingTest {
     }
 
     @Test
-    fun `sanitizer categories replaced and emptied element removed`() {
+    fun `sanitizer vulnerability types replaced and emptied element removed`() {
         val entry =
             model(
                 """
                 sanitizers:
-                  - categories: [sql, text]
-                  - categories: [text]
+                  - vulnTypes: [sql, text]
+                  - vulnTypes: [text]
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
@@ -76,17 +76,17 @@ internal class CategoryMappingTest {
     }
 
     @Test
-    fun `sanitizer check with a bound stays and a check with only categories is removed`() {
+    fun `sanitizer check with a bound stays and a check with only vulnerability types is removed`() {
         val entry =
             model(
                 """
                 sanitizers:
-                  - categories: [text]
+                  - vulnTypes: [text]
                     check:
                       argument: argument(0)
                       accepts: true
                       within: "[0-9]"
-                  - categories: [text]
+                  - vulnTypes: [text]
                     check:
                       argument: argument(0)
                       accepts: true
@@ -98,24 +98,24 @@ internal class CategoryMappingTest {
     }
 
     @Test
-    fun `source colors replaced and emptied element removed`() {
+    fun `source kinds replaced and emptied element removed`() {
         val entry =
             loadModel(
                 """
                 - subject:
                     variable: ${'$'}_GET
                   sources:
-                    - provenance: [input, env]
-                    - provenance: [env]
+                    - sourceKinds: [input, env]
+                    - sourceKinds: [env]
                 """.trimIndent(),
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
-        assertEquals(listOf(SourceDecl(setOf(OriginId("user-input")))), translated.body.sources)
+        assertEquals(listOf(SourceDecl(setOf(SourceKindId("user-input")))), translated.body.sources)
     }
 
     @Test
     fun `entry emptied without signature is dropped`() {
-        val entry = model("sinks:\n  - port: argument(0)\n    category: text")
+        val entry = model("sinks:\n  - port: argument(0)\n    vulnType: text")
         assertNull(mapping.apply(entry))
     }
 
@@ -131,7 +131,7 @@ internal class CategoryMappingTest {
                   returnType: string
                 sinks:
                   - port: argument(0)
-                    category: text
+                    vulnType: text
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
@@ -150,7 +150,7 @@ internal class CategoryMappingTest {
                     to: return
                 sinks:
                   - port: argument(0)
-                    category: html
+                    vulnType: html
                 """,
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
@@ -161,7 +161,7 @@ internal class CategoryMappingTest {
 
     @Test
     fun `raises passes through`() {
-        val entry = model("raises: [ValueError]\nsinks:\n  - port: argument(0)\n    category: text")
+        val entry = model("raises: [ValueError]\nsinks:\n  - port: argument(0)\n    vulnType: text")
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(setOf(ClassSubject("valueerror")), translated.body.raises)
     }
@@ -170,11 +170,11 @@ internal class CategoryMappingTest {
     fun `policy rows translated and emptied rows dropped`() {
         val rows =
             listOf(
-                PolicyRow(OriginId("input"), setOf(VulnTypeId("sql"), VulnTypeId("text"))),
-                PolicyRow(OriginId("input"), setOf(VulnTypeId("text"))),
-                PolicyRow(OriginId("env"), setOf(VulnTypeId("sql"))),
+                PolicyRow(SourceKindId("input"), setOf(VulnTypeId("sql"), VulnTypeId("text"))),
+                PolicyRow(SourceKindId("input"), setOf(VulnTypeId("text"))),
+                PolicyRow(SourceKindId("env"), setOf(VulnTypeId("sql"))),
             )
-        assertEquals(listOf(PolicyRow(OriginId("user-input"), setOf(VulnTypeId("sqli")))), mapping.apply(rows))
+        assertEquals(listOf(PolicyRow(SourceKindId("user-input"), setOf(VulnTypeId("sqli")))), mapping.apply(rows))
     }
 
     @Test
@@ -195,9 +195,9 @@ internal class CategoryMappingTest {
                   returnType: string
                 sinks:
                   - port: argument(0)
-                    category: sql
+                    vulnType: sql
                 sources:
-                  - provenance: [input]
+                  - sourceKinds: [input]
                     at: argument(2)
                     keys: ["k.*"]
                 """,
@@ -213,24 +213,24 @@ internal class CategoryMappingTest {
     }
 
     @Test
-    fun `category and origin translate directly`() {
-        assertEquals(VulnTypeId("sqli"), mapping.category(VulnTypeId("sql")))
-        assertNull(mapping.category(VulnTypeId("text")))
-        assertEquals(OriginId("user-input"), mapping.origin(OriginId("input")))
-        assertNull(mapping.origin(OriginId("env")))
+    fun `vulnerability type and source kind translate directly`() {
+        assertEquals(VulnTypeId("sqli"), mapping.vulnType(VulnTypeId("sql")))
+        assertNull(mapping.vulnType(VulnTypeId("text")))
+        assertEquals(SourceKindId("user-input"), mapping.sourceKind(SourceKindId("input")))
+        assertNull(mapping.sourceKind(SourceKindId("env")))
     }
 
     @Test
     fun `unlisted name fails`() {
-        val entry = model("sinks:\n  - port: argument(0)\n    category: shell")
+        val entry = model("sinks:\n  - port: argument(0)\n    vulnType: shell")
         val onEntry = assertFailsWith<VocabularyException> { mapping.apply(entry) }
         assertTrue("shell" in onEntry.message.orEmpty(), onEntry.message)
-        val strayOrigin = listOf(PolicyRow(OriginId("remote"), setOf(VulnTypeId("sql"))))
+        val strayOrigin = listOf(PolicyRow(SourceKindId("remote"), setOf(VulnTypeId("sql"))))
         val onRow = assertFailsWith<VocabularyException> { mapping.apply(strayOrigin) }
         assertTrue("remote" in onRow.message.orEmpty(), onRow.message)
-        val strayCategory = listOf(PolicyRow(OriginId("input"), setOf(VulnTypeId("shell"))))
+        val strayCategory = listOf(PolicyRow(SourceKindId("input"), setOf(VulnTypeId("shell"))))
         assertFailsWith<VocabularyException> { mapping.apply(strayCategory) }
-        assertFailsWith<VocabularyException> { mapping.category(VulnTypeId("shell")) }
-        assertFailsWith<VocabularyException> { mapping.origin(OriginId("remote")) }
+        assertFailsWith<VocabularyException> { mapping.vulnType(VulnTypeId("shell")) }
+        assertFailsWith<VocabularyException> { mapping.sourceKind(SourceKindId("remote")) }
     }
 }

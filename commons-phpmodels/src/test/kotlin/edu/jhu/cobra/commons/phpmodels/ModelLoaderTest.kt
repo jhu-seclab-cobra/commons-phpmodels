@@ -17,11 +17,11 @@ import kotlin.test.assertIs
  *   propagation, sinks, and when-condition of one callable entry.
  * - `entries of every subject kind decode` — the seven one-key subject
  *   spellings route to their subtypes.
- * - `sanitizers section decodes to its category sets` — the fifth assertion
+ * - `sanitizers section decodes to its vulnerability type sets` — the fifth assertion
  *   section round-trips through the loader.
  * - `generator keys are rejected` — the retired name/find/where/model form
  *   fails as unknown keys.
- * - `mixed-case category and color references intern lowercased` — the
+ * - `mixed-case vulnerability type and source kind references intern lowercased` — the
  *   Jackson decode path folds identity tokens like the interning path does.
  * - `entry asserting nothing is rejected` — no signature and no section.
  * - `unknown subject kind is rejected` — closed wrapper-key set.
@@ -45,7 +45,7 @@ internal class ModelLoaderTest {
                       to: return
                   sinks:
                     - port: argument(0)
-                      category: sqli
+                      vulnType: sqli
                 """.trimIndent(),
             )
         assertEquals(FunctionSubject("settype"), model.subject)
@@ -86,7 +86,7 @@ internal class ModelLoaderTest {
                 - subject:
                     variable: ${'$'}_GET
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                 """.trimIndent(),
             )
         val subjects = entries.map { assertIs<ModelEntry>(it).subject }
@@ -105,14 +105,14 @@ internal class ModelLoaderTest {
     }
 
     @Test
-    fun `sanitizers section decodes to its category sets`() {
+    fun `sanitizers section decodes to its vulnerability type sets`() {
         val model =
             loadModel(
                 """
                 - subject:
                     function: mysqli_real_escape_string
                   sanitizers:
-                    - categories: [sqli, xss]
+                    - vulnTypes: [sqli, xss]
                 """.trimIndent(),
             )
         assertEquals(
@@ -141,7 +141,7 @@ internal class ModelLoaderTest {
     }
 
     @Test
-    fun `mixed-case category and color references intern lowercased`() {
+    fun `mixed-case vulnerability type and source kind references intern lowercased`() {
         val entries =
             load(
                 """
@@ -149,11 +149,11 @@ internal class ModelLoaderTest {
                     method: mysqli::query
                   sinks:
                     - port: argument(0)
-                      category: SQLI
+                      vulnType: SQLI
                 - subject:
                     variable: ${'$'}_GET
                   sources:
-                    - provenance: [Remote]
+                    - sourceKinds: [Remote]
                 """.trimIndent(),
             )
         assertEquals(
@@ -161,7 +161,7 @@ internal class ModelLoaderTest {
             assertIs<ModelEntry>(entries[0]).body.sinks,
         )
         assertEquals(
-            listOf(SourceDecl(setOf(OriginId("remote")))),
+            listOf(SourceDecl(setOf(SourceKindId("remote")))),
             assertIs<ModelEntry>(entries[1]).body.sources,
         )
     }

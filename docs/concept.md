@@ -12,7 +12,8 @@ third-party fragments — and several consumers read it. Without one shared
 format and one shared validation implementation, each producer/consumer pair
 re-invents both. Without one shared organization of the documents, each
 side also re-invents the loading convention, and a consumer mounting a
-source that names categories on another axis has nowhere to translate them.
+source that spells its vulnerability types and source kinds differently has
+nowhere to translate them.
 
 **System Role.** commons-phpmodels is the format library — it owns the
 model types, the YAML decoding, and the load-time validation of one
@@ -107,29 +108,28 @@ not matter; the entry holds when every listed position carries its value.
   subject's unconditional statement; several entries for one subject are
   alternatives.
 
-**Origin Color** — A named category of untrusted provenance.
+**Source Kind** — A named category of untrusted provenance.
 - Scope: travels with a value along data flow.
 - Relationships: declared in the Vocabulary; produced by sources; mapped by
   the Policy.
 
-**Danger Category** — A named category of vulnerability a sink is sensitive
-to.
+**Vulnerability Type** — A named category of vulnerability a sink is sensitive to.
 - Scope: sink-side only.
 - Relationships: declared in the Vocabulary; named by sinks and sanitizers;
   enabled by the Policy.
 
-**Vocabulary** — The closed, declared sets of origin colors and danger
-categories.
-- Scope: any color or category named anywhere else must be declared here
+**Vocabulary** — The closed, declared sets of source kinds and vulnerability
+types.
+- Scope: any source kind or vulnerability type named anywhere else must be declared here
   first. A second declaration of a name is admitted only when identical to
   the first: two sets can restate a shared name, never silently disagree.
 - Relationships: referenced by every Model and by the Policy; accumulated
   across Document Sets by the consumer that loads them in sequence.
 
-**Policy** — The global mapping from an origin color to the danger categories
+**Policy** — The global mapping from a source kind to the vulnerability types
 it can trigger.
 - Scope: one matrix per analysis.
-- Relationships: relates Origin Colors to Danger Categories; validated
+- Relationships: relates Source Kinds to Vulnerability Types; validated
   against the Vocabulary.
 
 **Document Set** — One source of models as it is stored: a root holding a
@@ -141,9 +141,9 @@ an optional policy, and an optional provenance, under fixed file names.
 - Relationships: contains Models, at most one Vocabulary, one Policy, and
   one Set Provenance; loaded whole; the target of at most one Category Mapping.
 
-**Category Mapping** — A consumer-supplied translation from the danger
-categories and origin colors a Document Set names to the names in the
-consumer's own vocabulary.
+**Category Mapping** — A consumer-supplied translation from the
+vulnerability types and source kinds a Document Set names to the names in
+the consumer's own vocabulary.
 - Scope: total over the set — every name the set uses is either mapped to
   a declared name or explicitly discarded; an unlisted name fails the load.
   A mapped set contributes no vocabulary of its own: its entries reach the
@@ -161,7 +161,7 @@ consumer's own vocabulary.
   build or the consumer's load — never a silent miss. One validation
   implementation and one loading convention serve every caller.
 - **With consumers:** consumers receive only validated typed values.
-  Interned identifiers replace raw color and category names past the load
+  Interned identifiers replace raw source kind and vulnerability type names past the load
   boundary, so a name mismatch cannot occur downstream
   ([design.md](design.md)).
 
@@ -180,7 +180,7 @@ consumer's own vocabulary.
 
 - **Typical — add a sink.** A rule author declares one model naming the
   function, with a sinks section listing the dangerous argument port under a
-  declared danger category. No code change in any consumer.
+  declared vulnerability type. No code change in any consumer.
 - **Boundary — malformed spelling.** An entry spelling a method subject with
   two `::` separators, or a property without its `$`, fails the decode with
   the entry named. The closed grammar admits no guess.
@@ -188,9 +188,9 @@ consumer's own vocabulary.
   signature-only entries for tens of thousands of builtin declarations; the
   decode-and-validate path a consumer uses at runtime validates them at the producer's build.
 - **Interaction — mapped upstream taint set.** A producer publishes a
-  document set whose sinks are categorized by the medium they write to
-  (`sql`, `html`, `shell`). A consumer whose vocabulary names vulnerability
-  classes (`sqli`, `xss`, `cmdi`) mounts the set with a category mapping.
+  document set whose vulnerability types name the medium a sink writes to
+  (`sql`, `html`, `shell`). A consumer whose vulnerability types name the
+  attack (`sqli`, `xss`, `cmdi`) mounts the set with a category mapping.
   The set's entries arrive in the consumer's names; a new upstream medium
   absent from the mapping fails the load instead of vanishing.
 - **Boundary — conflicting redeclaration.** Two sets both declare `sqli`;

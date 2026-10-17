@@ -6,8 +6,8 @@ import java.io.InputStream
 /**
  * Decodes one model document's entries in file order. Construction-time
  * validation runs during the decode; vocabulary interning of the entries'
- * color and category references stays with the caller, which owns the
- * cross-document load order.
+ * source kind and vulnerability type references stays with the caller,
+ * which owns the cross-document load order.
  */
 internal object ModelLoader {
     /**

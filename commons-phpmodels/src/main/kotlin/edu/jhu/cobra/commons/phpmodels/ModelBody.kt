@@ -1,7 +1,6 @@
 package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonProperty
 
 /**
  * One declared flow between two ports of a call.
@@ -145,23 +144,23 @@ public data class CharacterBound(
 }
 
 /**
- * One produced color set of a sources section.
+ * One produced source kind set of a sources section.
  *
- * @property origin Origin colors the produced value carries; YAML key `provenance`.
+ * @property sourceKinds Source kinds the produced value carries.
  * @property at The argument port produced into (a by-reference out-parameter),
  *   or null for the subject kind's default production site.
  * @property keys Key patterns restricting production to matching array keys,
  *   or null when the whole value is produced.
- * @throws IllegalArgumentException If no color is declared, or a declared
+ * @throws IllegalArgumentException If no source kind is declared, or a declared
  *   key-pattern set is empty.
  */
 public data class SourceDecl(
-    @param:JsonProperty("provenance") @get:JsonProperty("provenance") val origin: Set<OriginId>,
+    val sourceKinds: Set<SourceKindId>,
     val at: Port.Argument? = null,
     val keys: List<KeyPattern>? = null,
 ) {
     init {
-        require(origin.isNotEmpty()) { "Sources element declares no origin color" }
+        require(sourceKinds.isNotEmpty()) { "Sources element declares no source kind" }
         require(keys == null || keys.isNotEmpty()) { "Sources element declares an empty key-pattern set" }
     }
 }
@@ -170,11 +169,11 @@ public data class SourceDecl(
  * One dangerously consumed port of a sinks section.
  *
  * @property port The argument port consumed dangerously.
- * @property vulnType The danger category a color reaching [port] enables; YAML key `category`.
+ * @property vulnType The vulnerability type a source kind reaching [port] enables.
  */
 public data class SinkDecl(
     val port: Port.Argument,
-    @param:JsonProperty("category") @get:JsonProperty("category") val vulnType: VulnTypeId,
+    val vulnType: VulnTypeId,
 )
 
 /**

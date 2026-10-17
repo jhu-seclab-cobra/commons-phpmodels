@@ -1,45 +1,46 @@
 package edu.jhu.cobra.commons.phpmodels
 
 /**
- * One policy statement: an origin color and the danger categories it enables.
- * A value carrying [origin] that reaches a sink of a category in [enables] is
- * a vulnerability.
+ * One policy statement: a source kind and the vulnerability types it enables.
+ * A value carrying [sourceKind] that reaches a sink of a vulnerability type in
+ * [enables] is a vulnerability.
  *
- * @property origin Interned origin color the row governs.
- * @property enables Danger categories this origin makes dangerous.
- * @throws IllegalArgumentException If no category is enabled.
+ * @property sourceKind Interned source kind the row governs.
+ * @property enables Vulnerability types this source kind makes dangerous.
+ * @throws IllegalArgumentException If no vulnerability type is enabled.
  */
 public data class PolicyRow(
-    val origin: OriginId,
+    val sourceKind: SourceKindId,
     val enables: Set<VulnTypeId>,
 ) {
     init {
-        require(enables.isNotEmpty()) { "Policy row for '${origin.id}' enables no category" }
+        require(enables.isNotEmpty()) { "Policy row for '${sourceKind.id}' enables no vulnerability type" }
     }
 }
 
 /**
- * The global origin→categories matrix. Answers whether a value of a given
- * origin color reaching a sink of a given danger category is a vulnerability.
- * Rows sharing an origin accumulate (union of enabled categories).
+ * The global source kind → vulnerability types matrix. Answers whether a value
+ * of a given source kind reaching a sink of a given vulnerability type is a
+ * vulnerability. Rows sharing a source kind accumulate (union of enabled
+ * vulnerability types).
  *
  * @param rows Policy statements, validated against the vocabulary at load time.
  */
 public class TaintPolicy(
     rows: List<PolicyRow>,
 ) {
-    private val matrix: Map<OriginId, Set<VulnTypeId>> =
-        rows.groupingBy { it.origin }.fold(emptySet()) { acc, row -> acc + row.enables }
+    private val matrix: Map<SourceKindId, Set<VulnTypeId>> =
+        rows.groupingBy { it.sourceKind }.fold(emptySet()) { acc, row -> acc + row.enables }
 
     /**
-     * Reports whether [color] reaching a sink of [category] is a vulnerability.
+     * Reports whether [sourceKind] reaching a sink of [vulnType] is a vulnerability.
      *
-     * @param color Origin color arriving at the sink.
-     * @param category Danger category of the sink.
-     * @return True when the matrix enables [category] for [color].
+     * @param sourceKind Source kind arriving at the sink.
+     * @param vulnType Vulnerability type of the sink.
+     * @return True when the matrix enables [vulnType] for [sourceKind].
      */
     public fun isDangerous(
-        color: OriginId,
-        category: VulnTypeId,
-    ): Boolean = matrix[color]?.contains(category) == true
+        sourceKind: SourceKindId,
+        vulnType: VulnTypeId,
+    ): Boolean = matrix[sourceKind]?.contains(vulnType) == true
 }

@@ -6,7 +6,7 @@ import java.io.InputStream
 /** The two declared sections of a vocabulary document, as written in the file. */
 internal data class VocabularyFile(
     val vulnTypes: List<VocabularyEntry>,
-    val provenances: List<VocabularyEntry>,
+    val sourceKinds: List<VocabularyEntry>,
 )
 
 /** One declared term of either section, before its name is interned. */
@@ -16,7 +16,7 @@ internal data class VocabularyEntry(
 )
 
 /**
- * Decodes the two-axis [Vocabulary] — danger categories and origin colors —
+ * Decodes the two-axis [Vocabulary] — vulnerability types and source kinds —
  * from a YAML document. Where the document lives — classpath resource, file,
  * artifact — is the caller's value placement, not this library's.
  */
@@ -25,17 +25,17 @@ internal object VocabularyLoader {
      * Parses a vocabulary document into a [Vocabulary].
      *
      * @param input The document content; consumed by the decode, not closed.
-     * @return The declared danger categories and origin colors, keyed by interned identity.
+     * @return The declared vulnerability types and source kinds, keyed by interned identity.
      * @throws IllegalArgumentException If an entry is malformed or carries a stray key.
      * @throws VocabularyException If a name repeats within a section.
      */
     fun load(input: InputStream): Vocabulary {
         val file = ModelYaml.decode(input, jacksonTypeRef<VocabularyFile>())
         val vulnTypes = file.vulnTypes.declaredBy("vulnTypes") { VulnTypeId(it.name) }
-        val origins = file.provenances.declaredBy("provenances") { OriginId(it.name) }
+        val sourceKinds = file.sourceKinds.declaredBy("sourceKinds") { SourceKindId(it.name) }
         return Vocabulary(
             vulnTypes = vulnTypes.mapValues { (id, entry) -> VulnTypeDecl(id, entry.description) },
-            origins = origins.mapValues { (id, entry) -> OriginDecl(id, entry.description) },
+            sourceKinds = sourceKinds.mapValues { (id, entry) -> SourceKindDecl(id, entry.description) },
         )
     }
 

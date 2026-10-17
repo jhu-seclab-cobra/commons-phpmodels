@@ -4,42 +4,43 @@ package edu.jhu.cobra.commons.phpmodels
  * One translation table over both vocabulary axes, applied to a document
  * set whose names are not the consumer's. A `null` target discards the
  * source name: the element naming it is dropped rather than renamed.
- * Translation touches only category and color names; subject, ports,
- * conditions, signatures, and value units pass through unchanged.
+ * Translation touches only vulnerability type and source kind names;
+ * subject, ports, conditions, signatures, and value units pass through
+ * unchanged.
  *
  * Whether each target is declared is checked at load against the
  * accumulated vocabulary ([DocumentSetLoader]); the table alone does not
  * know the consumer's vocabulary.
  *
- * @property categories Source category to target category, or null to discard.
- * @property origins Source color to target color, or null to discard.
+ * @property vulnTypes Mapped-set vulnerability type to the consumer's, or null to discard.
+ * @property sourceKinds Mapped-set source kind to the consumer's, or null to discard.
  */
 public data class CategoryMapping(
-    val categories: Map<VulnTypeId, VulnTypeId?>,
-    val origins: Map<OriginId, OriginId?>,
+    val vulnTypes: Map<VulnTypeId, VulnTypeId?>,
+    val sourceKinds: Map<SourceKindId, SourceKindId?>,
 ) {
     /**
-     * Translates one category name.
+     * Translates one vulnerability type name.
      *
-     * @param source A category name of the mapped set.
+     * @param source A vulnerability type name of the mapped set.
      * @return The consumer's name, or null when [source] is discarded.
      * @throws VocabularyException If [source] is unlisted.
      */
-    public fun category(source: VulnTypeId): VulnTypeId? {
-        if (source !in categories) throw unmapped("category", source.id)
-        return categories[source]
+    public fun vulnType(source: VulnTypeId): VulnTypeId? {
+        if (source !in vulnTypes) throw unmapped("vulnerability type", source.id)
+        return vulnTypes[source]
     }
 
     /**
-     * Translates one origin-color name.
+     * Translates one source kind name.
      *
-     * @param source A color name of the mapped set.
+     * @param source A source kind name of the mapped set.
      * @return The consumer's name, or null when [source] is discarded.
      * @throws VocabularyException If [source] is unlisted.
      */
-    public fun origin(source: OriginId): OriginId? {
-        if (source !in origins) throw unmapped("origin", source.id)
-        return origins[source]
+    public fun sourceKind(source: SourceKindId): SourceKindId? {
+        if (source !in sourceKinds) throw unmapped("source kind", source.id)
+        return sourceKinds[source]
     }
 
     /**
@@ -59,15 +60,15 @@ public data class CategoryMapping(
      * Translates policy rows.
      *
      * @param rows Rows in the mapped set's names.
-     * @return Rows in the consumer's names; a row whose origin is discarded
+     * @return Rows in the consumer's names; a row whose source kind is discarded
      *   or whose enabled set empties is dropped.
      * @throws VocabularyException If a referenced name is unlisted.
      */
     public fun apply(rows: List<PolicyRow>): List<PolicyRow> =
         rows.mapNotNull { row ->
-            val origin = origin(row.origin) ?: return@mapNotNull null
-            val enables = row.enables.mapNotNull(::category).toSet()
-            if (enables.isEmpty()) null else PolicyRow(origin, enables)
+            val sourceKind = sourceKind(row.sourceKind) ?: return@mapNotNull null
+            val enables = row.enables.mapNotNull(::vulnType).toSet()
+            if (enables.isEmpty()) null else PolicyRow(sourceKind, enables)
         }
 
     private fun apply(body: ModelBody): ModelBody =
@@ -82,17 +83,17 @@ public data class CategoryMapping(
         )
 
     private fun apply(source: SourceDecl): SourceDecl? {
-        val colors = source.origin.mapNotNull(::origin).toSet()
-        return if (colors.isEmpty()) null else source.copy(origin = colors)
+        val sourceKinds = source.sourceKinds.mapNotNull(::sourceKind).toSet()
+        return if (sourceKinds.isEmpty()) null else source.copy(sourceKinds = sourceKinds)
     }
 
-    private fun apply(sink: SinkDecl): SinkDecl? = category(sink.vulnType)?.let { sink.copy(vulnType = it) }
+    private fun apply(sink: SinkDecl): SinkDecl? = vulnType(sink.vulnType)?.let { sink.copy(vulnType = it) }
 
-    // A check element bounding its argument by a class or a type set outlives its categories.
+    // A check element bounding its argument by a class or a type set outlives its vulnerability types.
     private fun apply(sanitizer: SanitizerDecl): SanitizerDecl? {
-        val categories = sanitizer.categories.mapNotNull(::category).toSet()
-        val emptied = categories.isEmpty() && sanitizer.check?.statesBound != true
-        return if (emptied) null else sanitizer.copy(categories = categories)
+        val vulnTypes = sanitizer.vulnTypes.mapNotNull(::vulnType).toSet()
+        val emptied = vulnTypes.isEmpty() && sanitizer.check?.statesBound != true
+        return if (emptied) null else sanitizer.copy(vulnTypes = vulnTypes)
     }
 
     private fun unmapped(

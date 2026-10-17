@@ -166,7 +166,7 @@ internal class ModelEntrySignatureTest {
                   signature:
                     type: array
                   sources:
-                    - provenance: [remote]
+                    - sourceKinds: [remote]
                 """.trimIndent(),
             )
         }
