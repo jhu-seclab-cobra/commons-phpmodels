@@ -8,13 +8,16 @@ decoder: [design.md](design.md). Ports and propagations:
 ## Design Overview
 
 - **Classes:** `ModelBody`, `ValueUnit`, `CharacterBound`,
-  `CharacterClass`, `SourceDecl`, `KeyPattern`, `SinkDecl`, `SanitizerDecl`
-  (data classes)
+  `CharacterClass`, `SourceDecl`, `KeyPattern`, `SinkDecl`, `SanitizerDecl`,
+  `ArgumentCheck` (data classes)
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
   `CharacterBound` contains optional `Port.Argument`s and an optional
   `CharacterClass`; `SinkDecl` contains one `Port.Argument` and one
-  `VulnClassId`; `SourceDecl` contains an optional `Port.Argument` site
+  `VulnClassId`; `SanitizerDecl` contains `VulnClassId`s and an optional
+  `ArgumentCheck`, which contains one `Port.Argument`, one `IPrimitiveVal`,
+  an optional `CharacterClass` and an optional `DeclaredType`;
+  `SourceDecl` contains an optional `Port.Argument` site
   override and optional `KeyPattern`s; `ValueUnit` is built from a
   `ModelBody`. All arrows one-way into the data types.
 - **Exceptions:** `IllegalArgumentException` from `init` blocks and
@@ -55,8 +58,27 @@ case-sensitive match, never a substring match.
 **Responsibility:** One element of the sinks / sanitizers sections:
 `SinkDecl(port: Port.Argument, vulnClass: VulnClassId)` — one dangerously
 consumed argument port under one category (YAML key `category:`);
-`SanitizerDecl(categories: Set<VulnClassId>)` — a non-empty neutralized
-category set.
+`SanitizerDecl(categories: Set<VulnClassId> = emptySet(), check:
+ArgumentCheck? = null)` — the neutralized category set of the call result,
+or, with a check, of the argument the call accepts (agent decision CK-1,
+[model.md](model.md)).
+
+**Validation (`init`):** without a check, `categories` non-empty; with a
+check, `categories`, `check.within`, or `check.types` declared.
+
+### ArgumentCheck
+
+**Responsibility:** The check of one sanitizers element: `argument:
+Port.Argument` — the checked port; `accepts: IPrimitiveVal` — the result
+value that accepts the argument; `within: CharacterClass?` — the class
+every byte of the accepted argument belongs to; `types: DeclaredType?` —
+the type set the call accepts exactly. YAML: `check: {argument:
+argument(0), accepts: true, within: "[0-9]"}`.
+
+**Validation (creator, `init`):** `accepts` present and a scalar, read
+as a condition scalar is ([impl.md](impl.md)); `types` is not `void`.
+That `argument` lies inside the signature is entry-level validation
+([design-entries.md](design-entries.md)).
 
 ### CharacterBound
 

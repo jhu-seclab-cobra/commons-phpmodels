@@ -17,6 +17,8 @@ import kotlin.test.assertFailsWith
  *   no bound.
  * - `source site beyond the declared parameter list is rejected` — the
  *   arity bound covers the source `at` port too.
+ * - `checked port beyond the declared parameter list is rejected` — the
+ *   arity bound covers a sanitizers check's argument port too.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
  */
@@ -128,6 +130,28 @@ internal class ModelEntryArityTest {
                   sources:
                     - provenance: [remote]
                       at: argument(1)
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `checked port beyond the declared parameter list is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: ctype_digit
+                  signature:
+                    params:
+                      - name: text
+                        type: mixed
+                    returnType: bool
+                  sanitizers:
+                    - check:
+                        argument: argument(1)
+                        accepts: true
+                        within: "[0-9]"
                 """.trimIndent(),
             )
         }

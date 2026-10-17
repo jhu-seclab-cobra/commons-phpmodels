@@ -88,9 +88,11 @@ public data class CategoryMapping(
 
     private fun apply(sink: SinkDecl): SinkDecl? = category(sink.vulnClass)?.let { sink.copy(vulnClass = it) }
 
+    // A check element bounding its argument by a class or a type set outlives its categories.
     private fun apply(sanitizer: SanitizerDecl): SanitizerDecl? {
         val categories = sanitizer.categories.mapNotNull(::category).toSet()
-        return if (categories.isEmpty()) null else sanitizer.copy(categories = categories)
+        val emptied = categories.isEmpty() && sanitizer.check?.statesBound != true
+        return if (emptied) null else sanitizer.copy(categories = categories)
     }
 
     private fun unmapped(

@@ -84,7 +84,7 @@ Vocabulary, Policy, Origin Color, Danger Category: [model.md](model.md).
 | Element | Mapped name | Discarded name | Unlisted name |
 |---------|-------------|----------------|---------------|
 | sink element | category replaced | element removed | load failure |
-| sanitizer element | category replaced | category removed; an emptied element is removed | load failure |
+| sanitizer element | category replaced | category removed; an element left with no category and no other statement of its check is removed | load failure |
 | source element | color replaced | color removed; an emptied element is removed | load failure |
 | policy row | origin and categories replaced | row or category removed; an emptied row is removed | load failure |
 

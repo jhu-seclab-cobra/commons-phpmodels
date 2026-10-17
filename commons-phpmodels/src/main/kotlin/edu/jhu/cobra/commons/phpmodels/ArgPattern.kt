@@ -2,12 +2,7 @@ package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.databind.JsonNode
-import edu.jhu.cobra.commons.value.BoolVal
-import edu.jhu.cobra.commons.value.FloatVal
 import edu.jhu.cobra.commons.value.IPrimitiveVal
-import edu.jhu.cobra.commons.value.IntVal
-import edu.jhu.cobra.commons.value.NullVal
-import edu.jhu.cobra.commons.value.StrVal
 import edu.jhu.cobra.commons.value.Unsure
 
 /**
@@ -68,14 +63,6 @@ public data class ArgPattern(
         internal fun decode(elements: List<JsonNode>): ArgPattern = ArgPattern(elements.map(::scalarOf))
 
         private fun scalarOf(node: JsonNode): IPrimitiveVal? =
-            when {
-                node.isTextual && node.textValue() == WILDCARD -> null
-                node.isBoolean -> BoolVal(node.booleanValue())
-                node.isIntegralNumber && node.canConvertToLong() -> IntVal(node.longValue())
-                node.isNumber -> FloatVal(node.doubleValue())
-                node.isNull -> NullVal
-                node.isTextual -> StrVal(node.textValue())
-                else -> throw IllegalArgumentException("Condition element must be a scalar or '_', got: $node")
-            }
+            if (node.isTextual && node.textValue() == WILDCARD) null else node.toPhpScalar("Condition element")
     }
 }

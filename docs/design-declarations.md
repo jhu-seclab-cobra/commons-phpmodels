@@ -60,7 +60,7 @@ caller.
 
 - Arity: every argument position the entry names — the condition's
   non-wildcard positions, both propagation sides, sink ports, explicit
-  source sites — lies inside the parameter list. Exception: a variadic last parameter admits every
+  source sites, checked ports — lies inside the parameter list. Exception: a variadic last parameter admits every
   position. An entry without a signature is not arity-checked.
 - Write direction: every written-into argument port — a propagation `to:`
   side, a source element's explicit site — names a by-reference parameter.

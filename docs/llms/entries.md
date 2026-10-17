@@ -25,7 +25,8 @@ for (entry in set.entries) {
 - **`SourceDecl(origin: Set<OriginId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced color set (YAML key `provenance`); optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
 - **`KeyPattern(pattern: String)`** — Regex over array keys, matched entire-key and case-sensitively; `matches(key: String): Boolean`. Decoded from a bare string scalar.
 - **`SinkDecl(port: Port.Argument, vulnClass: VulnClassId)`** — One dangerously consumed argument under one category (YAML key `category`).
-- **`SanitizerDecl(categories: Set<VulnClassId>)`** — Non-empty neutralized category set.
+- **`SanitizerDecl(categories: Set<VulnClassId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized category set of the result (non-empty without a check), or of the argument a check accepts.
+- **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's categories and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
 - **`ReturnKind`** — Enum `STR`, `NUM`, `BOOL`, `ANY`; `join(other: ReturnKind): ReturnKind` gives itself when equal, `ANY` otherwise.
 
 ## Configuration

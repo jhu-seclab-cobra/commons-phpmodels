@@ -64,8 +64,12 @@ category mapping: [model-sets.md](model-sets.md).
     key patterns mean the whole value.
   - *sinks* — each element names one argument port consumed under one Danger
     Category.
-  - *sanitizers* — the subject neutralizes one or more Danger Categories; it
-    still carries its input value to its result.
+  - *sanitizers* — each element neutralizes Danger Categories in the call
+    result, which still carries its input value, or is a *check* (agent
+    decision CK-1): one argument port and the result value accepting it,
+    with the categories the accepted argument is free of, the Character
+    Class its bytes belong to, or the type set it holds; a type set also
+    rules out the accepting value for an argument of any other type.
   - *raises* — the set of exception classes the subject's own
     implementation may throw. It excludes three kinds of throw, each decided
     elsewhere: binding the arguments to the declared parameters (the
@@ -80,9 +84,8 @@ category mapping: [model-sets.md](model-sets.md).
   production site. Satisfied only when the entire key matches,
   case-sensitively — array keys are runtime data, not identifiers, so no
   case folding applies.
-- **Character Class** — A regular expression matched against one byte read
-  as one Latin-1 character; the class holds every byte it matches: `[^/]`,
-  `[0-9a-f]`.
+- **Character Class** — A regular expression matched against one byte read as one
+  Latin-1 character; the class holds every byte it matches: `[^/]`, `[0-9a-f]`.
 - **Policy** — The global relation from each Origin Color to the set of
   Danger Categories it can trigger. One instance for the whole analysis.
   Rows sharing an origin accumulate (union of enabled categories).
@@ -107,7 +110,7 @@ itself an effect.
 | Model (sources) | Origin Color | produces | M:N | The source introduces these colors at its production site |
 | Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
 | Model (sinks) | Port × Danger Category | consumes under | N:M | The named argument port is sensitive to that category |
-| Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value |
+| Model (sanitizers) | Danger Category | neutralizes | M:N | Danger removed for these categories from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
 | Model (raises) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
 | Policy | Origin Color × Danger Category | enables | M:N | This color reaching a sink of this category is a vulnerability |
 | Model / Policy | Vocabulary | references | N:1 | Every named color/category must be declared in the vocabulary |
@@ -128,9 +131,8 @@ model, driven by the declarations defined here.
 
 ## Invariants
 
-- Each model identifies exactly one subject, and declares at least one
-  section. A field outside a section's closed set is a load failure, not an
-  ignored key.
+- Each model identifies exactly one subject, and declares at least one section. A
+  field outside a section's closed set is a load failure, not an ignored key.
 - Each model declares exactly one subject kind. The subject kind fixes the
   identity fields exactly.
 - The port set is closed: *argument(n)* with n ≥ 0, *this*, *return*,
@@ -163,10 +165,12 @@ model, driven by the declarations defined here.
   variable — admits only the *sources* section.
 - A sources section produces a non-empty color set. A sinks section is
   non-empty and each element names one argument port and one category. A
-  sanitizers section neutralizes a non-empty category set. A raises section
-  is the one section a declared empty value is a statement of: no class,
-  distinct from the absent section, which asserts nothing. Each raises
-  element is a class name, spelled and folded as a class subject.
+  sanitizers element names a non-empty category set, or a check: one
+  argument port, a scalar accepting value, and categories, a class, or a
+  type set other than `void`. A raises section is the one section a
+  declared empty value is a statement of: no class, distinct from the
+  absent section, which asserts nothing. Each raises element is a class
+  name, spelled and folded as a class subject.
 - A source element's explicit production site is an argument port of a
   callable subject: explicit *return* is a load failure (the default
   already states it), and a non-callable subject admits no explicit site.

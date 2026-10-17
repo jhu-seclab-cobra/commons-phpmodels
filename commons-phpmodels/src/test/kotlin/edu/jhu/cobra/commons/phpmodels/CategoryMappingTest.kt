@@ -1,5 +1,6 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import edu.jhu.cobra.commons.value.BoolVal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -12,6 +13,9 @@ import kotlin.test.assertTrue
  *
  * - `sink …`, `sanitizer …`, `source …` — mapped name replaced, discarded
  *   name removed, emptied element removed.
+ * - `sanitizer check …` — a check element bounding its argument by a class
+ *   or a type set stays when its categories empty; one stating only
+ *   categories is removed.
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
  * - `value units pass through` — returns and propagation are untouched.
@@ -69,6 +73,28 @@ internal class CategoryMappingTest {
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(listOf(SanitizerDecl(setOf(VulnClassId("sqli")))), translated.body.sanitizers)
+    }
+
+    @Test
+    fun `sanitizer check with a bound stays and a check with only categories is removed`() {
+        val entry =
+            model(
+                """
+                sanitizers:
+                  - categories: [text]
+                    check:
+                      argument: argument(0)
+                      accepts: true
+                      within: "[0-9]"
+                  - categories: [text]
+                    check:
+                      argument: argument(0)
+                      accepts: true
+                """,
+            )
+        val translated = assertIs<ModelEntry>(mapping.apply(entry))
+        val check = ArgumentCheck(Port.Argument(0), BoolVal(true), CharacterClass("[0-9]"))
+        assertEquals(listOf(SanitizerDecl(emptySet(), check)), translated.body.sanitizers)
     }
 
     @Test

@@ -178,20 +178,6 @@ public data class SinkDecl(
 )
 
 /**
- * One neutralized category set of a sanitizers section.
- *
- * @property categories Danger categories neutralized for values passing through.
- * @throws IllegalArgumentException If no category is declared.
- */
-public data class SanitizerDecl(
-    val categories: Set<VulnClassId>,
-) {
-    init {
-        require(categories.isNotEmpty()) { "Sanitizers element declares no category" }
-    }
-}
-
-/**
  * The sectioned statement of one model: seven optional assertion sections.
  *
  * `returns`, `propagation`, and `characters` form one value unit:

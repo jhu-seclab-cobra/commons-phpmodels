@@ -40,7 +40,7 @@ before decoding.
 `getEvent()` until `StreamEndEvent` — the pre-decode event scan.
 `YAMLException` from the scan is wrapped like a decode failure.
 
-**[jackson]** Unquoted condition scalars carry YAML 1.1 semantics (probe
+**[jackson]** Unquoted condition and accepting-value scalars carry YAML 1.1 semantics (probe
 2026-09-08 on a `List<JsonNode>` creator): `no` decodes as boolean
 `false`, `017` as integer 15, `0x1F` as 31, `.inf` fails at parse
 ("Malformed numeric value"), `_` and `x` as text, `null` and `~` as a null
@@ -134,7 +134,8 @@ opener's resources are released regardless of the decode outcome.
 | Malformed port string (creator throws `IllegalArgumentException`) | Rejected at decode | `ValueInstantiationException` |
 | Synonym port-pair spellings | All four spellings (`from`/`input`/`to`/`output`) as nullable creator parameters; a require-exactly-one check per side | `ValueInstantiationException` on a doubled or missing side |
 | `@JsonAlias` for the synonym pair | Unusable: a mapping naming both spellings decodes silently, later key overwriting the earlier | — (silent) |
-| Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the condition scalar shapes, any other shape throws in the creator | `ValueInstantiationException` |
+| Creator parameter typed `JsonNode` | Receives the raw tree; `isBoolean`/`isIntegralNumber`/`isTextual` narrow the scalar shapes of a condition element and of a check's accepting value through one reader, any other shape throws in the creator | `ValueInstantiationException` |
+| Non-null `JsonNode` creator parameter (`ArgumentCheck.accepts`) | An explicit YAML `null` arrives as a `NullNode` and reads as the null scalar; an absent key fails as a missing creator parameter (`ArgumentCheckTest`) | `MismatchedInputException` |
 | Integral node wider than `Long` | `isIntegralNumber` is true for a `BigInteger` node and `longValue()` silently wraps — `canConvertToLong()` gates the narrowing; out-of-range throws in the creator | `ValueInstantiationException` |
 | Optional `when` field (`@JsonProperty("when")`, nullable `ArgPattern`) on the entry creator | Decodes a sequence when present, stays null when absent | — |
 | `ArgPattern` `init` failure (empty sequence, all wildcards, nested sequence or mapping element) | Rejected at decode | `ValueInstantiationException` |

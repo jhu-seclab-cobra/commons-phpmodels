@@ -119,6 +119,7 @@ public data class ModelEntry(
                 (pair.to as? Port.Argument)?.let(::add)
             }
             body.sinks?.forEach { add(it.port) }
+            body.sanitizers?.forEach { sanitizer -> sanitizer.check?.argument?.let(::add) }
             body.sources?.forEach { source -> source.at?.let(::add) }
         }
 
