@@ -57,8 +57,9 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 - `signature` subtype matches the subject kind
   ([design-declarations.md](design-declarations.md)).
 - A declared `CallableSignature` constrains every argument position the
-  entry names — propagation sides, sink ports, explicit source sites, and
-  the condition's non-wildcard positions — to the parameter list, with the
+  entry names — propagation sides, the callable position of a callback
+  port, sink ports, explicit source sites, and the condition's
+  non-wildcard positions — to the parameter list, with the
   write-direction and `void` rules of
   [design-declarations.md](design-declarations.md).
 - Explicit `returns` beside a `CallableSignature` is rejected (one fact, one

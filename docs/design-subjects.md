@@ -89,14 +89,18 @@ never less.
 ### Port (sealed)
 
 **Responsibility:** One explicitly named location in a call, decoded from
-the string spellings `argument(n)`, `this`, and `return`. No bare integer
-and no sentinel value exists anywhere in the port vocabulary.
+the string spellings `argument(n)`, `this`, `return`,
+`callback(argument(n)).parameter(m)` and `callback(argument(n)).return`. No
+bare integer and no sentinel value exists anywhere in the port vocabulary.
 
 **Subtypes:** `Argument(position: Int)` — `position >= 0`; `Receiver`
-(object, spelling `this`); `Return` (object). The sealed sub-interface
-`Port.Input` marks the ports a call supplies values through (`Argument`,
-`Receiver`), so a from-side field is input-typed instead of
-runtime-checked. `Port.Argument.parseArgument(raw: String): Argument` and
+(object, spelling `this`); `Return` (object);
+`CallbackParameter(callable: Int, position: Int)` — both `>= 0`, a to-port
+only; `CallbackReturn(callable: Int)` — `callable >= 0`. The sealed
+sub-interface `Port.Input` marks the ports a call reads values from
+(`Argument`, `Receiver`, `CallbackReturn`), so a from-side field is
+input-typed instead of runtime-checked.
+`Port.Argument.parseArgument(raw: String): Argument` and
 `Port.Input.parseInput(raw: String): Input` are the narrowing creators (a
 field typed as a subtype does not consult the supertype's creator,
 [impl.md](impl.md)).
@@ -104,10 +108,7 @@ field typed as a subtype does not consult the supertype's creator,
 **Methods:** companion `parse(raw: String): Port` — the decode entry point;
 `IllegalArgumentException` on any other spelling.
 
-**Open gap:** no subtype holds a callback port. The decided spellings
-`callback(argument(n)).parameter(m)` (a to-port only) and
-`callback(argument(n)).return` (a `Port.Input`) are in
-[model.md](model.md) Port.
+The ports and the position a subject calls: [model.md](model.md) Port.
 
 ### Propagation
 

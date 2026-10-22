@@ -23,17 +23,17 @@ vocabulary mapping: [model-sets.md](model-sets.md).
   *function* and *method*; only they admit calls, ports, and conditions.
 - **Port** — An explicitly named location in a call to a callable subject:
   *argument(n)* with n ≥ 0, *this* — the receiver of a call to a method —
-  *return*, or a *callback port* (user decision 2026-09-27):
-  *callback(argument(n)).parameter(m)* with m ≥ 0 — the m-th argument the
-  subject passes when it calls the callable supplied at *argument(n)* — or
-  *callback(argument(n)).return* — the value that call returns. The closed
-  set of positional references; no other location exists. The *input
-  ports* — arguments, the receiver, and callback returns — are the ports
-  values enter the subject through; *return* and callback parameters are
-  never input ports. Undecided: a flow into a callback parameter carries the
-  whole value at its from-port; binding each element of an array argument
-  (`array_map`) or shifting a variadic tail (`call_user_func`) has no port
-  spelling.
+  *return*, or a *callback port*: *callback(argument(n)).parameter(m)*
+  with m ≥ 0 — the m-th argument the subject passes when it calls the
+  callable supplied at *argument(n)* — or *callback(argument(n)).return* —
+  the value that call returns. The closed set of positional references; no
+  other location exists. The *input ports* — arguments, the receiver, and
+  callback returns — are the ports values enter the subject through;
+  *return* and callback parameters are never input ports. A subject calls
+  exactly the positions its callback ports name; a callable-typed parameter no callback port names is only
+  inspected or stored (`is_callable`) and forwards nothing. A flow into a
+  callback parameter carries the whole value at its from-port; binding
+  each array element or shifting a variadic tail has no spelling.
 - **Model** — The single declarative statement attached to one Matching
   Subject. Composed of sections; existence condition: at least one section
   present. An entry may carry a Condition, making it one alternative of
@@ -138,7 +138,7 @@ model, driven by the declarations defined here.
 - The port set is closed: *argument(n)* with n ≥ 0, *this*, *return*,
   *callback(argument(n)).parameter(m)*, or *callback(argument(n)).return*
   with n, m ≥ 0. Any other port name, and any bare integer position, is a
-  load failure. Open gap: the decoder admits no callback port.
+  load failure.
 - The receiver port *this* exists only in a call to a method subject: a
   model for any other subject naming it, in any section, is a load failure.
 - A propagation's from-port is an input port; its to-port is any different
