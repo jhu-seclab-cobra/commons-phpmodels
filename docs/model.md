@@ -12,7 +12,7 @@ vocabulary mapping: [model-sets.md](model-sets.md).
   lowercased. Carries a human description.
 - **Vulnerability Type** — A declared category of vulnerability. Existence
   condition: declared in the vocabulary. Identity is its declared name,
-  lowercased. Sink-side only.
+  lowercased. Sink-side only. Tokenizer language: [model-tokenizer.md](model-tokenizer.md).
 - **Vocabulary** — The two closed sets: all declared Source Kinds and all
   declared Vulnerability Types. Every source kind or vulnerability type
   referenced by a policy row or a model must belong to it. Sole authority for what names exist.

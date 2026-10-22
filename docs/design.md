@@ -6,7 +6,8 @@ single-document loaders. The sectioned model body:
 [design-subjects.md](design-subjects.md).
 The entry form: [design-entries.md](design-entries.md). Conditions:
 [design-conditions.md](design-conditions.md). Signatures:
-[design-declarations.md](design-declarations.md). Document sets and
+[design-declarations.md](design-declarations.md). The tokenizer language:
+[design-tokenizer.md](design-tokenizer.md). Document sets and
 vocabulary mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
@@ -52,7 +53,9 @@ downstream. Decode from the bare scalar.
 
 **Responsibility:** One declared vocabulary entry: interned identity plus a
 human description that self-documents the file and enriches the
-undeclared-reference error message.
+undeclared-reference error message. `VulnTypeDecl` also holds an optional
+`tokenizer: TokenizerLanguage?` ([design-tokenizer.md](design-tokenizer.md));
+`SourceKindDecl` holds none.
 
 ### Vocabulary
 
@@ -101,7 +104,8 @@ Jackson type crosses the API.
 a single document, so the set loader is the only place these run.
 
 **Methods:**
-- `VocabularyLoader.load(input): Vocabulary` — interns names; a repeated
+- `VocabularyLoader.load(input): Vocabulary` — interns names and keeps a
+  vulnerability type's `tokenizer`; a repeated
   name within a section is a `VocabularyException` (one of the two
   declarations would be lost).
 - `PolicyLoader.load(input, vocabulary): List<PolicyRow>` — validates every
