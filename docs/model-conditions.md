@@ -81,6 +81,13 @@ describes the subject with defaulted arguments.
 - **Entry ≡ complete model.** No section of one entry leaks into another:
   a consumer that attributes a call to an entry reads every unit from that
   entry, never from a sibling.
+- **Join of value units.** A call whose conditional entries are not all
+  decided has every candidate's value unit in force. The join of two value
+  units holds the union of their returns classifications and of their
+  flows, and the characters bound only when both declare it identically;
+  a call's returns is then a non-empty set of classifications, not one
+  (`print_r($v, $flag)` returns the string when `$flag` is true and `true`
+  otherwise, so an unknown `$flag` gives string and boolean).
 - **Merging is downstream.** Which entry is in force per (subject,
   condition, override unit) when several document sets state one subject
   is decided by the consumer that merges sets, by set provenance rank

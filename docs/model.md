@@ -43,7 +43,8 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     different port of the same call. Together with *returns* it
     forms the **value unit**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
-    without *returns* does not exist.
+    without *returns* does not exist. A unit holds a non-empty set of
+    classifications; its join: [model-conditions.md](model-conditions.md).
   - *characters* (agent decision CH-1) — the bytes the call result may
     hold: only bytes of the listed argument ports (*of*), only bytes of one
     Character Class (*within*), or both, each bound narrowing the other.
@@ -160,9 +161,8 @@ model, driven by the declarations defined here.
 - Every regular expression of a model, a Key Pattern or a Character Class,
   follows the one dialect [impl.md](impl.md) names.
 - The *returns*, *propagation*, *characters*, and *throws* sections are declared only for
-  callable subjects. A class subject declares no assertion section. Every other
-  non-callable kind — constant, class constant, property, predefined
-  variable — admits only the *sources* section.
+  callable subjects. A class subject declares no assertion section. Every other non-callable
+  kind — constant, class constant, property, predefined variable — admits only *sources*.
 - A sources section produces a non-empty source kind set. A sinks section
   is non-empty and each element names one argument port and one
   vulnerability type. A sanitizers element names a non-empty vulnerability

@@ -131,11 +131,19 @@ each `characters.of` port is the from-port of a declared flow into
 
 ### ValueUnit
 
-**Responsibility:** The value unit a lookup serves: the returns
-classification, the exhaustive propagation set, and `characters:
-CharacterBound?`. An absent propagation section in the declaring body
-becomes the empty list — no flow, not unknown flow; an absent characters
-section stays null — no bound.
+**Responsibility:** The value unit a lookup serves: the set of returns
+classifications (`returns: Set<ReturnKind>`, never empty), the exhaustive
+propagation set, and `characters: CharacterBound?`. A body declares one
+classification, so `ValueUnit(returns: ReturnKind, ...)` builds the unit of
+that one kind; the set grows only through `join`. An absent propagation
+section in the declaring body becomes the empty list — no flow, not unknown
+flow; an absent characters section stays null — no bound.
+
+**Validation (`init`):** the classification set is non-empty.
+
+**Methods:** `fun join(other: ValueUnit): ValueUnit` — the union of the
+classifications, the distinct flows of both (this unit's first), and the
+characters bound when both units carry equal bounds, else null.
 
 ### ReturnKind
 
