@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonCreator
  * all four arrive as nullable creator parameters because a Jackson alias would
  * let a pair naming both spellings of one side decode silently (impl.md).
  *
- * @property from The input port the data leaves: an argument or the receiver.
+ * @property from The input port the data leaves: an argument, the receiver, or
+ *   a callback return.
  * @property to The port the data reaches: the result, or a different port.
  * @throws IllegalArgumentException If a side is missing or doubled, or the flow
  *   targets its own source port.

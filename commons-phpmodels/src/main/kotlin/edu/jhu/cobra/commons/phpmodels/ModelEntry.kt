@@ -91,7 +91,20 @@ public data class ModelEntry(
         require(beyond == null) {
             "Entry for $subject names $beyond beyond its $limit-parameter signature"
         }
+        val beyondCallable = calledPositions().firstOrNull { it >= limit }
+        require(beyondCallable == null) {
+            "Entry for $subject calls argument($beyondCallable) beyond its $limit-parameter signature"
+        }
     }
+
+    // The argument position of the callable each callback port names.
+    private fun calledPositions(): List<Int> =
+        buildList {
+            body.propagation?.forEach { pair ->
+                (pair.from as? Port.CallbackReturn)?.let { add(it.callable) }
+                (pair.to as? Port.CallbackParameter)?.let { add(it.callable) }
+            }
+        }
 
     // The entry stores into the caller's argument through these ports, so
     // each must name a by-reference parameter. Runs after the arity check:

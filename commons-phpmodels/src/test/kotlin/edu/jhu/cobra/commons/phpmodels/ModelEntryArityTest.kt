@@ -25,6 +25,12 @@ import kotlin.test.assertFailsWith
  *   describe a function only.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
+ * - `callback port decodes in a propagation` — a callback return as the
+ *   from-port, a callback parameter as the to-port.
+ * - `callback parameter as a from-port is rejected` — only an input port is
+ *   read.
+ * - `callback port beyond the declared parameter list is rejected` — the
+ *   arity bound covers the callable position of both callback ports.
  */
 internal class ModelEntryArityTest {
     @Test
@@ -207,7 +213,10 @@ internal class ModelEntryArityTest {
     }
 
     // One entry of an optional second parameter; [keys] are the last signature lines.
-    private fun withKeys(vararg keys: String, subject: String = "function: foo"): String =
+    private fun withKeys(
+        vararg keys: String,
+        subject: String = "function: foo",
+    ): String =
         listOf(
             "- subject:",
             "    $subject",
@@ -220,4 +229,81 @@ internal class ModelEntryArityTest {
             "        optional: true",
             "    returnType: bool",
         ).plus(keys.map { "    $it" }).joinToString("\n")
+
+    @Test
+    fun `callback port decodes in a propagation`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    function: map
+                  signature:
+                    params:
+                      - name: callback
+                        type: callable
+                      - name: array
+                        type: array
+                    returnType: array
+                  propagation:
+                    - from: argument(1)
+                      to: callback(argument(0)).parameter(0)
+                    - from: callback(argument(0)).return
+                      to: return
+                """.trimIndent(),
+            )
+        assertEquals(
+            listOf(
+                Propagation(from = Port.Argument(1), to = Port.CallbackParameter(0, 0)),
+                Propagation(from = Port.CallbackReturn(0), to = Port.Return),
+            ),
+            model.body.propagation,
+        )
+    }
+
+    @Test
+    fun `callback parameter as a from-port is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: map
+                  signature:
+                    params:
+                      - name: callback
+                        type: callable
+                    returnType: array
+                  propagation:
+                    - from: callback(argument(0)).parameter(0)
+                      to: return
+                """.trimIndent(),
+            )
+        }
+    }
+
+    @Test
+    fun `callback port beyond the declared parameter list is rejected`() {
+        val flows =
+            listOf(
+                "argument(0)" to "callback(argument(1)).parameter(0)",
+                "callback(argument(1)).return" to "return",
+            )
+        for ((from, to) in flows) {
+            assertFailsWith<IllegalArgumentException> {
+                load(
+                    """
+                    - subject:
+                        function: map
+                      signature:
+                        params:
+                          - name: value
+                            type: mixed
+                        returnType: mixed
+                      propagation:
+                        - from: $from
+                          to: $to
+                    """.trimIndent(),
+                )
+            }
+        }
+    }
 }

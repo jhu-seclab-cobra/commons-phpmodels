@@ -128,15 +128,29 @@ public sealed interface Port {
             }
 
         private fun parseIndexed(raw: String): Port {
-            ARGUMENT_PATTERN.matchEntire(raw)?.let { return Argument(position(raw, it, 1)) }
-            CALLBACK_RETURN_PATTERN.matchEntire(raw)?.let { return CallbackReturn(position(raw, it, 1)) }
-            CALLBACK_PARAMETER_PATTERN.matchEntire(raw)?.let {
-                return CallbackParameter(position(raw, it, 1), position(raw, it, 2))
+            val argument = ARGUMENT_PATTERN.matchEntire(raw)
+            val callbackReturn = CALLBACK_RETURN_PATTERN.matchEntire(raw)
+            val callbackParameter = CALLBACK_PARAMETER_PATTERN.matchEntire(raw)
+            return when {
+                argument != null -> {
+                    Argument(position(raw, argument, 1))
+                }
+
+                callbackReturn != null -> {
+                    CallbackReturn(position(raw, callbackReturn, 1))
+                }
+
+                callbackParameter != null -> {
+                    CallbackParameter(position(raw, callbackParameter, 1), position(raw, callbackParameter, 2))
+                }
+
+                else -> {
+                    throw IllegalArgumentException(
+                        "Port must be 'return', 'this', 'argument(n)', 'callback(argument(n)).parameter(m)' " +
+                            "or 'callback(argument(n)).return', got '$raw'",
+                    )
+                }
             }
-            throw IllegalArgumentException(
-                "Port must be 'return', 'this', 'argument(n)', 'callback(argument(n)).parameter(m)' " +
-                    "or 'callback(argument(n)).return', got '$raw'",
-            )
         }
 
         private fun position(
