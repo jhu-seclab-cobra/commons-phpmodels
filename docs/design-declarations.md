@@ -35,14 +35,26 @@ describable kind, holding exactly the fields
 [model-declarations.md](model-declarations.md) fixes for that kind.
 
 - `CallableSignature` — `params: List<ParameterInfo>`,
-  `returnType: DeclaredType`, `opcodeArities: Set<Int>` (function,
-  method); `opcodeArities` holds the argument counts at which the engine
-  compiles a call to one opcode whose operands are the arguments, empty
-  when none does (YAML key `opcodeArities`, absent = empty);
-  `maxArguments` is the parameter count, unbounded with a variadic last
-  parameter, and the entry-level argument-port bound reads it too;
-  **Validation (`init`):** each count is at least the number of required
-  parameters and at most `maxArguments`
+  `returnType: DeclaredType` (function, method); `maxArguments` is the
+  parameter count, unbounded with a variadic last parameter, and the
+  entry-level argument-port bound reads it too; a function also states how
+  php-src compiles a call of it to one opcode:
+  - `framelessArities: Set<Int>`: the argument counts at which php-src
+    selects a frameless function for a call of the function; each count is
+    at most 3. Empty when the function has none.
+  - `specialArities: Set<Int>`: the argument counts, each 2 or more, at
+    which php-src always compiles a call bound when compiled to one opcode
+    reading its arguments. Empty when none.
+  - `ropeFormat: String?`: the parameter whose constant value php-src
+    compiles into a rope with the arguments after it; null when none.
+
+  **Validation (`init`):** each count lies within the required parameter
+  count and `maxArguments`, each frameless count is at most 3, each special
+  count is at least 2, and `ropeFormat` names a declared parameter that is
+  neither by reference nor variadic; the entry rejects a method signature
+  that declares any of the three. A violation raises
+  `IllegalArgumentException`. The YAML keys are the field names; an absent
+  key reads as empty or null.
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`; a `data class` with a private constructor
   whose companion `invoke` factory — also the Jackson creator — folds the

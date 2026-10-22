@@ -25,7 +25,7 @@ model.subject == subject
 | `VariableSubject(name)` | `variable:` | `$_GET` | folded |
 
 - **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
-- **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, opcodeArities: Set<Int> = emptySet())`** — function, method; `opcodeArities` are the argument counts the engine compiles to one opcode, each within the required..declared parameter count (any above it with a variadic tail).
+- **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, framelessArities: Set<Int> = emptySet(), specialArities: Set<Int> = emptySet(), ropeFormat: String? = null)`** — function, method; `framelessArities` are the argument counts (at most 3) at which php-src selects a frameless function, `specialArities` the counts (2 or more) at which it always compiles a call bound when compiled to one opcode, `ropeFormat` the parameter php-src compiles into a rope; counts lie within the required..declared parameter count (any above it with a variadic tail), and a method declares none of the three.
 - **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String?, interfaces: List<String>)`** — class; parent and interfaces case-folded.
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.

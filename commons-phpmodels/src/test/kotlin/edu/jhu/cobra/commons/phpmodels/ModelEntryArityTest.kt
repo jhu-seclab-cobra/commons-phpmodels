@@ -19,8 +19,10 @@ import kotlin.test.assertFailsWith
  *   arity bound covers the source `at` port too.
  * - `checked port beyond the declared parameter list is rejected` — the
  *   arity bound covers a sanitizers check's argument port too.
- * - `opcodeArities key decodes into the callable signature` — the declared
- *   counts, and the empty set when the key is absent.
+ * - `one-opcode keys decode into the callable signature` — the declared
+ *   counts and rope format, and empty or null when the keys are absent.
+ * - `method entry declaring a one-opcode key is rejected` — the facts
+ *   describe a function only.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
  */
@@ -183,18 +185,32 @@ internal class ModelEntryArityTest {
     }
 
     @Test
-    fun `opcodeArities key decodes into the callable signature`() {
-        val declared = loadModel(withArities("opcodeArities: [1, 2]")).signature
-        assertEquals(setOf(1, 2), (declared as SignatureInfo.CallableSignature).opcodeArities)
-        val absent = loadModel(withArities("")).signature
-        assertEquals(emptySet(), (absent as SignatureInfo.CallableSignature).opcodeArities)
+    fun `one-opcode keys decode into the callable signature`() {
+        val declared =
+            loadModel(withKeys("framelessArities: [1, 2]", "specialArities: [2]", "ropeFormat: a")).signature
+        declared as SignatureInfo.CallableSignature
+        assertEquals(setOf(1, 2), declared.framelessArities)
+        assertEquals(setOf(2), declared.specialArities)
+        assertEquals("a", declared.ropeFormat)
+        val absent = loadModel(withKeys()).signature as SignatureInfo.CallableSignature
+        assertEquals(emptySet(), absent.framelessArities)
+        assertEquals(emptySet(), absent.specialArities)
+        assertEquals(null, absent.ropeFormat)
     }
 
-    // One function entry of an optional second parameter; [arities] is the last signature line.
-    private fun withArities(arities: String): String =
+    @Test
+    fun `method entry declaring a one-opcode key is rejected`() {
+        for (key in listOf("framelessArities: [1]", "specialArities: [2]", "ropeFormat: a")) {
+            assertFailsWith<IllegalArgumentException> { load(withKeys(key, subject = "method: C::foo")) }
+        }
+        assertEquals(1, load(withKeys(subject = "method: C::foo")).size)
+    }
+
+    // One entry of an optional second parameter; [keys] are the last signature lines.
+    private fun withKeys(vararg keys: String, subject: String = "function: foo"): String =
         listOf(
             "- subject:",
-            "    function: foo",
+            "    $subject",
             "  signature:",
             "    params:",
             "      - name: a",
@@ -203,6 +219,5 @@ internal class ModelEntryArityTest {
             "        type: string",
             "        optional: true",
             "    returnType: bool",
-            "    $arities",
-        ).joinToString("\n")
+        ).plus(keys.map { "    $it" }).joinToString("\n")
 }

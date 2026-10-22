@@ -18,12 +18,17 @@ import kotlin.test.assertNotEquals
  * - `typed signature value defaults to null` — a constant without a literal.
  * - `property signature static defaults to false` — instance is the default.
  * - `callable signature params default to empty` — a nullary callable.
- * - `callable signature opcode arities default to empty` — no count compiles
- *   to one opcode unless declared.
- * - `callable signature rejects an opcode arity outside its parameters` — a
- *   count below the required parameters or above the list (no variadic).
- * - `variadic signature admits an opcode arity beyond the list` — the
+ * - `callable signature one-opcode facts default to empty` — no count and no
+ *   rope format unless declared.
+ * - `callable signature rejects an arity outside its parameters` — a count
+ *   below the required parameters or above the list (no variadic).
+ * - `variadic signature admits a special arity beyond the list` — the
  *   variadic tail collects every remaining position.
+ * - `frameless arities admit counts one to three only` — a count above 3 is
+ *   rejected, count 1 is kept.
+ * - `special arities admit counts of two or more only` — count 1 is rejected.
+ * - `rope format names a plain declared parameter` — undeclared, by-reference
+ *   and variadic parameters are rejected.
  * - `callable signature counts the arguments it admits` — the parameter
  *   count, unbounded with a variadic last parameter.
  * - `class signatures compare by folded fields` — equality and hash code
@@ -96,27 +101,72 @@ internal class SignatureInfoTest {
     }
 
     @Test
-    fun `callable signature opcode arities default to empty`() {
-        assertEquals(emptySet(), SignatureInfo.CallableSignature(returnType = DeclaredType("void")).opcodeArities)
+    fun `callable signature one-opcode facts default to empty`() {
+        val signature = SignatureInfo.CallableSignature(returnType = DeclaredType("void"))
+        assertEquals(emptySet(), signature.framelessArities)
+        assertEquals(emptySet(), signature.specialArities)
+        assertEquals(null, signature.ropeFormat)
     }
 
     @Test
-    fun `callable signature rejects an opcode arity outside its parameters`() {
+    fun `callable signature rejects an arity outside its parameters`() {
         val params = listOf(ParameterInfo("a", DeclaredType("string")), ParameterInfo("b", DeclaredType("int"), true))
-        val admitted = SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(1, 2))
-        assertEquals(setOf(1, 2), admitted.opcodeArities)
+        val admitted = SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(1, 2), setOf(2))
+        assertEquals(setOf(1, 2), admitted.framelessArities)
+        assertEquals(setOf(2), admitted.specialArities)
         assertFailsWith<IllegalArgumentException> {
             SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(0))
         }
         assertFailsWith<IllegalArgumentException> {
             SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(3))
         }
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.CallableSignature(params, DeclaredType("int"), specialArities = setOf(3))
+        }
     }
 
     @Test
-    fun `variadic signature admits an opcode arity beyond the list`() {
+    fun `variadic signature admits a special arity beyond the list`() {
         val params = listOf(ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true))
-        assertEquals(setOf(5), SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(5)).opcodeArities)
+        val signature = SignatureInfo.CallableSignature(params, DeclaredType("int"), specialArities = setOf(5))
+        assertEquals(setOf(5), signature.specialArities)
+    }
+
+    @Test
+    fun `frameless arities admit counts one to three only`() {
+        val params = List(5) { ParameterInfo("p$it", DeclaredType("int"), optional = true) }
+        val admitted = SignatureInfo.CallableSignature(params.take(3), DeclaredType("int"), setOf(1, 3))
+        assertEquals(setOf(1, 3), admitted.framelessArities)
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(4))
+        }
+    }
+
+    @Test
+    fun `special arities admit counts of two or more only`() {
+        val params = List(3) { ParameterInfo("p$it", DeclaredType("int"), optional = true) }
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.CallableSignature(params, DeclaredType("int"), specialArities = setOf(1))
+        }
+        val admitted = SignatureInfo.CallableSignature(params, DeclaredType("int"), specialArities = setOf(2))
+        assertEquals(setOf(2), admitted.specialArities)
+    }
+
+    @Test
+    fun `rope format names a plain declared parameter`() {
+        val params =
+            listOf(
+                ParameterInfo("format", DeclaredType("string")),
+                ParameterInfo("ref", DeclaredType("string"), byRef = true),
+                ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true),
+            )
+        val admitted = SignatureInfo.CallableSignature(params, DeclaredType("string"), ropeFormat = "format")
+        assertEquals("format", admitted.ropeFormat)
+        for (bad in listOf("missing", "ref", "values")) {
+            assertFailsWith<IllegalArgumentException> {
+                SignatureInfo.CallableSignature(params, DeclaredType("string"), ropeFormat = bad)
+            }
+        }
     }
 
     @Test

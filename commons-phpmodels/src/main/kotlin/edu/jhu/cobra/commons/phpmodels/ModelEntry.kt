@@ -75,6 +75,9 @@ public data class ModelEntry(
     // and a void callable admits no flow into its result.
     private fun validatePortBounds() {
         val callable = signature as? CallableSignature ?: return
+        require(subject !is MethodSubject || !callable.declaresOpcodeFacts) {
+            "Entry for $subject declares a one-opcode fact; the facts describe a function only"
+        }
         validateArity(callable)
         validateWrittenPorts(callable)
         require(!callable.returnType.isVoid || body.propagation.orEmpty().none { it.to == Port.Return }) {

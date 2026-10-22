@@ -17,29 +17,59 @@ public sealed interface SignatureInfo {
      * @property params Declared parameters; position is list order.
      * @property returnType Declared return type; the returns classification is
      *   derived from it at load and never stored beside it.
-     * @property opcodeArities The argument counts at which the engine compiles
-     *   a call of this callable to one opcode whose operands are the
-     *   arguments; empty when no count does. An engine fact read off the
-     *   upstream compiler, stored with the declaration it describes.
+     * @property framelessArities The argument counts at which php-src selects
+     *   a frameless function for a call of this callable; each count is at
+     *   most [MAX_FRAMELESS_ARITY]. Empty when none.
+     * @property specialArities The argument counts, each 2 or more, at which
+     *   php-src always compiles a call bound when compiled to one opcode
+     *   reading its arguments. Empty when none.
+     * @property ropeFormat The parameter whose constant value php-src compiles
+     *   into a rope with the arguments after it; null when none.
      * @throws IllegalArgumentException If a count lies below the number of
      *   required parameters, or above the parameter count of a signature
-     *   without a variadic parameter.
+     *   without a variadic parameter; a frameless count exceeds
+     *   [MAX_FRAMELESS_ARITY]; a special count is below 2; or the rope format
+     *   names no declared parameter, or one passed by reference or variadic.
      */
     public data class CallableSignature(
         val params: List<ParameterInfo> = emptyList(),
         val returnType: DeclaredType,
-        val opcodeArities: Set<Int> = emptySet(),
+        val framelessArities: Set<Int> = emptySet(),
+        val specialArities: Set<Int> = emptySet(),
+        val ropeFormat: String? = null,
     ) : SignatureInfo {
         /** The most arguments a call may pass: the parameter count, unbounded with a variadic last parameter. */
         val maxArguments: Int
             get() = if (params.lastOrNull()?.variadic == true) Int.MAX_VALUE else params.size
 
+        /** True when the signature states any one-opcode fact. */
+        val declaresOpcodeFacts: Boolean
+            get() = framelessArities.isNotEmpty() || specialArities.isNotEmpty() || ropeFormat != null
+
         init {
             val required = params.count { !it.optional }
-            val outside = opcodeArities.firstOrNull { it !in required..maxArguments }
+            val outside = (framelessArities + specialArities).firstOrNull { it !in required..maxArguments }
             require(outside == null) {
-                "Opcode arity $outside lies outside the $required..$maxArguments arguments the signature admits"
+                "Arity $outside lies outside the $required..$maxArguments arguments the signature admits"
             }
+            val tooMany = framelessArities.firstOrNull { it > MAX_FRAMELESS_ARITY }
+            require(tooMany == null) { "Frameless arity $tooMany exceeds $MAX_FRAMELESS_ARITY" }
+            val tooFew = specialArities.firstOrNull { it < MIN_SPECIAL_ARITY }
+            require(tooFew == null) { "Special arity $tooFew is below $MIN_SPECIAL_ARITY" }
+            if (ropeFormat != null) {
+                val format = params.firstOrNull { it.name == ropeFormat }
+                require(format != null && !format.byRef && !format.variadic) {
+                    "Rope format $ropeFormat names no plain declared parameter"
+                }
+            }
+        }
+
+        private companion object {
+            /** php-src `find_frameless_function_info` rejects a call of more arguments. */
+            const val MAX_FRAMELESS_ARITY = 3
+
+            /** A one-operand compile has no operand order. */
+            const val MIN_SPECIAL_ARITY = 2
         }
     }
 

@@ -15,10 +15,12 @@ declaration kind, with no nesting of one declaration inside another.
 - **Signature** — The descriptive section of an entry: what the declaration
   looks like, never what an analysis believes about it. Content per subject
   kind:
-  - *function*, *method* — parameter list, declared return type, and the
-    argument counts at which the engine compiles a call to one opcode
-    whose operands are the arguments (opcode arities; none when the engine
-    compiles no such call).
+  - *function*, *method* — parameter list, declared return type. A
+    function may also state how php-src compiles a call of it to one opcode:
+    the argument counts that select a frameless function, the argument
+    counts that always compile to one opcode reading two or more arguments,
+    and the parameter whose constant value php-src compiles into a rope. A
+    method declaration states none of them.
   - *class* — classifier (class, interface, trait, enum), parent, interfaces.
   - *constant*, *class constant* — declared type, literal value. The value
     is the constant's spelled literal, stored losslessly; absent when the
