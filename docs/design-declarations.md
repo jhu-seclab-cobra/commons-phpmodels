@@ -35,7 +35,13 @@ describable kind, holding exactly the fields
 [model-declarations.md](model-declarations.md) fixes for that kind.
 
 - `CallableSignature` — `params: List<ParameterInfo>`,
-  `returnType: DeclaredType` (function, method)
+  `returnType: DeclaredType`, `opcodeArities: Set<Int>` (function,
+  method); `opcodeArities` holds the argument counts at which the engine
+  compiles a call to one opcode whose operands are the arguments, empty
+  when none does (YAML key `opcodeArities`, absent = empty);
+  **Validation (`init`):** each count is at least the number of required
+  parameters and at most the parameter count, unbounded above with a
+  variadic last parameter
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`; a `data class` with a private constructor
   whose companion `invoke` factory — also the Jackson creator — folds the

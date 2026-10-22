@@ -18,6 +18,12 @@ import kotlin.test.assertNotEquals
  * - `typed signature value defaults to null` — a constant without a literal.
  * - `property signature static defaults to false` — instance is the default.
  * - `callable signature params default to empty` — a nullary callable.
+ * - `callable signature opcode arities default to empty` — no count compiles
+ *   to one opcode unless declared.
+ * - `callable signature rejects an opcode arity outside its parameters` — a
+ *   count below the required parameters or above the list (no variadic).
+ * - `variadic signature admits an opcode arity beyond the list` — the
+ *   variadic tail collects every remaining position.
  * - `class signatures compare by folded fields` — equality and hash code
  *   over classifier, folded parent, and folded interfaces.
  * - `class signature spells its fields` — the toString form.
@@ -85,5 +91,29 @@ internal class SignatureInfoTest {
     @Test
     fun `callable signature params default to empty`() {
         assertEquals(emptyList(), SignatureInfo.CallableSignature(returnType = DeclaredType("void")).params)
+    }
+
+    @Test
+    fun `callable signature opcode arities default to empty`() {
+        assertEquals(emptySet(), SignatureInfo.CallableSignature(returnType = DeclaredType("void")).opcodeArities)
+    }
+
+    @Test
+    fun `callable signature rejects an opcode arity outside its parameters`() {
+        val params = listOf(ParameterInfo("a", DeclaredType("string")), ParameterInfo("b", DeclaredType("int"), true))
+        val admitted = SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(1, 2))
+        assertEquals(setOf(1, 2), admitted.opcodeArities)
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(0))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(3))
+        }
+    }
+
+    @Test
+    fun `variadic signature admits an opcode arity beyond the list`() {
+        val params = listOf(ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true))
+        assertEquals(setOf(5), SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(5)).opcodeArities)
     }
 }

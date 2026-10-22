@@ -19,6 +19,10 @@ import kotlin.test.assertFailsWith
  *   arity bound covers the source `at` port too.
  * - `checked port beyond the declared parameter list is rejected` — the
  *   arity bound covers a sanitizers check's argument port too.
+ * - `opcodeArities key decodes into the callable signature` — the declared
+ *   counts, and the empty set when the key is absent.
+ * - `opcodeArities beyond the declared parameter list is rejected` — the
+ *   same bound as an argument port.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
  */
@@ -178,5 +182,47 @@ internal class ModelEntryArityTest {
                 """.trimIndent(),
             )
         assertEquals(listOf(SinkDecl(Port.Argument(5), VulnTypeId("sqli"))), model.body.sinks)
+    }
+
+    @Test
+    fun `opcodeArities key decodes into the callable signature`() {
+        val declared = loadModel(withArities("opcodeArities: [1, 2]")).signature
+        assertEquals(setOf(1, 2), (declared as SignatureInfo.CallableSignature).opcodeArities)
+        val absent = loadModel(withArities("")).signature
+        assertEquals(emptySet(), (absent as SignatureInfo.CallableSignature).opcodeArities)
+    }
+
+    // One function entry of an optional second parameter; [arities] is the last signature line.
+    private fun withArities(arities: String): String =
+        listOf(
+            "- subject:",
+            "    function: foo",
+            "  signature:",
+            "    params:",
+            "      - name: a",
+            "        type: string",
+            "      - name: b",
+            "        type: string",
+            "        optional: true",
+            "    returnType: bool",
+            "    $arities",
+        ).joinToString("\n")
+
+    @Test
+    fun `opcodeArities beyond the declared parameter list is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: foo
+                  signature:
+                    params:
+                      - name: a
+                        type: string
+                    returnType: bool
+                    opcodeArities: [2]
+                """.trimIndent(),
+            )
+        }
     }
 }

@@ -17,11 +17,28 @@ public sealed interface SignatureInfo {
      * @property params Declared parameters; position is list order.
      * @property returnType Declared return type; the returns classification is
      *   derived from it at load and never stored beside it.
+     * @property opcodeArities The argument counts at which the engine compiles
+     *   a call of this callable to one opcode whose operands are the
+     *   arguments; empty when no count does. An engine fact read off the
+     *   upstream compiler, stored with the declaration it describes.
+     * @throws IllegalArgumentException If a count lies below the number of
+     *   required parameters, or above the parameter count of a signature
+     *   without a variadic parameter.
      */
     public data class CallableSignature(
         val params: List<ParameterInfo> = emptyList(),
         val returnType: DeclaredType,
-    ) : SignatureInfo
+        val opcodeArities: Set<Int> = emptySet(),
+    ) : SignatureInfo {
+        init {
+            val required = params.count { !it.optional }
+            val limit = if (params.lastOrNull()?.variadic == true) Int.MAX_VALUE else params.size
+            val outside = opcodeArities.firstOrNull { it !in required..limit }
+            require(outside == null) {
+                "Opcode arity $outside lies outside the $required..$limit arguments the signature admits"
+            }
+        }
+    }
 
     /**
      * A class-like declaration: its classifier and inheritance edges

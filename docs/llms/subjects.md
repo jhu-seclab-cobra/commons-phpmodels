@@ -25,7 +25,7 @@ model.subject == subject
 | `VariableSubject(name)` | `variable:` | `$_GET` | folded |
 
 - **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
-- **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType)`** — function, method.
+- **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, opcodeArities: Set<Int> = emptySet())`** — function, method; `opcodeArities` are the argument counts the engine compiles to one opcode, each within the required..declared parameter count (any above it with a variadic tail).
 - **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String?, interfaces: List<String>)`** — class; parent and interfaces case-folded.
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
