@@ -266,18 +266,44 @@ public data class ModelBody(
 }
 
 /**
- * The value unit a lookup serves: the returns classification together
- * with the exhaustive propagation set and the optional character bound. An
- * absent propagation section in the declaring body becomes the empty list here
- * — no flow, not unknown flow; an absent characters section stays null — no
- * bound.
+ * The value unit a lookup serves: the classifications the call result may
+ * have, together with the exhaustive propagation set and the optional
+ * character bound. A body declares one classification; a unit holds several
+ * once a consumer joins the units of the alternatives a call may take
+ * ([join]). An absent propagation section in the declaring body becomes the
+ * empty list here — no flow, not unknown flow; an absent characters section
+ * stays null — no bound.
  *
- * @property returns Classification of the call's result.
+ * @property returns Classifications of the call's result; never empty.
  * @property propagation Every declared port-to-port flow.
  * @property characters The bytes the result may hold, or null when unbounded.
+ * @throws IllegalArgumentException If [returns] is empty.
  */
 public data class ValueUnit(
-    val returns: ReturnKind,
+    val returns: Set<ReturnKind>,
     val propagation: List<Propagation>,
     val characters: CharacterBound? = null,
-)
+) {
+    init {
+        require(returns.isNotEmpty()) { "A value unit holds at least one returns classification" }
+    }
+
+    /** The unit a body declaring the single classification [returns] asserts. */
+    public constructor(
+        returns: ReturnKind,
+        propagation: List<Propagation>,
+        characters: CharacterBound? = null,
+    ) : this(setOf(returns), propagation, characters)
+
+    /**
+     * The unit covering both: the union of the classifications and of the
+     * flows (this unit's flows first), and the character bound only when both
+     * units declare it identically.
+     */
+    public fun join(other: ValueUnit): ValueUnit =
+        ValueUnit(
+            returns = returns + other.returns,
+            propagation = (propagation + other.propagation).distinct(),
+            characters = characters.takeIf { it == other.characters },
+        )
+}
