@@ -83,8 +83,7 @@ public data class ModelEntry(
     }
 
     private fun validateArity(callable: CallableSignature) {
-        if (callable.params.lastOrNull()?.variadic == true) return
-        val limit = callable.params.size
+        val limit = callable.maxArguments
         val beyond = namedArgumentPorts().firstOrNull { it.position >= limit }
         require(beyond == null) {
             "Entry for $subject names $beyond beyond its $limit-parameter signature"

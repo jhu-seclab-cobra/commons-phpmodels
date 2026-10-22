@@ -21,8 +21,6 @@ import kotlin.test.assertFailsWith
  *   arity bound covers a sanitizers check's argument port too.
  * - `opcodeArities key decodes into the callable signature` — the declared
  *   counts, and the empty set when the key is absent.
- * - `opcodeArities beyond the declared parameter list is rejected` — the
- *   same bound as an argument port.
  * - `variadic signature admits ports beyond the declared list` — the
  *   variadic tail collects every remaining position.
  */
@@ -207,22 +205,4 @@ internal class ModelEntryArityTest {
             "    returnType: bool",
             "    $arities",
         ).joinToString("\n")
-
-    @Test
-    fun `opcodeArities beyond the declared parameter list is rejected`() {
-        assertFailsWith<IllegalArgumentException> {
-            load(
-                """
-                - subject:
-                    function: foo
-                  signature:
-                    params:
-                      - name: a
-                        type: string
-                    returnType: bool
-                    opcodeArities: [2]
-                """.trimIndent(),
-            )
-        }
-    }
 }

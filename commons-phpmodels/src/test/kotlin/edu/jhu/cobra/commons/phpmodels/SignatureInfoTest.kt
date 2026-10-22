@@ -24,6 +24,8 @@ import kotlin.test.assertNotEquals
  *   count below the required parameters or above the list (no variadic).
  * - `variadic signature admits an opcode arity beyond the list` — the
  *   variadic tail collects every remaining position.
+ * - `callable signature counts the arguments it admits` — the parameter
+ *   count, unbounded with a variadic last parameter.
  * - `class signatures compare by folded fields` — equality and hash code
  *   over classifier, folded parent, and folded interfaces.
  * - `class signature spells its fields` — the toString form.
@@ -115,5 +117,14 @@ internal class SignatureInfoTest {
     fun `variadic signature admits an opcode arity beyond the list`() {
         val params = listOf(ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true))
         assertEquals(setOf(5), SignatureInfo.CallableSignature(params, DeclaredType("int"), setOf(5)).opcodeArities)
+    }
+
+    @Test
+    fun `callable signature counts the arguments it admits`() {
+        val fixed = listOf(ParameterInfo("a", DeclaredType("string")), ParameterInfo("b", DeclaredType("int"), true))
+        assertEquals(2, SignatureInfo.CallableSignature(fixed, DeclaredType("int")).maxArguments)
+        assertEquals(0, SignatureInfo.CallableSignature(returnType = DeclaredType("void")).maxArguments)
+        val variadic = listOf(ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true))
+        assertEquals(Int.MAX_VALUE, SignatureInfo.CallableSignature(variadic, DeclaredType("int")).maxArguments)
     }
 }

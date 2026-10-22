@@ -30,12 +30,15 @@ public sealed interface SignatureInfo {
         val returnType: DeclaredType,
         val opcodeArities: Set<Int> = emptySet(),
     ) : SignatureInfo {
+        /** The most arguments a call may pass: the parameter count, unbounded with a variadic last parameter. */
+        val maxArguments: Int
+            get() = if (params.lastOrNull()?.variadic == true) Int.MAX_VALUE else params.size
+
         init {
             val required = params.count { !it.optional }
-            val limit = if (params.lastOrNull()?.variadic == true) Int.MAX_VALUE else params.size
-            val outside = opcodeArities.firstOrNull { it !in required..limit }
+            val outside = opcodeArities.firstOrNull { it !in required..maxArguments }
             require(outside == null) {
-                "Opcode arity $outside lies outside the $required..$limit arguments the signature admits"
+                "Opcode arity $outside lies outside the $required..$maxArguments arguments the signature admits"
             }
         }
     }

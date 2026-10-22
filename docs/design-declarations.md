@@ -39,9 +39,10 @@ describable kind, holding exactly the fields
   method); `opcodeArities` holds the argument counts at which the engine
   compiles a call to one opcode whose operands are the arguments, empty
   when none does (YAML key `opcodeArities`, absent = empty);
+  `maxArguments` is the parameter count, unbounded with a variadic last
+  parameter, and the entry-level argument-port bound reads it too;
   **Validation (`init`):** each count is at least the number of required
-  parameters and at most the parameter count, unbounded above with a
-  variadic last parameter
+  parameters and at most `maxArguments`
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`; a `data class` with a private constructor
   whose companion `invoke` factory — also the Jackson creator — folds the
