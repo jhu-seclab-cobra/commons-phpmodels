@@ -7,6 +7,7 @@
 | model.md | Model sections, subjects, taint vocabulary, relations, invariants. |
 | model-conditions.md | Conditional models: argument-pattern condition, match outcome, entry alternatives. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
+| model-tokenizer.md | Tokenizer language: states, rules, tracked word states, target states. |
 | model-sets.md | Document sets, accumulated vocabulary, vocabulary mapping, set provenance rank. |
 | design.md | Vocabulary, policy, decoder, loaders. |
 | design-bodies.md | The model body, its section element types, the character bound. |
@@ -14,6 +15,7 @@
 | design-entries.md | The entry form, its creator, and entry-level validation. |
 | design-conditions.md | The argument pattern type and its match operation. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
+| design-tokenizer.md | `TokenizerLanguage`, its declaration types, the compiled transition table. |
 | design-sets.md | `DocumentSetLoader`, `ResourceOpener`, `VocabularyMapping`, `SetProvenance`, `Precedence`. |
 | impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
 | llms.txt | Agent-consumable documentation index (llmstxt.org format); routes to the llms/ module docs. |

@@ -177,8 +177,8 @@ optionally through a mapping, in the order the model fixes.
 ### Vocabulary (extension)
 
 **Methods added:** `fun merge(other: Vocabulary): Vocabulary` — union;
-`VocabularyException` on a name declared in both with different
-description. `companion val EMPTY`. `fun verify(entry: ModelEntry)` —
+`VocabularyException` on a name declared in both with a different
+description or tokenizer language. `companion val EMPTY`. `fun verify(entry: ModelEntry)` —
 every vulnerability type and source kind the entry references is
 declared; moves the check consumers currently write by hand into the
 authority that owns the sets.
@@ -190,7 +190,7 @@ authority that owns the sets.
   duplicate manifest line, listed document malformed (the format failure
   is the cause); message and `path` name the document.
 - `VocabularyException` — conflicting redeclaration (names the name and
-  both descriptions), undeclared reference in a listed document (names the
+  both declarations), undeclared reference in a listed document (names the
   name and the document), unmapped name (names the name and the set),
   mapping target undeclared (names the target).
 
