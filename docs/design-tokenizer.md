@@ -83,17 +83,18 @@ vulnTypes:
     description: ...
     tokenizer:
       start: text
-      targets: [value-double, value-single, value-bare]
+      targets: [url-before-value, url-bare-scheme, url-double-start]
       words:
         url-attribute: [href, src]
       states:
         text:
           rules:
-            - {chars: '[<]', next: tag}
+            - {chars: '[<]', next: tag-open}
         attribute-name:
           track: url-attribute
           rules:
-            - {chars: '[=]', next: value-start, ifWord: true}
+            - {chars: '[=]', next: url-before-value, ifWord: true}
+            - {chars: '[=]', next: before-value}
 ```
 
 `sourceKinds` entries carry no `tokenizer` key; the strict decoder rejects it.
