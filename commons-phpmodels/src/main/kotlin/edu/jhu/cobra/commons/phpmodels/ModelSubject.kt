@@ -199,12 +199,33 @@ public class PropertySubject(
     }
 }
 
-/** A global constant declaration, identified by its case-sensitive name alone. */
+/**
+ * A global constant declaration, identified by its case-sensitive name alone,
+ * except the root keyword constants `TRUE`, `FALSE`, and `NULL`: php-src 8.5.11
+ * `zend_get_special_const` matches those three ASCII-case-insensitively, so
+ * every spelling of one keyword is one subject, stored upper-case.
+ */
 public class ConstantSubject(
     name: String,
-) : NamedSubject(KIND, name) {
+) : NamedSubject(KIND, canonicalName(name)) {
     public companion object {
         private const val KIND = "constant"
+
+        // The only list of the root keyword constants.
+        private val ROOT_KEYWORDS = setOf("TRUE", "FALSE", "NULL")
+
+        /**
+         * Whether [raw], with or without a leading namespace slash, spells a
+         * root keyword constant in any ASCII case.
+         */
+        @JvmStatic
+        public fun isRootKeyword(raw: String): Boolean = asciiUpperCase(simpleName(raw)) in ROOT_KEYWORDS
+
+        private fun canonicalName(name: String): String = asciiUpperCase(name).takeIf { it in ROOT_KEYWORDS } ?: name
+
+        // ASCII-only: Unicode case mapping would fold U+017F into the S of FALSE.
+        private fun asciiUpperCase(name: String): String =
+            name.map { if (it in 'a'..'z') it - ('a' - 'A') else it }.joinToString("")
 
         /** @throws IllegalArgumentException If [raw] is not a plain constant name. */
         @JvmStatic

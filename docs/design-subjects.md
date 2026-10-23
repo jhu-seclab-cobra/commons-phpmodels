@@ -65,7 +65,11 @@ that kind's creator. Jackson mechanism verified in [impl.md](impl.md).
   name sensitive.
 - `PropertySubject(owner, name)` — `property:`, owner folded, name
   sensitive; spelled `class::$name`, stored without the `$`.
-- `ConstantSubject(name)` — `constant:`, sensitive.
+- `ConstantSubject(name)` — `constant:`, sensitive, except that the root
+  keywords `TRUE`, `FALSE`, `NULL` fold ASCII-case-insensitively and are
+  stored upper-case. `ConstantSubject.isRootKeyword(raw)` is the one
+  classification: it tells a consumer that a name, with or without a leading
+  `\`, is such a keyword; the three names live only there.
 - `VariableSubject(name)` — `variable:`, folded; spelled `$name`, stored
   without the `$`.
 

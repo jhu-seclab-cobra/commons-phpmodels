@@ -3,7 +3,9 @@ package edu.jhu.cobra.commons.phpmodels
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 
 /**
  * Spelling grammar and folded identity of the seven [ModelSubject] kinds.
@@ -12,6 +14,10 @@ import kotlin.test.assertNotEquals
  *   variable names compare case-insensitively.
  * - `sensitive kinds keep their case` — constant, class-constant, and
  *   property names compare exactly; owners still fold.
+ * - `root keyword constants compare case-insensitively` — `TRUE`, `FALSE`, and
+ *   `NULL` equal every ASCII case variant, with or without a leading slash,
+ *   as php-src 8.5.11 `zend_get_special_const` compares them; every other
+ *   constant stays exact.
  * - `leading namespace slash is stripped` — `\mysqli::query` equals
  *   `mysqli::query`.
  * - `member spelling requires exactly one separator` — zero or two `::` fail.
@@ -168,5 +174,57 @@ internal class ModelSubjectTest {
         assertEquals("property mysqli::\$insert_id", PropertySubject("mysqli", "insert_id").toString())
         assertEquals("constant PHP_EOL", ConstantSubject("PHP_EOL").toString())
         assertEquals("variable \$_get", VariableSubject("_GET").toString())
+    }
+
+    private fun caseVariants(word: String): List<String> =
+        (0 until (1 shl word.length)).map { mask ->
+            word.indices.joinToString("") { i ->
+                if (mask and (1 shl i) != 0) word[i].uppercase() else word[i].lowercase()
+            }
+        }
+
+    @Test
+    fun `root keyword constants compare case-insensitively`() {
+        // PHP 8.5.11: var_dump(true, \TrUe, NULL, \nuLL) prints bool(true), bool(true), NULL, NULL.
+        for (word in listOf("TRUE", "FALSE", "NULL")) {
+            val reference = ConstantSubject.parse(word)
+            for (variant in caseVariants(word)) {
+                for (spelling in listOf(variant, "\\$variant")) {
+                    val subject = ConstantSubject.parse(spelling)
+                    assertEquals(reference, subject, spelling)
+                    assertEquals(reference.hashCode(), subject.hashCode(), spelling)
+                    assertEquals("constant $word", subject.toString(), spelling)
+                    assertEquals(reference, ConstantSubject(variant), spelling)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `root keyword constants stay distinct from other names`() {
+        assertNotEquals(ConstantSubject.parse("TRUE"), ConstantSubject.parse("FALSE"))
+        assertNotEquals(ConstantSubject.parse("TRUE"), ConstantSubject.parse("TRUE_X"))
+        assertNotEquals(ConstantSubject.parse("true"), ConstantSubject.parse("NULL"))
+        // The long s U+017F upper-cases to S, but the comparison is ASCII-only.
+        assertNotEquals(ConstantSubject.parse("FALSE"), ConstantSubject.parse("fal\u017Fe"))
+        assertNotEquals(ConstantSubject.parse("PHP_EOL"), ConstantSubject.parse("php_eol"))
+        assertNotEquals(ConstantSubject.parse("TRUE_X"), ConstantSubject.parse("true_x"))
+        assertNotEquals(ConstantSubject.parse("True\\X"), ConstantSubject.parse("TRUE\\X"))
+    }
+
+    @Test
+    fun `class constants named like root keywords stay exact`() {
+        // PHP 8.5.11: class C { const true = 17; const TRUE = 18; } prints int(17), int(18).
+        assertNotEquals(ClassConstantSubject.parse("C::true"), ClassConstantSubject.parse("C::TRUE"))
+    }
+
+    @Test
+    fun `root keyword classification reads the one name list`() {
+        for (spelling in listOf("true", "\\False", "nULl", "TRUE")) {
+            assertTrue(ConstantSubject.isRootKeyword(spelling), spelling)
+        }
+        for (spelling in listOf("TRUE_X", "PHP_EOL", "True\\X", "", "nil")) {
+            assertFalse(ConstantSubject.isRootKeyword(spelling), spelling)
+        }
     }
 }

@@ -57,8 +57,14 @@ declaration kind, with no nesting of one declaration inside another.
 | method | `mysqli::query` | (class, name) | both folded |
 | class constant | `mysqli::MYSQLI_REPORT_ERROR` | (class, name) | class folded, name sensitive |
 | property | `mysqli::$insert_id` | (class, name) | class folded, name sensitive |
-| constant | `PHP_EOL` | name | sensitive |
+| constant | `PHP_EOL` | name | sensitive; root keywords fold |
 | predefined variable | `$_GET` | name | folded |
+
+The root keyword constants `TRUE`, `FALSE`, and `NULL` are the one exception
+in the constant kind: PHP matches them ASCII-case-insensitively (php-src
+`zend_get_special_const`), so every case variant of one keyword, with or
+without a leading `\`, is one subject. Every other global constant, and every
+class constant even when named `true`, keeps its exact spelling.
 
 The member spelling is PHP's own static-reference grammar: exactly one `::`,
 both sides non-empty; a property name carries the `$` prefix after `::`; a
