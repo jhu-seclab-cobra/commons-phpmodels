@@ -56,6 +56,9 @@ key ([impl.md](impl.md)); the creator completes them into the body.
   production site requires a callable subject.
 - `signature` subtype matches the subject kind
   ([design-declarations.md](design-declarations.md)).
+- For a `ClassSignature`, `ModelEntry.init` calls `validateClassNames()` to
+  enforce the class-name constraints in
+  [model-declarations.md](model-declarations.md#invariants).
 - A declared `CallableSignature` constrains every argument position the
   entry names — propagation sides, the callable position of a callback
   port, sink ports, explicit source sites, and the condition's

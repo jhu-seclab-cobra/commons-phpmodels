@@ -22,8 +22,10 @@ declaration kind, with no nesting of one declaration inside another.
     and the parameter whose constant value php-src compiles into a rope. A
     method declaration states none of them.
   - *class* — classifier (class, interface, trait, enum), parent, interfaces,
-    final-class status, and the effective handler facts of a builtin class
-    ([model-declarations-handlers.md](model-declarations-handlers.md)).
+    final-class status, the effective handler facts of a builtin class
+    ([model-declarations-handlers.md](model-declarations-handlers.md)), the class
+    name in the letter case its declaration spells, and the class aliases the
+    engine registers for the class.
     Final-class status is the registered declaration's FINAL status, independent
     of classifier and local to that declaration. True states the flag is set;
     false states it is clear; unestablished status proves neither. Registration
@@ -112,6 +114,7 @@ alternatives of the declared type itself.
 |------|----|----------|-------------|---------|
 | Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; a member references its class by identity, and a class entry never holds its member entries |
 | Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the returns classification when propagation is asserted |
+| Class Signature | class alias | states | 1:0..N | A class signature can state further names the engine registers the class under |
 | Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, condition, unit) |
 
 ## Invariants
@@ -128,6 +131,10 @@ alternatives of the declared type itself.
   tolerate spelling variance without merging two distinct variables.
 - The signature section is one override unit: a higher layer replacing a
   subject's signature replaces it whole.
+- A class alias is folded as a class subject and differs from the entry's
+  subject and from every other class alias of the same signature. A
+  signature that states class aliases states the class name, and the class
+  name folds to the entry's subject.
 - A signature never produces a taint statement. Sources, sinks, and
   sanitizers are hand-declared assertions in every layer.
 - The declared-type grammar is closed; a spelling outside it is a load

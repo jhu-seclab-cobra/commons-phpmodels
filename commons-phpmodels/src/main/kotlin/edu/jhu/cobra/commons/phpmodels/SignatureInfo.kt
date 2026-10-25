@@ -78,8 +78,9 @@ public sealed interface SignatureInfo {
     }
 
     /**
-     * A class-like declaration: its classifier and inheritance edges
-     * (class subjects).
+     * A class-like declaration: its classifier, inheritance edges (class
+     * subjects), the name its declaration spells, and the further names the
+     * engine registers for it.
      *
      * @property classifier The declaration kind.
      * @property parent Case-folded parent class name, or null when none.
@@ -89,8 +90,14 @@ public sealed interface SignatureInfo {
      *   when unestablished, which proves neither value.
      * @property handlers The effective object-handler table alternatives of a
      *   builtin class; empty when none is established.
+     * @property name The class name in the letter case its declaration spells,
+     *   or null when the declaring source states none.
+     * @property aliases The case-folded class aliases the engine registers for
+     *   the class, each without a leading namespace separator.
      * @throws IllegalArgumentException If the parent or an interface name is
-     *   blank, a table is null, or two tables share an id.
+     *   blank, a table is null, or two tables share an id, the name is not a
+     *   plain class name, two aliases fold to one key, or aliases are stated
+     *   without a name.
      */
     @ConsistentCopyVisibility
     public data class ClassSignature private constructor(
@@ -99,6 +106,8 @@ public sealed interface SignatureInfo {
         val interfaces: List<String>,
         val isFinal: Boolean?,
         val handlers: List<HandlerTable>,
+        val name: String?,
+        val aliases: List<String>,
     ) : SignatureInfo {
         init {
             require(parent == null || parent.isNotBlank()) { "Class signature declares a blank parent" }
@@ -111,10 +120,13 @@ public sealed interface SignatureInfo {
                     .entries
                     .firstOrNull { it.value > 1 }
             require(repeated == null) { "Class signature repeats handler table id ${repeated?.key}" }
+            name?.let(::ClassSubject)
+            require(aliases.toSet().size == aliases.size) { "Class signature repeats a class alias: $aliases" }
+            require(name != null || aliases.isEmpty()) { "Class signature states class aliases without a name" }
         }
 
         public companion object {
-            /** Folds the inheritance edges into the stored, compared form. */
+            /** Folds the inheritance edges and the class aliases into the stored, compared form. */
             @JvmStatic
             @JsonCreator
             public operator fun invoke(
@@ -123,8 +135,18 @@ public sealed interface SignatureInfo {
                 interfaces: List<String> = emptyList(),
                 isFinal: Boolean? = null,
                 handlers: List<HandlerTable> = emptyList(),
+                name: String? = null,
+                aliases: List<String> = emptyList(),
             ): ClassSignature =
-                ClassSignature(classifier, parent?.lowercase(), interfaces.map(String::lowercase), isFinal, handlers)
+                ClassSignature(
+                    classifier,
+                    parent?.lowercase(),
+                    interfaces.map(String::lowercase),
+                    isFinal,
+                    handlers,
+                    name,
+                    aliases.map { ClassSubject.parse(it).name },
+                )
         }
     }
 

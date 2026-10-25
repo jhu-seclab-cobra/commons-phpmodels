@@ -54,8 +54,21 @@ import kotlin.test.assertTrue
  * - `class signature rejects a null table` — null collection elements.
  * - `pinned stdClass facts` — an empty native string bound with the
  *   method-only dispatch still admits a descendant method.
+ * - `class signature keeps name as written and folds aliases` — the name keeps
+ *   its letter case; a leading namespace separator is dropped from an alias.
+ * - `class signature name and aliases default to none` — null and empty.
+ * - `class signature rejects an invalid name` — blank, leading separator.
+ * - `class signature rejects aliases that fold to one key` — distinct after
+ *   folding.
+ * - `class signature rejects aliases without a name` — an alias is a second
+ *   name of a named class.
+ * - `class signatures differing in name or aliases are unequal` — both fields
+ *   take part in equality.
  */
 internal class SignatureInfoTest {
+    private fun classNamed(alias: String): SignatureInfo.ClassSignature =
+        SignatureInfo.ClassSignature(Classifier.CLASS, name = "DOMException", aliases = listOf(alias))
+
     @Test
     fun `class signature folds parent and interfaces`() {
         val signature = SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable"))
@@ -90,9 +103,56 @@ internal class SignatureInfoTest {
     }
 
     @Test
+    fun `class signature keeps name as written and folds aliases`() {
+        val dropped = classNamed("Dom\\DOMException")
+        val separated = classNamed("\\Dom\\DOMException")
+        assertEquals("DOMException", dropped.name)
+        assertEquals(listOf("dom\\domexception"), dropped.aliases)
+        assertEquals(dropped, separated)
+    }
+
+    @Test
+    fun `class signature name and aliases default to none`() {
+        val signature = SignatureInfo.ClassSignature(Classifier.CLASS)
+        assertNull(signature.name)
+        assertEquals(emptyList(), signature.aliases)
+    }
+
+    @Test
+    fun `class signature rejects an invalid name`() {
+        assertFailsWith<IllegalArgumentException> { SignatureInfo.ClassSignature(Classifier.CLASS, name = " ") }
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.ClassSignature(Classifier.CLASS, name = "\\Exception")
+        }
+    }
+
+    @Test
+    fun `class signature rejects aliases that fold to one key`() {
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.ClassSignature(Classifier.CLASS, name = "A", aliases = listOf("Dom\\A", "\\dom\\a"))
+        }
+    }
+
+    @Test
+    fun `class signature rejects aliases without a name`() {
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.ClassSignature(Classifier.CLASS, aliases = listOf("Dom\\A"))
+        }
+    }
+
+    @Test
+    fun `class signatures differing in name or aliases are unequal`() {
+        val named = SignatureInfo.ClassSignature(Classifier.CLASS, name = "A")
+        assertNotEquals(SignatureInfo.ClassSignature(Classifier.CLASS), named)
+        assertNotEquals(SignatureInfo.ClassSignature(Classifier.CLASS, name = "A", aliases = listOf("b")), named)
+        assertNotEquals(SignatureInfo.ClassSignature(Classifier.CLASS, name = "a"), named)
+    }
+
+    @Test
     fun `class signature spells its fields`() {
         assertEquals(
-            "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable], isFinal=null, handlers=[])",
+            "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable], isFinal=null, handlers=[], " +
+                "name=null, aliases=[])",
             SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable")).toString(),
         )
     }

@@ -24,6 +24,10 @@ import kotlin.test.assertTrue
  * - `second document is rejected` — one document per stream.
  * - `alias is rejected naming the anchor` — an alias is never substituted.
  * - `malformed syntax is rejected` — a parse failure is a load failure.
+ * - `class signature decodes name and aliases` — the optional keys of a
+ *   class signature, folded as the factory folds them.
+ * - `class signature rejects a stray key` — the class signature shape is as
+ *   strict as the others.
  * - `narrow keeps the unknown-key strictness` — the tree-to-value path is
  *   as strict as the stream path.
  */
@@ -92,5 +96,23 @@ internal class ModelYamlTest {
             SignatureInfo.TypedSignature(DeclaredType("string")),
             ModelYaml.narrow(sound, SignatureInfo.TypedSignature::class.java),
         )
+    }
+
+    @Test
+    fun `class signature decodes name and aliases`() {
+        val yaml = "classifier: class\nname: DOMException\naliases: [Dom\\DOMException]\n"
+        val signature = ModelYaml.decode(yaml.byteInputStream(), jacksonTypeRef<SignatureInfo.ClassSignature>())
+        assertEquals("DOMException", signature.name)
+        assertEquals(listOf("dom\\domexception"), signature.aliases)
+    }
+
+    @Test
+    fun `class signature rejects a stray key`() {
+        assertFailsWith<IllegalArgumentException> {
+            ModelYaml.decode(
+                "classifier: class\nstray: 1\n".byteInputStream(),
+                jacksonTypeRef<SignatureInfo.ClassSignature>(),
+            )
+        }
     }
 }

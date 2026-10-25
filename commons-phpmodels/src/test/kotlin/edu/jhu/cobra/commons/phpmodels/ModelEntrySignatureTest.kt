@@ -29,6 +29,11 @@ import kotlin.test.assertNull
  * - `unknown classifier or visibility is rejected` — the sets are closed.
  * - `kind-mismatched signature shape is rejected` — a class signature's
  *   keys under a function subject.
+ * - `class name and aliases decode` — the optional keys of a class signature.
+ * - `class name that folds to another subject is rejected` — the name states
+ *   the entry's own class.
+ * - `class alias equal to the subject is rejected` — an alias is a further
+ *   name.
  */
 internal class ModelEntrySignatureTest {
     @Test
@@ -232,6 +237,42 @@ internal class ModelEntrySignatureTest {
     fun `kind-mismatched signature shape is rejected`() {
         assertFailsWith<IllegalArgumentException> {
             load("- subject:\n    function: strlen\n  signature:\n    classifier: class\n")
+        }
+    }
+
+    @Test
+    fun `class name and aliases decode`() {
+        val entries =
+            load(
+                """
+                - subject:
+                    class: domexception
+                  signature:
+                    classifier: class
+                    parent: exception
+                    name: DOMException
+                    aliases: [Dom\DOMException]
+                """.trimIndent(),
+            )
+        val signature = assertIs<SignatureInfo.ClassSignature>(entries[0].signature)
+        assertEquals("DOMException", signature.name)
+        assertEquals(listOf("dom\\domexception"), signature.aliases)
+    }
+
+    @Test
+    fun `class name that folds to another subject is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load("- subject:\n    class: mysqli\n  signature:\n    classifier: class\n    name: Other\n")
+        }
+    }
+
+    @Test
+    fun `class alias equal to the subject is rejected`() {
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                "- subject:\n    class: mysqli\n  signature:\n    classifier: class\n    name: MySQLi\n" +
+                    "    aliases: [\\MYSQLI]\n",
+            )
         }
     }
 }

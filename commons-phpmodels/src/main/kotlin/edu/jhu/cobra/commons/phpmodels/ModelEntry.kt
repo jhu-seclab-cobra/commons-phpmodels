@@ -43,6 +43,7 @@ public data class ModelEntry(
         }
         validateAdmissibility()
         validatePortBounds()
+        validateClassNames()
     }
 
     // The subject admits only the sections its kind allows: assertion sections
@@ -67,6 +68,16 @@ public data class ModelEntry(
         }
         val admitted = if (subject is ClassSubject) body.isEmpty else body.isEmpty || body.declaresOnlySources
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
+    }
+
+    // A class signature's name states the entry's own class, and a class alias is a further name, never the subject.
+    private fun validateClassNames() {
+        val declared = signature as? SignatureInfo.ClassSignature ?: return
+        val subject = subject as ClassSubject
+        require(declared.name == null || ClassSubject(declared.name) == subject) {
+            "Entry for $subject names a different class: ${declared.name}"
+        }
+        require(subject.name !in declared.aliases) { "Entry for $subject states itself as a class alias" }
     }
 
     // A declared callable signature fixes the port semantics: every argument

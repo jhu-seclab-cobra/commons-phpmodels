@@ -58,13 +58,18 @@ describable kind, holding exactly the fields
   key reads as empty or null.
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
   `interfaces: List<String>`, `isFinal: Boolean? = null`,
-  `handlers: List<HandlerTable> = emptyList()`; a `data class` with a private
-  constructor whose companion `invoke` factory — also the Jackson creator —
-  folds the inheritance edges into the stored, compared form ([impl.md](impl.md)).
-  A missing final status decodes as null; omitted handlers decode as empty.
-  Table alternatives and their validation: [Handler Facts](design-declarations-handlers.md).
+  `handlers: List<HandlerTable> = emptyList()`, `name: String?`,
+  `aliases: List<String>`; a `data class` with a private constructor whose
+  companion `invoke` factory — also the Jackson creator — folds the
+  inheritance edges and the class aliases into the stored, compared form and
+  keeps `name` as written ([impl.md](impl.md)). A missing final status
+  decodes as null; omitted handlers decode as empty. Table alternatives and
+  their validation: [Handler Facts](design-declarations-handlers.md).
   **Validation (`init`):** `parent`, when present, and every interface name
-  non-blank. A violation raises `IllegalArgumentException`.
+  non-blank; `name`, when present, passes `ClassSubject(name)` without
+  stripping a leading separator; the class aliases distinct and present only
+  with a `name`. A violation raises `IllegalArgumentException`. The semantic
+  constraints follow [model-declarations.md](model-declarations.md#invariants).
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
