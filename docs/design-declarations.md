@@ -62,16 +62,15 @@ describable kind, holding exactly the fields
   inheritance edges into the stored, compared form ([impl.md](impl.md));
   **Validation (`init`):** `parent`, when present, and every interface
   name non-blank; no two handler facts share a slot and request
-- `HandlerFact` — `slot: HandlerSlot`, `request: String?` (the cast target
-  type or the opcode name; null for a slot without one), `targets:
-  List<String>` (the effective target, or the alternatives of the table that
-  selects among targets by request), `absent: Boolean` (the slot is NULL in
-  the class), `results: Set<ReturnKind>` (the established kinds of the
-  normal result). **Validation (`init`):** an absent fact has no target and
-  no result kind; any other fact has a target and a non-empty result set.
-  Semantics: [model-declarations-handlers.md](model-declarations-handlers.md).
-  A class that states no fact for a slot has missing coverage, which a
-  consumer reads as unestablished.
+- `HandlerFact` — `slot: HandlerSlot`, `request: String?`,
+  `targets: List<String>`, `absent: Boolean`, `results: Set<ReturnKind>`.
+  Field meanings: [Effective Handler Facts](model-declarations-handlers.md).
+  **Validation (`init`):** every target is non-blank. A present CAST fact
+  names a consumed PHP cast request; a present OPERATION fact names a
+  consumed PHP opcode; a COMPARE fact has a null request. A null request is
+  also allowed for an absent whole slot. An absent fact has no target and
+  no result kind; a present fact has at least one target and permits an
+  empty result set. A violation raises `IllegalArgumentException`.
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
@@ -134,8 +133,8 @@ and derive to `ANY`.
 ### Classifier, HandlerSlot, Visibility
 
 **Responsibility:** Closed enums for the class-like declaration kinds, the
-object handler slots a fact describes, and member visibility, decoded case-insensitively from the lowercase file
-vocabulary ([impl.md](impl.md)).
+object handler slots a fact describes, and member visibility, decoded
+case-insensitively from the lowercase file vocabulary ([impl.md](impl.md)).
 
 ## Exception / Error Types
 
@@ -143,6 +142,12 @@ vocabulary ([impl.md](impl.md)).
   kind-mismatched signature, `returns` beside a callable signature. Raised
   at decode through the shared load-boundary contract
   ([design.md](design.md)).
+
+## Open Gaps
+
+- `SignatureInfo.ClassSignature` does not yet expose `handlers`, and
+  `HandlerFact` and `HandlerSlot` are not implemented. Their interface is
+  specified above for the [effective handler facts](model-declarations-handlers.md).
 
 Semantics: [model-declarations.md](model-declarations.md). The entry form:
 [design-entries.md](design-entries.md).

@@ -12,11 +12,14 @@ target type, or the opcode of the operation.
 
 - A fact states the effective target of the slot, or the alternatives of a
   table that selects among targets by the request, and the kinds of the
-  normal result the slot is established to produce (the classification of
-  Return Classification in [model-declarations.md](model-declarations.md#return-classification)).
-- A slot that is NULL in the class is stated as positively absent. That
-  differs from a slot with no fact: missing coverage stays unestablished and
-  is never read as the standard behavior.
+  normal result the slot is established to produce (classified as in
+  [Return Classification](model-declarations.md#return-classification)).
+- A slot that is NULL in the class is stated as positively absent. A
+  present slot with no normal return for a request has an empty set of
+  normal-result kinds. Neither case is missing coverage: a missing fact
+  for the consumed slot and request stays unestablished and is never read
+  as the standard behavior. An absent whole-slot fact applies to every
+  request of that slot.
 - A consumer finds the class candidates of an object through its LINK_WITH
   and INSTANCE_OF relations, reads the declaration kind through DEFINED_BY,
   and reaches the facts of an ancestor through the INHERIT_FROM lookup over
@@ -64,3 +67,27 @@ bool(true)
 
 The string cast of a tidy object is the native string, whatever the user
 class declares.
+
+An object of `stdClass` has a present string cast with no normal result, a
+boolean cast that yields true, and a NULL arithmetic slot:
+
+```php
+<?php
+try {
+    var_dump((string) new stdClass);
+} catch (Error $error) {
+    echo get_class($error), ': ', $error->getMessage(), "\n";
+}
+var_dump((bool) new stdClass);
+try {
+    var_dump((new stdClass) + 1);
+} catch (TypeError $error) {
+    echo get_class($error), ': ', $error->getMessage(), "\n";
+}
+```
+
+```text
+Error: Object of class stdClass could not be converted to string
+bool(true)
+TypeError: Unsupported operand types: stdClass + int
+```
