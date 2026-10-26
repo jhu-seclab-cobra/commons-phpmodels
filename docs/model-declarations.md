@@ -21,7 +21,9 @@ declaration kind, with no nesting of one declaration inside another.
     counts that always compile to one opcode reading two or more arguments,
     and the parameter whose constant value php-src compiles into a rope. A
     method declaration states none of them.
-  - *class* — classifier (class, interface, trait, enum), parent, interfaces.
+  - *class* — classifier (class, interface, trait, enum), parent, interfaces,
+    and the effective handler facts of a builtin class
+    ([model-declarations-handlers.md](model-declarations-handlers.md)).
   - *constant*, *class constant* — declared type, literal value. The value
     is the constant's spelled literal, stored losslessly; absent when the
     declaring source does not state one (hand-written entries). Consumers

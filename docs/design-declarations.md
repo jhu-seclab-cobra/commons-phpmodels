@@ -9,9 +9,9 @@ the declared-type vocabulary. Subject spellings and creators:
 
 - **Sealed hierarchies:** `SignatureInfo` (`CallableSignature`,
   `ClassSignature`, `TypedSignature`, `PropertySignature`)
-- **Classes:** `ParameterInfo`, `DeclaredType` (value class)
-- **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM), `Visibility`
-  (PUBLIC, PROTECTED, PRIVATE)
+- **Classes:** `ParameterInfo`, `HandlerFact`, `DeclaredType` (value class)
+- **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM), `HandlerSlot`
+  (CAST, COMPARE, OPERATION), `Visibility` (PUBLIC, PROTECTED, PRIVATE)
 - **Relationships:** `ModelEntry` contains at most one `SignatureInfo`
   ([design-entries.md](design-entries.md)); `CallableSignature`
   contains `ParameterInfo`s; `ParameterInfo`, `TypedSignature`, and
@@ -56,11 +56,22 @@ describable kind, holding exactly the fields
   `IllegalArgumentException`. The YAML keys are the field names; an absent
   key reads as empty or null.
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
-  `interfaces: List<String>`; a `data class` with a private constructor
+  `interfaces: List<String>`, `handlers: List<HandlerFact>` (empty when the
+  class states none); a `data class` with a private constructor
   whose companion `invoke` factory — also the Jackson creator — folds the
   inheritance edges into the stored, compared form ([impl.md](impl.md));
   **Validation (`init`):** `parent`, when present, and every interface
-  name non-blank
+  name non-blank; no two handler facts share a slot and request
+- `HandlerFact` — `slot: HandlerSlot`, `request: String?` (the cast target
+  type or the opcode name; null for a slot without one), `targets:
+  List<String>` (the effective target, or the alternatives of the table that
+  selects among targets by request), `absent: Boolean` (the slot is NULL in
+  the class), `results: Set<ReturnKind>` (the established kinds of the
+  normal result). **Validation (`init`):** an absent fact has no target and
+  no result kind; any other fact has a target and a non-empty result set.
+  Semantics: [model-declarations-handlers.md](model-declarations-handlers.md).
+  A class that states no fact for a slot has missing coverage, which a
+  consumer reads as unestablished.
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
@@ -120,10 +131,10 @@ this file, fixed by the PHP type system, not configuration. The relative
 class types `self`, `static`, and `parent` match the class-name spelling
 and derive to `ANY`.
 
-### Classifier, Visibility
+### Classifier, HandlerSlot, Visibility
 
-**Responsibility:** Closed enums for the class-like declaration kinds and
-member visibility, decoded case-insensitively from the lowercase file
+**Responsibility:** Closed enums for the class-like declaration kinds, the
+object handler slots a fact describes, and member visibility, decoded case-insensitively from the lowercase file
 vocabulary ([impl.md](impl.md)).
 
 ## Exception / Error Types
