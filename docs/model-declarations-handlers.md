@@ -2,24 +2,43 @@
 
 The handler facts of the class signature in a declaration entry
 ([model-declarations.md](model-declarations.md)). Software structure:
-[design-declarations.md](design-declarations.md).
+[design-declarations-handlers.md](design-declarations-handlers.md).
 
 The class signature states how a builtin class's native object handlers
 behave, for a consumer that must decide what a conversion or comparison of
-an object of that class yields. Each fact describes one handler slot of the
-class (cast, comparison, arithmetic operation) for one request: the cast
+an object of that class yields. The signature groups facts by effective
+object-handler table alternative. Each fact describes one slot of that
+table (cast, comparison, arithmetic operation) for one request: the cast
 target type, or the opcode of the operation.
 
-- A fact states the effective target of the slot, or the alternatives of a
-  table that selects among targets by the request, and the kinds of the
-  normal result the slot is established to produce (classified as in
-  [Return Classification](model-declarations.md#return-classification)).
-- A slot that is NULL in the class is stated as positively absent. A
-  present slot with no normal return for a request has an empty set of
-  normal-result kinds. Neither case is missing coverage: a missing fact
-  for the consumed slot and request stays unestablished and is never read
-  as the standard behavior. An absent whole-slot fact applies to every
-  request of that slot.
+- Each target alternative keeps its source identity, established normal-result
+  kinds and string dispatch together. Result kinds use
+  [Return Classification](model-declarations.md#return-classification).
+  Every possible table selection is retained within the signature; no
+  separate runtime table or selected-state property exists.
+- A slot that is NULL in one effective table is stated as positively absent.
+  A present target with no normal return for a request has an empty set of
+  normal-result kinds. Missing table or request coverage stays unestablished
+  and is never read as standard behavior. An absent whole slot applies to
+  every request of that slot; presence in a different table is independent.
+- An entirely unestablished class states no table coverage. A reachable
+  unresolved table remains an alternative with no established facts. Missing
+  coverage beside a known sibling cannot be discarded. A consumer without
+  native-state evaluation retains every table and applies the requested
+  dispatch and its PHP failure continuation before joining outcomes.
+- String dispatch is one of: no effective-method call; only that method;
+  attempt the method before native conversion; or native conversion before
+  the method. A later stage supplies a normal result only after an earlier
+  failure with no pending exception; this does not assert that C skips later
+  instructions while an exception is pending. Native-first fallback is controlled by
+  conversion failure, not failure of an earlier native invocation.
+  The ordinary effective-method call supplies its result and effects;
+  an ancestor's native bounds never replace a selected user method result.
+- Normal-result kinds bound possible normal values, without asserting a
+  literal value, success or absence of exceptions. The kinds of a native
+  or default path do not independently establish that the path is reached.
+  Unknown native success retains feasible native results and method calls.
+  Empty native results do not erase a language-level failure continuation.
 - A consumer finds the class candidates of an object through its LINK_WITH
   and INSTANCE_OF relations, reads the declaration kind through DEFINED_BY,
   and reaches the facts of an ancestor through the INHERIT_FROM lookup over
@@ -29,6 +48,8 @@ target type, or the opcode of the operation.
   native or standard dispatcher of the class uses it. SimpleXML does; tidy
   does not; COM falls back to it under a condition. A string method never
   overrides a native boolean, numeric or comparison slot.
+
+## Edge Cases
 
 ```php
 <?php
@@ -90,4 +111,86 @@ try {
 Error: Object of class stdClass could not be converted to string
 bool(true)
 TypeError: Unsupported operand types: stdClass + int
+```
+
+A standard-dispatched descendant method is retained despite its anchor's empty string bound:
+
+```php
+<?php
+class NativeBaseChild extends stdClass {
+    public function __toString(): string { return 'child'; }
+}
+final class FinalNativeGrandchild extends NativeBaseChild {}
+$object = new FinalNativeGrandchild;
+var_dump((string) $object, (bool) $object);
+try {
+    var_dump((string) new stdClass);
+} catch (Throwable $error) {
+    echo get_class($error), ': ', $error->getMessage(), "\n";
+}
+```
+
+```text
+string(5) "child"
+bool(true)
+Error: Object of class stdClass could not be converted to string
+```
+
+A throwing method supplies no normal native recovery; tidy casting bypasses it:
+
+```php
+<?php
+class ThrowingXml extends SimpleXMLElement {
+    public function __toString(): string {
+        echo "xml-method\n";
+        throw new RuntimeException('xml-stop');
+    }
+}
+class ThrowingTidy extends tidy {
+    public function __toString(): string {
+        echo "tidy-method\n";
+        throw new RuntimeException('tidy-stop');
+    }
+}
+try {
+    var_dump((string) new ThrowingXml('<r>native</r>'));
+} catch (RuntimeException $error) {
+    echo $error->getMessage(), "\n";
+}
+$document = new ThrowingTidy;
+$document->parseString('<p>native</p>');
+var_dump(str_contains((string) $document, 'native'));
+try {
+    $document->__toString();
+} catch (RuntimeException $error) {
+    echo $error->getMessage(), "\n";
+}
+```
+
+```text
+xml-method
+xml-stop
+bool(true)
+tidy-method
+tidy-stop
+```
+
+The same native class can have both present and NULL operation alternatives:
+
+```php
+<?php
+$ffi = FFI::cdef('typedef int I;');
+$scalar = $ffi->new('int');
+$pointer = FFI::addr($scalar);
+try {
+    var_dump($scalar + 1);
+} catch (TypeError $error) {
+    echo get_class($error), ': ', $error->getMessage(), "\n";
+}
+var_dump(get_debug_type($pointer + 1));
+```
+
+```text
+TypeError: Unsupported operand types: FFI\CData + int
+string(9) "FFI\CData"
 ```

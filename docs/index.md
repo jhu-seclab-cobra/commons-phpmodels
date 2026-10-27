@@ -15,6 +15,7 @@
 | design-entries.md | The entry form, its creator, and entry-level validation. |
 | design-conditions.md | The argument pattern type and its match operation. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
+| design-declarations-handlers.md | Table alternatives, requests, target results and dispatch types. |
 | design-sets.md | Set loader, resource opener, vocabulary mapping, provenance, precedence. |
 | impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
 | llms.txt | Agent documentation index in llmstxt.org format, routing to llms/. |

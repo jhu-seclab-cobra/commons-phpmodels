@@ -9,9 +9,10 @@ the declared-type vocabulary. Subject spellings and creators:
 
 - **Sealed hierarchies:** `SignatureInfo` (`CallableSignature`,
   `ClassSignature`, `TypedSignature`, `PropertySignature`)
-- **Classes:** `ParameterInfo`, `HandlerFact`, `DeclaredType` (value class)
-- **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM), `HandlerSlot`
-  (CAST, COMPARE, OPERATION), `Visibility` (PUBLIC, PROTECTED, PRIVATE)
+- **Classes:** `ParameterInfo`, `DeclaredType` (value class); handler types:
+  [Handler Facts](design-declarations-handlers.md).
+- **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM),
+  `Visibility` (PUBLIC, PROTECTED, PRIVATE)
 - **Relationships:** `ModelEntry` contains at most one `SignatureInfo`
   ([design-entries.md](design-entries.md)); `CallableSignature`
   contains `ParameterInfo`s; `ParameterInfo`, `TypedSignature`, and
@@ -56,24 +57,14 @@ describable kind, holding exactly the fields
   `IllegalArgumentException`. The YAML keys are the field names; an absent
   key reads as empty or null.
 - `ClassSignature` — `classifier: Classifier`, `parent: String?`,
-  `interfaces: List<String>`, `handlers: List<HandlerFact>` (empty when the
-  class states none); a `data class` with a private constructor
-  whose companion `invoke` factory — also the Jackson creator — folds the
-  inheritance edges into the stored, compared form ([impl.md](impl.md));
-  **Validation (`init`):** `parent`, when present, and every interface
-  name non-blank; no two handler facts share a slot and request, and no
-  slot has both an absent fact and a present fact. A violation raises
-  `IllegalArgumentException`.
-- `HandlerFact` — `slot: HandlerSlot`, `request: String?`,
-  `targets: List<String>`, `absent: Boolean`, `results: Set<ReturnKind>`.
-  Field meanings: [Effective Handler Facts](model-declarations-handlers.md).
-  **Validation (`init`):** every target is non-blank. A non-null CAST
-  request names a consumed PHP cast request; a non-null OPERATION request
-  names a consumed PHP opcode. A present CAST or OPERATION fact requires a
-  request; a COMPARE fact has a null request. A null request is also
-  allowed for an absent whole slot. An absent fact has no target and
-  no result kind; a present fact has at least one target and permits an
-  empty result set. A violation raises `IllegalArgumentException`.
+  `interfaces: List<String>`, `isFinal: Boolean? = null`,
+  `handlers: List<HandlerTable> = emptyList()`; a `data class` with a private
+  constructor whose companion `invoke` factory — also the Jackson creator —
+  folds the inheritance edges into the stored, compared form ([impl.md](impl.md)).
+  A missing final status decodes as null; omitted handlers decode as empty.
+  Table alternatives and their validation: [Handler Facts](design-declarations-handlers.md).
+  **Validation (`init`):** `parent`, when present, and every interface name
+  non-blank. A violation raises `IllegalArgumentException`.
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
   class constant; the spelled literal, null when the source states none)
 - `PropertySignature` — `type: DeclaredType`, `visibility: Visibility`,
@@ -133,10 +124,10 @@ this file, fixed by the PHP type system, not configuration. The relative
 class types `self`, `static`, and `parent` match the class-name spelling
 and derive to `ANY`.
 
-### Classifier, HandlerSlot, Visibility
+### Classifier, Visibility
 
-**Responsibility:** Closed enums for the class-like declaration kinds, the
-object handler slots a fact describes, and member visibility, decoded
+**Responsibility:** Closed enums for the class-like declaration kinds
+and member visibility, decoded
 case-insensitively from the lowercase file vocabulary ([impl.md](impl.md)).
 
 ## Exception / Error Types
@@ -148,9 +139,9 @@ case-insensitively from the lowercase file vocabulary ([impl.md](impl.md)).
 
 ## Open Gaps
 
-- `SignatureInfo.ClassSignature` does not yet expose `handlers`, and
-  `HandlerFact` and `HandlerSlot` are not implemented. Their interface is
-  specified above for the [effective handler facts](model-declarations-handlers.md).
+- `SignatureInfo.ClassSignature` does not yet expose `isFinal` or
+  `handlers`; the handler types in [Handler Facts](design-declarations-handlers.md)
+  are not implemented. Semantics: [effective handler facts](model-declarations-handlers.md).
 
 Semantics: [model-declarations.md](model-declarations.md). The entry form:
 [design-entries.md](design-entries.md).

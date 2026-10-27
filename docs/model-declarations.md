@@ -22,8 +22,16 @@ declaration kind, with no nesting of one declaration inside another.
     and the parameter whose constant value php-src compiles into a rope. A
     method declaration states none of them.
   - *class* — classifier (class, interface, trait, enum), parent, interfaces,
-    and the effective handler facts of a builtin class
+    final-class status, and the effective handler facts of a builtin class
     ([model-declarations-handlers.md](model-declarations-handlers.md)).
+    Final-class status is the registered declaration's FINAL status, independent
+    of classifier and local to that declaration. True states the flag is set;
+    false states it is clear; unestablished status proves neither. Registration
+    and compatible declaration modifiers establish the status. Enum restrictions
+    apply independently even when an internal enum has no FINAL flag. An
+    unregistered pseudo class or unavailable external declaration establishes
+    no registered status. Final-class status is never inherited and establishes
+    neither instantiability nor object content.
   - *constant*, *class constant* — declared type, literal value. The value
     is the constant's spelled literal, stored losslessly; absent when the
     declaring source does not state one (hand-written entries). Consumers
@@ -159,3 +167,26 @@ alternatives of the declared type itself.
 Concept and rationale: [concept.md](concept.md). Assertion axis:
 [model.md](model.md). Software structure:
 [design-declarations.md](design-declarations.md).
+
+## Edge Cases
+
+An enum's inheritance restriction is independent of its registered FINAL flag:
+
+```php
+<?php
+enum UserEnum { case A; }
+foreach (['RoundingMode', 'UserEnum'] as $name) {
+    $reflection = new ReflectionClass($name);
+    echo $name, "\n";
+    var_dump($reflection->isFinal(), $reflection->isEnum());
+}
+```
+
+```text
+RoundingMode
+bool(false)
+bool(true)
+UserEnum
+bool(true)
+bool(true)
+```
