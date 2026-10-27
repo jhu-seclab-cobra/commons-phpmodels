@@ -61,14 +61,17 @@ describable kind, holding exactly the fields
   whose companion `invoke` factory — also the Jackson creator — folds the
   inheritance edges into the stored, compared form ([impl.md](impl.md));
   **Validation (`init`):** `parent`, when present, and every interface
-  name non-blank; no two handler facts share a slot and request
+  name non-blank; no two handler facts share a slot and request, and no
+  slot has both an absent fact and a present fact. A violation raises
+  `IllegalArgumentException`.
 - `HandlerFact` — `slot: HandlerSlot`, `request: String?`,
   `targets: List<String>`, `absent: Boolean`, `results: Set<ReturnKind>`.
   Field meanings: [Effective Handler Facts](model-declarations-handlers.md).
-  **Validation (`init`):** every target is non-blank. A present CAST fact
-  names a consumed PHP cast request; a present OPERATION fact names a
-  consumed PHP opcode; a COMPARE fact has a null request. A null request is
-  also allowed for an absent whole slot. An absent fact has no target and
+  **Validation (`init`):** every target is non-blank. A non-null CAST
+  request names a consumed PHP cast request; a non-null OPERATION request
+  names a consumed PHP opcode. A present CAST or OPERATION fact requires a
+  request; a COMPARE fact has a null request. A null request is also
+  allowed for an absent whole slot. An absent fact has no target and
   no result kind; a present fact has at least one target and permits an
   empty result set. A violation raises `IllegalArgumentException`.
 - `TypedSignature` — `type: DeclaredType`, `value: String?` (constant,
