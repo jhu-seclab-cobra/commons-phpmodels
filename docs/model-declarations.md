@@ -94,7 +94,7 @@ alternatives of the declared type itself.
 
 | From | To | Relation | Cardinality | Meaning |
 |------|----|----------|-------------|---------|
-| Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; members reference their class by identity, never by containment |
+| Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; a member references its class by identity, and a class entry never holds its member entries |
 | Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the returns classification when propagation is asserted |
 | Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, condition, unit) |
 
