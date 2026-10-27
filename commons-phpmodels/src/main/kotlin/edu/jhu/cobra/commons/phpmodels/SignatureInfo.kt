@@ -80,17 +80,28 @@ public sealed interface SignatureInfo {
      * @property classifier The declaration kind.
      * @property parent Case-folded parent class name, or null when none.
      * @property interfaces Case-folded implemented interface names.
-     * @throws IllegalArgumentException If the parent or an interface name is blank.
+     * @property isFinal The registered declaration's FINAL flag, local to this
+     *   declaration, independent of the classifier and never inherited; null
+     *   when unestablished, which proves neither value.
+     * @property handlers The effective object-handler table alternatives of a
+     *   builtin class; empty when none is established.
+     * @throws IllegalArgumentException If the parent or an interface name is
+     *   blank, a table is null, or two tables share an id.
      */
     @ConsistentCopyVisibility
     public data class ClassSignature private constructor(
         val classifier: Classifier,
         val parent: String?,
         val interfaces: List<String>,
+        val isFinal: Boolean?,
+        val handlers: List<HandlerTable>,
     ) : SignatureInfo {
         init {
             require(parent == null || parent.isNotBlank()) { "Class signature declares a blank parent" }
             require(interfaces.none { it.isBlank() }) { "Class signature declares a blank interface" }
+            require(handlers.none { (it as HandlerTable?) == null }) { "Class signature holds a null handler table" }
+            val repeated = handlers.groupingBy { it.id }.eachCount().entries.firstOrNull { it.value > 1 }
+            require(repeated == null) { "Class signature repeats handler table id ${repeated?.key}" }
         }
 
         public companion object {
@@ -101,7 +112,10 @@ public sealed interface SignatureInfo {
                 classifier: Classifier,
                 parent: String? = null,
                 interfaces: List<String> = emptyList(),
-            ): ClassSignature = ClassSignature(classifier, parent?.lowercase(), interfaces.map(String::lowercase))
+                isFinal: Boolean? = null,
+                handlers: List<HandlerTable> = emptyList(),
+            ): ClassSignature =
+                ClassSignature(classifier, parent?.lowercase(), interfaces.map(String::lowercase), isFinal, handlers)
         }
     }
 

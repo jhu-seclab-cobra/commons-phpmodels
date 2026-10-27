@@ -1,0 +1,12 @@
+- subject:
+    class: Bad
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts:
+          - slot: shift
+            request: zend_add
+            targets:
+              - symbol: a.c:op
+                results: [any]

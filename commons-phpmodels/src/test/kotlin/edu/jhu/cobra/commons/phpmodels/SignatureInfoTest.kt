@@ -4,6 +4,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Signature field validation.
@@ -34,6 +36,16 @@ import kotlin.test.assertNotEquals
  * - `class signatures compare by folded fields` — equality and hash code
  *   over classifier, folded parent, and folded interfaces.
  * - `class signature spells its fields` — the toString form.
+ * - `class signature final status defaults to null` — unestablished status
+ *   proves neither true nor false; handlers default to empty.
+ * - `final status is independent of the classifier` — an enum or interface
+ *   states whichever flag its declaration carries.
+ * - `class signatures compare final status and handlers` — both fields take
+ *   part in equality and hash code.
+ * - `class signature rejects duplicate table ids` — a table id appears once.
+ * - `class signature rejects a null table` — null collection elements.
+ * - `pinned stdClass facts` — an empty native string bound with the
+ *   method-only dispatch still admits a descendant method.
  */
 internal class SignatureInfoTest {
     @Test
@@ -72,7 +84,7 @@ internal class SignatureInfoTest {
     @Test
     fun `class signature spells its fields`() {
         assertEquals(
-            "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable])",
+            "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable], isFinal=null, handlers=[])",
             SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable")).toString(),
         )
     }
@@ -176,5 +188,70 @@ internal class SignatureInfoTest {
         assertEquals(0, SignatureInfo.CallableSignature(returnType = DeclaredType("void")).maxArguments)
         val variadic = listOf(ParameterInfo("values", DeclaredType("mixed"), optional = true, variadic = true))
         assertEquals(Int.MAX_VALUE, SignatureInfo.CallableSignature(variadic, DeclaredType("int")).maxArguments)
+    }
+
+    @Test
+    fun `class signature final status defaults to null`() {
+        val signature = SignatureInfo.ClassSignature(Classifier.CLASS)
+        assertNull(signature.isFinal)
+        assertEquals(emptyList(), signature.handlers)
+    }
+
+    @Test
+    fun `final status is independent of the classifier`() {
+        assertEquals(false, SignatureInfo.ClassSignature(Classifier.ENUM, isFinal = false).isFinal)
+        assertEquals(true, SignatureInfo.ClassSignature(Classifier.INTERFACE, isFinal = true).isFinal)
+        assertNotEquals(
+            SignatureInfo.ClassSignature(Classifier.ENUM, isFinal = false),
+            SignatureInfo.ClassSignature(Classifier.ENUM),
+        )
+    }
+
+    @Test
+    fun `class signatures compare final status and handlers`() {
+        val table = HandlerTable("a.c:t", emptyList())
+        val one = SignatureInfo.ClassSignature(Classifier.CLASS, isFinal = true, handlers = listOf(table))
+        val same = SignatureInfo.ClassSignature(Classifier.CLASS, isFinal = true, handlers = listOf(table))
+        assertEquals(one, same)
+        assertEquals(one.hashCode(), same.hashCode())
+        assertNotEquals(one, SignatureInfo.ClassSignature(Classifier.CLASS, isFinal = true))
+        assertNotEquals(one, SignatureInfo.ClassSignature(Classifier.CLASS, isFinal = false, handlers = listOf(table)))
+    }
+
+    @Test
+    fun `class signature rejects duplicate table ids`() {
+        val table = HandlerTable("a.c:t", emptyList())
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.ClassSignature(Classifier.CLASS, handlers = listOf(table, HandlerTable("a.c:t", emptyList())))
+        }
+    }
+
+    @Test
+    fun `class signature rejects a null table`() {
+        @Suppress("UNCHECKED_CAST")
+        val withNull = listOf<HandlerTable?>(null) as List<HandlerTable>
+        assertFailsWith<IllegalArgumentException> {
+            SignatureInfo.ClassSignature(Classifier.CLASS, handlers = withNull)
+        }
+    }
+
+    @Test
+    fun `pinned stdClass facts keep an empty string bound beside method-only dispatch`() {
+        val string =
+            HandlerFact(
+                HandlerSlot.CAST,
+                HandlerRequest.IS_STRING,
+                listOf(HandlerTarget("Zend/zend_object_handlers.c:tostring", emptySet(), StringDispatch.METHOD_ONLY)),
+                absent = false,
+            )
+        val signature =
+            SignatureInfo.ClassSignature(
+                Classifier.CLASS,
+                isFinal = false,
+                handlers = listOf(HandlerTable("Zend/zend_objects.c:std_object_handlers", listOf(string))),
+            )
+        val target = signature.handlers.single().facts.single().targets.single()
+        assertTrue(target.results.isEmpty())
+        assertEquals(StringDispatch.METHOD_ONLY, target.stringDispatch)
     }
 }

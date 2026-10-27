@@ -78,10 +78,6 @@ their meaning is owned by the handler model. It is never a success flag.
   dispatch, collections, duplicate table ids or inconsistent table facts.
   Construction and YAML violations use the existing load-boundary contract.
 
-## Open Gaps
-
-- The handler types, fields and validation above are not implemented.
-
 ## Edge Cases
 
 Deferred initializers and ordinary runtime syntax share the consumed protocol:

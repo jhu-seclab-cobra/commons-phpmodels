@@ -1,0 +1,10 @@
+- subject:
+    class: Bad
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts:
+          - slot: compare
+            targets:
+              - symbol: a.c:compare

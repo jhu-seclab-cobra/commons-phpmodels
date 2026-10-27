@@ -1,0 +1,9 @@
+- subject:
+    class: Alias
+  signature:
+    classifier: class
+    handlers:
+      - id: &table a.c:handlers
+        facts: []
+      - id: *table
+        facts: []

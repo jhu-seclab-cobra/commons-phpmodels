@@ -137,11 +137,5 @@ case-insensitively from the lowercase file vocabulary ([impl.md](impl.md)).
   at decode through the shared load-boundary contract
   ([design.md](design.md)).
 
-## Open Gaps
-
-- `SignatureInfo.ClassSignature` does not yet expose `isFinal` or
-  `handlers`; the handler types in [Handler Facts](design-declarations-handlers.md)
-  are not implemented. Semantics: [effective handler facts](model-declarations-handlers.md).
-
 Semantics: [model-declarations.md](model-declarations.md). The entry form:
 [design-entries.md](design-entries.md).

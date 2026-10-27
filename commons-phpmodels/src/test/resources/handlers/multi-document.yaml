@@ -1,0 +1,10 @@
+- subject:
+    class: One
+  signature:
+    classifier: class
+    isFinal: true
+---
+- subject:
+    class: Two
+  signature:
+    classifier: class

@@ -1,0 +1,17 @@
+- subject:
+    class: Dup
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts:
+          - slot: operation
+            request: zend_add
+            targets:
+              - symbol: a.c:op
+                results: [any]
+          - slot: operation
+            request: zend_add
+            targets:
+              - symbol: a.c:op2
+                results: [num]

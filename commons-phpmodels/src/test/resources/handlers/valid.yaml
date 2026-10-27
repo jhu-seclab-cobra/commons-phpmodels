@@ -1,0 +1,38 @@
+- subject:
+    class: FFI\CData
+  signature:
+    classifier: class
+    isFinal: true
+    handlers:
+      - id: ext/ffi/ffi.c:zend_ffi_cdata_handlers
+        facts:
+          - slot: cast
+            request: is_string
+            targets:
+              - symbol: ext/ffi/ffi.c:zend_ffi_cdata_cast_object
+                results: [str]
+                stringDispatch: native_first
+          - slot: compare
+            targets:
+              - symbol: ext/ffi/ffi.c:zend_ffi_cdata_compare
+                results: [num]
+          - slot: operation
+            request: zend_add
+            targets:
+              - symbol: ext/ffi/ffi.c:zend_ffi_cdata_do_operation
+                results: [any]
+          - slot: operation
+            request: zend_sub
+            targets:
+              - symbol: ext/ffi/ffi.c:zend_ffi_cdata_do_operation
+                results: [num, any]
+      - id: ext/ffi/ffi.c:zend_ffi_cdata_free_handlers
+        facts:
+          - slot: cast
+            request: is_string
+            targets:
+              - symbol: ext/ffi/ffi.c:zend_ffi_cdata_cast_object
+                results: []
+                stringDispatch: none
+          - slot: operation
+            absent: true

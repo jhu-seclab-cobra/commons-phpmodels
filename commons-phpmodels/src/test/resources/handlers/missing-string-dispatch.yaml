@@ -1,0 +1,12 @@
+- subject:
+    class: Bad
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts:
+          - slot: cast
+            request: is_string
+            targets:
+              - symbol: a.c:cast
+                results: [str]

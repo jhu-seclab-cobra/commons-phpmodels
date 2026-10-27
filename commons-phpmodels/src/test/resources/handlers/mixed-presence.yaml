@@ -1,0 +1,14 @@
+- subject:
+    class: Mixed
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts:
+          - slot: operation
+            absent: true
+          - slot: operation
+            request: zend_add
+            targets:
+              - symbol: a.c:op
+                results: [any]

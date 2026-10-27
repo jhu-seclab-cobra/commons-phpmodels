@@ -1,0 +1,9 @@
+- subject:
+    class: Dup
+  signature:
+    classifier: class
+    handlers:
+      - id: a.c:handlers
+        facts: []
+      - id: a.c:handlers
+        facts: []

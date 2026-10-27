@@ -1,0 +1,6 @@
+- subject:
+    class: Dup
+  signature:
+    classifier: class
+    isFinal: true
+    isFinal: false

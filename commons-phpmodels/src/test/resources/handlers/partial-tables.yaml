@@ -1,0 +1,23 @@
+- subject:
+    class: stdClass
+  signature:
+    classifier: class
+    isFinal: false
+    handlers:
+      - id: Zend/zend_objects.c:std_object_handlers
+        facts:
+          - slot: cast
+            request: is_string
+            targets:
+              - symbol: Zend/zend_object_handlers.c:zend_std_cast_object_tostring
+                results: []
+                stringDispatch: method_only
+          - slot: cast
+            request: _is_bool
+            targets:
+              - symbol: Zend/zend_object_handlers.c:zend_std_cast_object_tostring
+                results: [bool]
+          - slot: operation
+            absent: true
+      - id: Zend/zend_objects.c:unresolved_selection
+        facts: []
