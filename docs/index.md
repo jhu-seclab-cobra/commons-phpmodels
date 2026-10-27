@@ -5,7 +5,7 @@
 | concept.md | Problem, scope, terminology, data flow, scenarios. |
 | concept-provenance.md | Set provenance: producer, verification kind, precedence over sets. |
 | model.md | Model sections, subjects, taint vocabulary, relations, invariants. |
-| model-conditions.md | Conditional models: argument-pattern condition, match outcome, entry alternatives. |
+| model-conditions.md | Conditional models: argument condition, match outcome, alternatives. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
 | model-declarations-handlers.md | Effective object handler facts and inherited string behavior. |
 | model-sets.md | Document sets, accumulated vocabulary, vocabulary mapping, set provenance rank. |
@@ -15,6 +15,6 @@
 | design-entries.md | The entry form, its creator, and entry-level validation. |
 | design-conditions.md | The argument pattern type and its match operation. |
 | design-declarations.md | Signature types, parameters, declared-type vocabulary. |
-| design-sets.md | `DocumentSetLoader`, `ResourceOpener`, `VocabularyMapping`, `SetProvenance`, `Precedence`. |
+| design-sets.md | Set loader, resource opener, vocabulary mapping, provenance, precedence. |
 | impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
-| llms.txt | Agent-consumable documentation index (llmstxt.org format); routes to the llms/ module docs. |
+| llms.txt | Agent documentation index in llmstxt.org format, routing to llms/. |
