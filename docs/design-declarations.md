@@ -8,7 +8,7 @@ the declared-type vocabulary. Subject spellings and creators:
 ## Design Overview
 
 - **Sealed hierarchies:** `SignatureInfo` (`CallableSignature`,
-  `ClassSignature`, `TypedSignature`, `PropertySignature`)
+  `ClassSignature`, `TypedSignature`, `PropertySignature`), `NamedExtras`
 - **Classes:** `ParameterInfo`, `DeclaredType` (value class); handler types:
   [Handler Facts](design-declarations-handlers.md).
 - **Enums:** `Classifier` (CLASS, INTERFACE, TRAIT, ENUM),
@@ -96,8 +96,23 @@ caller.
 
 **Responsibility:** One declared parameter: `name: String`,
 `type: DeclaredType`, `optional: Boolean`, `byRef: Boolean`,
-`variadic: Boolean`. Position is list order. **Validation (`init`):**
-`name` non-blank.
+`variadic: Boolean`, `namedExtras: NamedExtras? = null`. Position is list order.
+**Validation (`init`):** `name` non-blank; a non-null `namedExtras` requires
+`variadic`.
+
+A builtin variadic parameter carries `namedExtras: NamedExtras?`, one of REJECT(k) (named extras are refused at reception position k), FORWARD (they reach a target callable) or null (not extracted). The extractor reads the value from the builtin's argument parsing in php-src.
+
+### NamedExtras
+
+**Responsibility:** Sealed alternatives `Reject(position: Int)` and `Forward`
+(data object). `position` is the zero-based start of the argument parsing
+group that refuses extra names; it may precede the declared variadic tail.
+**Validation (`init`):** `Reject.position` is non-negative.
+
+The YAML forms are `namedExtras: {kind: reject, position: k}` and
+`namedExtras: {kind: forward}`. An absent or null field decodes as null.
+Unknown kinds, unknown keys and a missing rejection position fail decoding
+through the existing strict mapper. No policy is inferred from variadicness.
 
 ### DeclaredType
 

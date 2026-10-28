@@ -1,0 +1,42 @@
+- subject:
+    function: reject_first
+  signature:
+    params:
+    - name: args
+      type: mixed
+      variadic: true
+      namedExtras: {kind: reject, position: 0}
+    returnType: mixed
+- subject:
+    function: reject_second
+  signature:
+    params:
+    - name: args
+      type: mixed
+      variadic: true
+      namedExtras: {kind: reject, position: 1}
+    returnType: mixed
+- subject:
+    method: target::forward
+  signature:
+    params:
+    - name: args
+      type: mixed
+      variadic: true
+      namedExtras: {kind: forward}
+    returnType: mixed
+- subject:
+    function: unextracted
+  signature:
+    params:
+    - name: args
+      type: mixed
+      variadic: true
+    returnType: mixed
+- subject:
+    function: ordinary
+  signature:
+    params:
+    - name: value
+      type: mixed
+    returnType: mixed

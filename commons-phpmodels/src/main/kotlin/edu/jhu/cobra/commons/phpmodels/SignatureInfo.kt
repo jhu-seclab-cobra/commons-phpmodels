@@ -1,6 +1,8 @@
 package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonSubTypes
+import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 /**
  * The decoded signature section of a declaration entry: what the declaration
@@ -100,7 +102,12 @@ public sealed interface SignatureInfo {
             require(parent == null || parent.isNotBlank()) { "Class signature declares a blank parent" }
             require(interfaces.none { it.isBlank() }) { "Class signature declares a blank interface" }
             require(handlers.none { (it as HandlerTable?) == null }) { "Class signature holds a null handler table" }
-            val repeated = handlers.groupingBy { it.id }.eachCount().entries.firstOrNull { it.value > 1 }
+            val repeated =
+                handlers
+                    .groupingBy { it.id }
+                    .eachCount()
+                    .entries
+                    .firstOrNull { it.value > 1 }
             require(repeated == null) { "Class signature repeats handler table id ${repeated?.key}" }
         }
 
@@ -149,6 +156,10 @@ public sealed interface SignatureInfo {
  * @property optional True when the parameter has a default value.
  * @property byRef True when the parameter is taken by reference.
  * @property variadic True when the parameter collects the variadic tail.
+ * @property namedExtras The extracted builtin policy for extra named arguments;
+ *   null when unextracted. Only a variadic parameter may state a policy.
+ * @throws IllegalArgumentException If the name is blank or a nonvariadic
+ *   parameter states a named-extra policy.
  */
 public data class ParameterInfo(
     val name: String,
@@ -156,10 +167,46 @@ public data class ParameterInfo(
     val optional: Boolean = false,
     val byRef: Boolean = false,
     val variadic: Boolean = false,
+    val namedExtras: NamedExtras? = null,
 ) {
     init {
         require(name.isNotBlank()) { "Parameter declares a blank name" }
+        require(variadic || namedExtras == null) { "Only a variadic parameter declares namedExtras" }
     }
+}
+
+/** An extracted builtin variadic policy; absence of extraction is null on [ParameterInfo]. */
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "kind")
+@JsonSubTypes(
+    JsonSubTypes.Type(value = NamedExtras.Reject::class, name = "reject"),
+    JsonSubTypes.Type(value = NamedExtras.Forward::class, name = "forward"),
+)
+public sealed interface NamedExtras {
+    /**
+     * Extra named arguments are refused at the zero-based start of a parsing group.
+     *
+     * @property position The reception position, which may precede the declared variadic tail.
+     * @throws IllegalArgumentException If the position is negative.
+     */
+    @ConsistentCopyVisibility
+    public data class Reject private constructor(
+        val position: Int,
+    ) : NamedExtras {
+        init {
+            require(position >= 0) { "Named-extra reception position must be non-negative: $position" }
+        }
+
+        public companion object {
+            /** Rejects a missing reception position at the decoding boundary. */
+            @JvmStatic
+            @JsonCreator
+            public operator fun invoke(position: Int?): Reject =
+                Reject(requireNotNull(position) { "Named-extra rejection requires a reception position" })
+        }
+    }
+
+    /** Extra named arguments reach a target callable. */
+    public data object Forward : NamedExtras
 }
 
 /** The closed set of class-like declaration kinds. */

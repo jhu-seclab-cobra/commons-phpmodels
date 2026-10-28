@@ -42,6 +42,14 @@ declaration kind, with no nesting of one declaration inside another.
 - **Parameter** — One declared parameter: name, declared type, optional,
   by-reference, variadic. Position is list order; position 0 is the first
   declared parameter.
+
+A builtin variadic parameter carries `namedExtras: NamedExtras?`, one of REJECT(k) (named extras are refused at reception position k), FORWARD (they reach a target callable) or null (not extracted). The extractor reads the value from the builtin's argument parsing in php-src.
+
+The reception position is the zero-based start of the parsing group that
+refuses extra names, which may precede the declared variadic tail. An
+unrecognized builtin has no extracted policy; forwarding, accept-and-ignore
+and unextracted behavior never assert rejection.
+
 - **Declared Type** — A PHP type declaration in the grammar of the PHP
   manual: a single type, a nullable type (`?T`), a union (`A|B`), an
   intersection of class names (`A&B`), or a union whose members are single
