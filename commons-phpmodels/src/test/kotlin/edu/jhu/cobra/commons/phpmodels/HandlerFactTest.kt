@@ -18,6 +18,8 @@ import kotlin.test.assertTrue
  * - `present cast to string requires a dispatch` — only IS_STRING states one.
  * - `other requests take no dispatch` — a dispatch beside any other request.
  * - `compare takes a null request, cast and operation require one`.
+ * - `all requests reject both wrong slots with either presence` — the complete partition matrix.
+ * - `null facts and targets reject` — both nested collection boundaries.
  * - `a request belongs to its slot` — on absent facts too.
  * - `an absent fact has no targets; a present fact has at least one`.
  * - `a target may hold an empty result set` — no normal return.
@@ -194,4 +196,29 @@ internal class HandlerFactTest {
         assertTrue(positive.absent && positive.targets.isEmpty())
         assertTrue(!emptyResult.absent && emptyResult.targets.single().results.isEmpty())
     }
+
+    @Test
+    fun `all requests reject both wrong slots with either presence`() {
+        for (request in HandlerRequest.entries) {
+            for (slot in HandlerSlot.entries.filter { it != request.slot }) {
+                val target = HandlerTarget(
+                    "a.c:f", emptySet(), if (request == HandlerRequest.IS_STRING) StringDispatch.NONE else null,
+                )
+                assertFailsWith<IllegalArgumentException> { HandlerFact(slot, request, listOf(target)) }
+                assertFailsWith<IllegalArgumentException> { HandlerFact(slot, request, absent = true) }
+            }
+        }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    @Test
+    fun `null facts and targets reject`() {
+        assertFailsWith<IllegalArgumentException> {
+            HandlerTable("a.c:t", listOf<HandlerFact?>(null) as List<HandlerFact>)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            HandlerFact(HandlerSlot.COMPARE, targets = listOf<HandlerTarget?>(null) as List<HandlerTarget>)
+        }
+    }
+
 }
