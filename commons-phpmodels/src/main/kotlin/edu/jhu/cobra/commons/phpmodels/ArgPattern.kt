@@ -39,12 +39,55 @@ public data class ArgPattern(
      */
     public fun matches(actual: List<IPrimitiveVal?>): Boolean? {
         if (expected.size > actual.size) return false
-        val outcomes = positions.map { outcomeAt(actual[it], expected[it]) }
-        return when {
-            outcomes.any { it == false } -> false
-            outcomes.any { it == null } -> null
-            else -> true
+        return combine(positions.map { outcomeAt(actual[it], expected[it]) })
+    }
+
+    /**
+     * Matches this condition against a call whose arguments each hold a set of alternatives. A constrained position
+     * holds when every alternative holds, fails when all fail, and is undecidable otherwise; the positions stay
+     * independent, so no combination of alternatives across positions is formed and the work is the sum of the
+     * alternatives over the constrained positions.
+     *
+     * @param actual The call's alternatives by position; a null entry marks an omitted argument, an alternative that
+     *   is null or [Unsure] an unknown one. A position this pattern leaves as a wildcard is not read.
+     * @return `false` when the pattern is longer than [actual], a constrained position is omitted, or every
+     *   alternative of a constrained position differs from its scalar; `true` when every alternative of every
+     *   constrained position equals its scalar; `null` otherwise.
+     */
+    public fun matchesAlternatives(actual: List<Set<IPrimitiveVal?>?>): Boolean? {
+        if (expected.size > actual.size) return false
+        return combine(positions.map { position -> positionOutcome(actual[position], expected[position]) })
+    }
+
+    // An omitted position fails; a supplied one answers over its alternatives.
+    private fun positionOutcome(
+        alternatives: Set<IPrimitiveVal?>?,
+        scalar: IPrimitiveVal?,
+    ): Boolean? = if (alternatives == null) false else alternativesOutcome(alternatives, scalar)
+
+    // A failing position decides over an unknown one.
+    private fun combine(outcomes: List<Boolean?>): Boolean? = when {
+        outcomes.any { it == false } -> false
+        outcomes.any { it == null } -> null
+        else -> true
+    }
+
+    // One position's outcome over its alternatives, each read once: all true → true, all false → false, else (an
+    // unknown or mixed set, or none) undecidable.
+    private fun alternativesOutcome(
+        alternatives: Set<IPrimitiveVal?>,
+        scalar: IPrimitiveVal?,
+    ): Boolean? {
+        var holds = false
+        var fails = false
+        for (alternative in alternatives) {
+            when (outcomeAt(alternative, scalar)) {
+                true -> holds = true
+                false -> fails = true
+                null -> return null
+            }
         }
+        return if (holds == fails) null else holds
     }
 
     // One position's outcome: unknown argument → undecidable, else equality.

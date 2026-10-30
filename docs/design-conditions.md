@@ -60,6 +60,14 @@ non-wildcard element; no element is an `Unsure`.
   non-null value other than `Unsure`; equality is commons-value equality,
   so `IntVal(1)` and `FloatVal(1.0)` are unequal. A failing position
   decides the outcome even when another position is unknown.
+- `fun matchesAlternatives(actual: List<Set<IPrimitiveVal?>?>): Boolean?` —
+  the same outcome over a call whose arguments each hold a set of
+  alternatives, a `null` entry marking an omitted argument. A non-wildcard
+  position holds when every alternative holds, fails when all fail and is
+  undecidable otherwise; it fails when its argument is omitted or `expected`
+  is longer than `actual`. A failing position decides over an undecidable
+  one. Positions are independent: the work is the sum of the alternatives
+  over the non-wildcard positions, with no combination across positions.
 - `val positions: List<Int>` — the non-wildcard positions, for the
   entry-level arity check ([design-entries.md](design-entries.md)).
 

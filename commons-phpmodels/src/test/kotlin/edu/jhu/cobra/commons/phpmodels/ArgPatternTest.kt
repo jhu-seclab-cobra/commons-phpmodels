@@ -34,6 +34,9 @@ import kotlin.test.assertNotEquals
  * - `matches …` — holds, fails, and undecidable outcomes, including a
  *   failing position deciding over an unknown one, a pattern longer than
  *   the call, cross-type inequality, and `NullVal` as a known argument.
+ * - `matchesAlternatives …` — the per-position alternatives: all holding, all failing, mixed or unknown
+ *   alternatives, an omitted port, independent ports, a wildcard position that is never read, and a
+ *   pattern longer than the call.
  */
 internal class ArgPatternTest {
     private fun condition(yaml: String): ArgPattern? =
@@ -154,5 +157,65 @@ internal class ArgPatternTest {
     fun `failing position decides over an unknown one`() {
         val pattern = ArgPattern(listOf(BoolVal(true), IntVal(2)))
         assertEquals(false, pattern.matches(listOf(null, IntVal(3))))
+    }
+
+    @Test
+    fun `matchesAlternatives holds when every alternative of every listed position holds`() {
+        val pattern = ArgPattern(listOf(null, IntVal(257)))
+        assertEquals(true, pattern.matchesAlternatives(listOf(setOf(StrVal("v")), setOf(IntVal(257)))))
+        assertEquals(true, pattern.matchesAlternatives(listOf(null, setOf(IntVal(257)), setOf(Unsure.ANY))))
+    }
+
+    @Test
+    fun `matchesAlternatives fails when all alternatives of a listed position fail`() {
+        val pattern = ArgPattern(listOf(IntVal(1)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(IntVal(2), StrVal("1"), FloatVal(1.0)))))
+    }
+
+    @Test
+    fun `matchesAlternatives is undecidable on mixed or unknown alternatives`() {
+        val pattern = ArgPattern(listOf(IntVal(1)))
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf(IntVal(1), IntVal(2)))))
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf(IntVal(1), null))))
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf(IntVal(2), Unsure.ANY))))
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf<IPrimitiveVal?>(null))))
+        assertEquals(null, pattern.matchesAlternatives(listOf(emptySet())))
+    }
+
+    @Test
+    fun `matchesAlternatives fails on an omitted listed position and ignores an omitted wildcard position`() {
+        val pattern = ArgPattern(listOf(null, IntVal(2)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(IntVal(9)), null)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf<IPrimitiveVal?>(null), null)))
+        assertEquals(true, pattern.matchesAlternatives(listOf(null, setOf(IntVal(2)))))
+    }
+
+    @Test
+    fun `matchesAlternatives fails on a call shorter than the pattern`() {
+        val pattern = ArgPattern(listOf(null, IntVal(2)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(IntVal(2)))))
+        assertEquals(false, pattern.matchesAlternatives(emptyList()))
+    }
+
+    @Test
+    fun `matchesAlternatives keeps the positions independent`() {
+        val pattern = ArgPattern(listOf(IntVal(1), IntVal(2)))
+        val both = listOf(setOf(IntVal(1), IntVal(3)), setOf(IntVal(2), IntVal(4)))
+        assertEquals(null, pattern.matchesAlternatives(both))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(IntVal(1), IntVal(3)), setOf(IntVal(4)))))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(IntVal(3)), setOf(IntVal(2), IntVal(4)))))
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf(IntVal(1), IntVal(3)), setOf(IntVal(2)))))
+        assertEquals(true, pattern.matchesAlternatives(listOf(setOf(IntVal(1)), setOf(IntVal(2)))))
+    }
+
+    @Test
+    fun `matchesAlternatives reads a singleton position as matches does`() {
+        val pattern = ArgPattern(listOf(BoolVal(true), IntVal(2)))
+        val calls = listOf(
+            listOf<IPrimitiveVal?>(null, IntVal(3)),
+            listOf(null, IntVal(2)),
+            listOf(BoolVal(true), IntVal(2)),
+        )
+        for (call in calls) assertEquals(pattern.matches(call), pattern.matchesAlternatives(call.map { setOf(it) }))
     }
 }
