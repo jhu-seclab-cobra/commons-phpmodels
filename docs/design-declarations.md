@@ -96,9 +96,18 @@ caller.
 
 **Responsibility:** One declared parameter: `name: String`,
 `type: DeclaredType`, `optional: Boolean`, `byRef: Boolean`,
-`variadic: Boolean`, `namedExtras: NamedExtras? = null`. Position is list order.
+`variadic: Boolean`, `namedExtras: NamedExtras? = null`,
+`default: String? = null`. Position is list order.
 **Validation (`init`):** `name` non-blank; a non-null `namedExtras` requires
-`variadic`.
+`variadic`; a non-null `default` requires `optional` and not `variadic`, and
+must spell a PHP scalar literal.
+
+`default` is the default the stub declares when it is a scalar literal:
+`true`, `false` or `null`, a decimal integer or float, or a quoted string
+without an escape. It is absent for a parameter without a default and for a
+default of any other form (a constant, an expression, an array).
+`defaultValue: IPrimitiveVal?` is the scalar `default` spells. The YAML form
+is `default: 'false'`, the spelled literal as text.
 
 A builtin variadic parameter carries `namedExtras: NamedExtras?`, one of REJECT(k) (named extras are refused at reception position k), FORWARD (they reach a target callable) or null (not extracted). The extractor reads the value from the builtin's argument parsing in php-src.
 

@@ -1,5 +1,10 @@
 package edu.jhu.cobra.commons.phpmodels
 
+import edu.jhu.cobra.commons.value.BoolVal
+import edu.jhu.cobra.commons.value.FloatVal
+import edu.jhu.cobra.commons.value.IntVal
+import edu.jhu.cobra.commons.value.NullVal
+import edu.jhu.cobra.commons.value.StrVal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -17,6 +22,9 @@ import kotlin.test.assertTrue
  * - `parameter rejects a blank name` — parameter identity is non-blank.
  * - `parameter flags default to false` — optional, by-reference, and
  *   variadic are opt-in.
+ * - `parameter default reads the scalar literal it spells` — the forms a stub default takes.
+ * - `parameter default needs an optional nonvariadic parameter and a scalar literal` — the validation.
+ * - `parameter default decodes from the spelled literal` — the YAML form.
  * - `typed signature value defaults to null` — a constant without a literal.
  * - `property signature static defaults to false` — instance is the default.
  * - `callable signature params default to empty` — a nullary callable.
@@ -87,6 +95,48 @@ internal class SignatureInfoTest {
             "ClassSignature(classifier=CLASS, parent=base, interfaces=[traversable], isFinal=null, handlers=[])",
             SignatureInfo.ClassSignature(Classifier.CLASS, "Base", listOf("Traversable")).toString(),
         )
+    }
+
+    @Test
+    fun `parameter default reads the scalar literal it spells`() {
+        fun valueOf(default: String?) =
+            ParameterInfo("value", DeclaredType("mixed"), optional = true, default = default).defaultValue
+        assertEquals(BoolVal(false), valueOf("false"))
+        assertEquals(BoolVal(true), valueOf("TRUE"))
+        assertEquals(NullVal, valueOf("null"))
+        assertEquals(IntVal(-1), valueOf("-1"))
+        assertEquals(FloatVal(1.5), valueOf("1.5"))
+        assertEquals(StrVal("a b"), valueOf("'a b'"))
+        assertEquals(StrVal(""), valueOf("\"\""))
+        assertNull(valueOf(null))
+        assertNull(ParameterInfo("value", DeclaredType("mixed")).defaultValue)
+    }
+
+    @Test
+    fun `parameter default needs an optional nonvariadic parameter and a scalar literal`() {
+        assertFailsWith<IllegalArgumentException> { ParameterInfo("value", DeclaredType("mixed"), default = "false") }
+        assertFailsWith<IllegalArgumentException> {
+            ParameterInfo("value", DeclaredType("mixed"), optional = true, variadic = true, default = "false")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ParameterInfo("value", DeclaredType("mixed"), optional = true, default = "PHP_INT_MAX")
+        }
+        assertFailsWith<IllegalArgumentException> {
+            ParameterInfo("value", DeclaredType("mixed"), optional = true, default = "'a\\n'")
+        }
+    }
+
+    @Test
+    fun `parameter default decodes from the spelled literal`() {
+        val entry =
+            loadModel(
+                "- subject:\n    function: f\n  signature:\n    params:\n" +
+                    "    - {name: a, type: bool, optional: true, default: 'false'}\n" +
+                    "    - {name: b, type: array, optional: true}\n" +
+                    "    returnType: void\n",
+            )
+        val params = (entry.signature as SignatureInfo.CallableSignature).params
+        assertEquals(listOf(BoolVal(false), null), params.map { it.defaultValue })
     }
 
     @Test
@@ -250,7 +300,13 @@ internal class SignatureInfoTest {
                 isFinal = false,
                 handlers = listOf(HandlerTable("Zend/zend_objects.c:std_object_handlers", listOf(string))),
             )
-        val target = signature.handlers.single().facts.single().targets.single()
+        val target =
+            signature.handlers
+                .single()
+                .facts
+                .single()
+                .targets
+                .single()
         assertTrue(target.results.isEmpty())
         assertEquals(StringDispatch.METHOD_ONLY, target.stringDispatch)
     }

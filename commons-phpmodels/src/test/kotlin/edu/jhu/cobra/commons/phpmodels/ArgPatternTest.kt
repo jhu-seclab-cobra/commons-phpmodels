@@ -35,8 +35,8 @@ import kotlin.test.assertNotEquals
  *   failing position deciding over an unknown one, a pattern longer than
  *   the call, cross-type inequality, and `NullVal` as a known argument.
  * - `matchesAlternatives …` — the per-position alternatives: all holding, all failing, mixed or unknown
- *   alternatives, an omitted port, independent ports, a wildcard position that is never read, and a
- *   pattern longer than the call.
+ *   alternatives, an omitted port, independent ports, a wildcard position that is never read, a
+ *   pattern longer than the call, and an omitted port read as its declared default.
  */
 internal class ArgPatternTest {
     private fun condition(yaml: String): ArgPattern? =
@@ -198,6 +198,36 @@ internal class ArgPatternTest {
     }
 
     @Test
+    fun `matchesAlternatives reads an omitted position as its declared default`() {
+        val pattern = ArgPattern(listOf(null, BoolVal(false)))
+        val defaults = listOf(null, BoolVal(false))
+        assertEquals(true, pattern.matchesAlternatives(listOf(setOf(StrVal("v"))), defaults))
+        assertEquals(true, pattern.matchesAlternatives(listOf(setOf(StrVal("v")), null), defaults))
+        assertEquals(true, pattern.matchesAlternatives(listOf(setOf(StrVal("v")), setOf(BoolVal(false))), defaults))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(StrVal("v")), setOf(BoolVal(true))), defaults))
+        assertEquals(
+            null,
+            pattern.matchesAlternatives(listOf(setOf(StrVal("v")), setOf<IPrimitiveVal?>(null)), defaults),
+        )
+        assertEquals(null, pattern.matchesAlternatives(listOf(setOf(StrVal("v")), setOf(Unsure.ANY)), defaults))
+    }
+
+    @Test
+    fun `matchesAlternatives fails an omitted position whose default differs or is absent`() {
+        val pattern = ArgPattern(listOf(null, BoolVal(true)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(StrVal("v"))), listOf(null, BoolVal(false))))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(StrVal("v"))), listOf(null, null)))
+        assertEquals(false, pattern.matchesAlternatives(listOf(setOf(StrVal("v"))), listOf(null)))
+    }
+
+    @Test
+    fun `matchesAlternatives reads a null default as a known value`() {
+        val pattern = ArgPattern(listOf(NullVal))
+        assertEquals(true, pattern.matchesAlternatives(emptyList(), listOf(NullVal)))
+        assertEquals(false, pattern.matchesAlternatives(emptyList(), listOf(BoolVal(false))))
+    }
+
+    @Test
     fun `matchesAlternatives keeps the positions independent`() {
         val pattern = ArgPattern(listOf(IntVal(1), IntVal(2)))
         val both = listOf(setOf(IntVal(1), IntVal(3)), setOf(IntVal(2), IntVal(4)))
@@ -211,11 +241,12 @@ internal class ArgPatternTest {
     @Test
     fun `matchesAlternatives reads a singleton position as matches does`() {
         val pattern = ArgPattern(listOf(BoolVal(true), IntVal(2)))
-        val calls = listOf(
-            listOf<IPrimitiveVal?>(null, IntVal(3)),
-            listOf(null, IntVal(2)),
-            listOf(BoolVal(true), IntVal(2)),
-        )
+        val calls =
+            listOf(
+                listOf<IPrimitiveVal?>(null, IntVal(3)),
+                listOf(null, IntVal(2)),
+                listOf(BoolVal(true), IntVal(2)),
+            )
         for (call in calls) assertEquals(pattern.matches(call), pattern.matchesAlternatives(call.map { setOf(it) }))
     }
 }

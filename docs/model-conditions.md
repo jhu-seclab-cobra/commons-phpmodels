@@ -9,8 +9,9 @@ Matching Subject, Port, Override Unit: [model.md](model.md).
   a sequence of expected values by argument position, each either one
   scalar (boolean, integer, float, string, null) or the *wildcard*. The
   condition holds at a call exactly when, for every position of the
-  sequence, the call supplies an argument at that position and, unless the
-  position is the wildcard, that argument is that scalar. Identity is the
+  sequence, the call supplies an argument at that position, or omits it
+  where the callable declares a scalar default, and, unless the position is
+  the wildcard, that argument or default is that scalar. Identity is the
   sequence. Equality is the only predicate.
 - **Conditional Entry** — One model entry for a subject that carries a
   Condition. Its sections describe the subject's whole behavior under that
@@ -42,15 +43,17 @@ Positions are compared in order; the first decisive position decides.
 
 | Outcome | Condition |
 |---------|-----------|
-| fails | The sequence is longer than the argument count |
-| fails | Some non-wildcard position holds a known argument not equal to its scalar |
-| holds | Every non-wildcard position holds a known argument equal to its scalar |
+| fails | A non-wildcard position is omitted and the callable declares no scalar default there |
+| fails | Some non-wildcard position holds a known argument, or an omitted position's declared default, not equal to its scalar |
+| holds | Every non-wildcard position holds a known argument, or an omitted position the callable's declared default, equal to its scalar |
 | undecidable | Neither: some non-wildcard position holds an unknown argument and no position fails |
 
 The argument count is always known to the consumer: a call site lists its
-arguments. A position beyond the count fails, so a condition on a
-defaulted parameter never holds; the Unconditional Entry therefore
-describes the subject with defaulted arguments.
+arguments. A position beyond the count is omitted, and PHP binds an omitted
+argument to the parameter's declared default, so the position answers as
+that scalar; with no scalar default it fails. A condition on a defaulted
+parameter therefore holds at a call that omits the argument exactly when the
+condition names the default.
 
 ## Invariants
 

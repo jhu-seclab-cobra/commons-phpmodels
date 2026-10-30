@@ -1,8 +1,10 @@
 package edu.jhu.cobra.commons.phpmodels
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import edu.jhu.cobra.commons.value.IPrimitiveVal
 
 /**
  * The decoded signature section of a declaration entry: what the declaration
@@ -158,8 +160,13 @@ public sealed interface SignatureInfo {
  * @property variadic True when the parameter collects the variadic tail.
  * @property namedExtras The extracted builtin policy for extra named arguments;
  *   null when unextracted. Only a variadic parameter may state a policy.
- * @throws IllegalArgumentException If the name is blank or a nonvariadic
- *   parameter states a named-extra policy.
+ * @property default The default the declaration spells when it is a PHP scalar
+ *   literal (`false`, `null`, `0`, `'x'`); null when the parameter declares no
+ *   default or one that is not such a literal (a constant, an expression, an
+ *   array).
+ * @throws IllegalArgumentException If the name is blank, a nonvariadic
+ *   parameter states a named-extra policy, or the default is stated on a
+ *   parameter that is not optional, is variadic, or is not a scalar literal.
  */
 public data class ParameterInfo(
     val name: String,
@@ -168,11 +175,23 @@ public data class ParameterInfo(
     val byRef: Boolean = false,
     val variadic: Boolean = false,
     val namedExtras: NamedExtras? = null,
+    val default: String? = null,
 ) {
     init {
         require(name.isNotBlank()) { "Parameter declares a blank name" }
         require(variadic || namedExtras == null) { "Only a variadic parameter declares namedExtras" }
+        require(
+            default == null || (optional && !variadic),
+        ) { "Only an optional nonvariadic parameter declares a default" }
+        require(
+            default == null || parsePhpScalarLiteral(default) != null,
+        ) { "Default $default is not a scalar literal" }
     }
+
+    /** The scalar [default] spells, or null when the parameter declares none. */
+    @get:JsonIgnore
+    val defaultValue: IPrimitiveVal?
+        get() = default?.let(::parsePhpScalarLiteral)
 }
 
 /** An extracted builtin variadic policy; absence of extraction is null on [ParameterInfo]. */

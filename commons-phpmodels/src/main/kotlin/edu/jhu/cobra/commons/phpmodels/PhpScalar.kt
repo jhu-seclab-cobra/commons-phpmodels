@@ -25,3 +25,26 @@ internal fun JsonNode.toPhpScalar(role: String): IPrimitiveVal =
         isTextual -> StrVal(textValue())
         else -> throw IllegalArgumentException("$role must be a scalar, got: $this")
     }
+
+/**
+ * Reads the PHP scalar literal a stub spells as a parameter default: `true`, `false` or `null` in any case, a decimal
+ * integer within `Long`, a decimal float, or a quoted string without an escape.
+ *
+ * @param spelled The default as the stub spells it.
+ * @return The scalar, or null when the spelling is none of those forms.
+ */
+internal fun parsePhpScalarLiteral(spelled: String): IPrimitiveVal? {
+    val quoted = spelled.length >= 2 && spelled.first() in "'\"" && spelled.last() == spelled.first()
+    return when {
+        spelled.lowercase() == "true" -> BoolVal(true)
+        spelled.lowercase() == "false" -> BoolVal(false)
+        spelled.lowercase() == "null" -> NullVal
+        quoted && '\\' !in spelled -> StrVal(spelled.substring(1, spelled.length - 1))
+        INTEGER.matches(spelled) -> spelled.toLongOrNull()?.let(::IntVal)
+        DECIMAL.matches(spelled) -> FloatVal(spelled.toDouble())
+        else -> null
+    }
+}
+
+private val INTEGER = Regex("-?\\d+")
+private val DECIMAL = Regex("-?\\d+\\.\\d+")

@@ -46,31 +46,46 @@ public data class ArgPattern(
      * Matches this condition against a call whose arguments each hold a set of alternatives. A constrained position
      * holds when every alternative holds, fails when all fail, and is undecidable otherwise; the positions stay
      * independent, so no combination of alternatives across positions is formed and the work is the sum of the
-     * alternatives over the constrained positions.
+     * alternatives over the constrained positions. An omitted position, including one past the end of [actual], is
+     * read as the default the callable declares there, as PHP binds it.
      *
      * @param actual The call's alternatives by position; a null entry marks an omitted argument, an alternative that
      *   is null or [Unsure] an unknown one. A position this pattern leaves as a wildcard is not read.
-     * @return `false` when the pattern is longer than [actual], a constrained position is omitted, or every
-     *   alternative of a constrained position differs from its scalar; `true` when every alternative of every
-     *   constrained position equals its scalar; `null` otherwise.
+     * @param defaults The scalar default the callable declares at each position, null where it declares none.
+     * @return `false` when a constrained position is omitted and has no declared default, or every alternative of a
+     *   constrained position differs from its scalar; `true` when every alternative of every constrained position
+     *   equals its scalar; `null` otherwise.
      */
-    public fun matchesAlternatives(actual: List<Set<IPrimitiveVal?>?>): Boolean? {
-        if (expected.size > actual.size) return false
-        return combine(positions.map { position -> positionOutcome(actual[position], expected[position]) })
-    }
+    public fun matchesAlternatives(
+        actual: List<Set<IPrimitiveVal?>?>,
+        defaults: List<IPrimitiveVal?> = emptyList(),
+    ): Boolean? =
+        combine(
+            positions.map { position ->
+                positionOutcome(actual.getOrNull(position), defaults.getOrNull(position), expected[position])
+            },
+        )
 
-    // An omitted position fails; a supplied one answers over its alternatives.
+    // An omitted position answers as its declared default, or fails without one; a supplied one answers over its
+    // alternatives.
     private fun positionOutcome(
         alternatives: Set<IPrimitiveVal?>?,
+        default: IPrimitiveVal?,
         scalar: IPrimitiveVal?,
-    ): Boolean? = if (alternatives == null) false else alternativesOutcome(alternatives, scalar)
+    ): Boolean? =
+        when {
+            alternatives != null -> alternativesOutcome(alternatives, scalar)
+            default != null -> default == scalar
+            else -> false
+        }
 
     // A failing position decides over an unknown one.
-    private fun combine(outcomes: List<Boolean?>): Boolean? = when {
-        outcomes.any { it == false } -> false
-        outcomes.any { it == null } -> null
-        else -> true
-    }
+    private fun combine(outcomes: List<Boolean?>): Boolean? =
+        when {
+            outcomes.any { it == false } -> false
+            outcomes.any { it == null } -> null
+            else -> true
+        }
 
     // One position's outcome over its alternatives, each read once: all true → true, all false → false, else (an
     // unknown or mixed set, or none) undecidable.
