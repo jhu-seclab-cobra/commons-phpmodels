@@ -8,6 +8,7 @@
 | model-conditions.md | Conditional models: argument condition, match outcome, alternatives. |
 | model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
 | model-declarations-handlers.md | Effective object handler facts and inherited string behavior. |
+| model-declarations-class-names.md | Class name and class aliases of a class signature. |
 | model-sets.md | Document sets, accumulated vocabulary, vocabulary mapping, set provenance rank. |
 | design.md | Vocabulary, policy, decoder, loaders. |
 | design-bodies.md | The model body, its section element types, the character bound. |

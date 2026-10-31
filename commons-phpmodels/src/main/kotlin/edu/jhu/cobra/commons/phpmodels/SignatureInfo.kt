@@ -129,6 +129,7 @@ public sealed interface SignatureInfo {
             /** Folds the inheritance edges and the class aliases into the stored, compared form. */
             @JvmStatic
             @JsonCreator
+            @Suppress("LongParameterList") // one parameter per stored field: the decoded key set
             public operator fun invoke(
                 classifier: Classifier,
                 parent: String? = null,
@@ -241,6 +242,7 @@ public sealed interface NamedExtras {
             /** Rejects a missing reception position at the decoding boundary. */
             @JvmStatic
             @JsonCreator
+            @Suppress("LongParameterList") // one parameter per stored field: the decoded key set
             public operator fun invoke(position: Int?): Reject =
                 Reject(requireNotNull(position) { "Named-extra rejection requires a reception position" })
         }
