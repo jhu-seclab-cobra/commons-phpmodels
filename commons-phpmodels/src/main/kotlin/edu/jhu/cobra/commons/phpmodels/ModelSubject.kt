@@ -45,7 +45,7 @@ public sealed interface ModelSubject {
  *
  * @property name The declared name, exactly as the subtype passed it.
  * @throws IllegalArgumentException If the declared name is blank, carries a
- *   spelling-grammar character, or contains whitespace.
+ *   spelling-grammar character, or contains ASCII whitespace.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public sealed class NamedSubject(
@@ -55,7 +55,7 @@ public sealed class NamedSubject(
 ) : ModelSubject {
     init {
         val label = labelOf(kind)
-        require(name.isNotBlank()) { "$label subject declares a blank name" }
+        require(name.isNotEmpty()) { "$label subject declares a blank name" }
         requirePlainIdentity(label, "name", name)
     }
 
@@ -77,7 +77,7 @@ public sealed class NamedSubject(
  * @property owner Case-folded name of the owning class.
  * @property name The declared member name, exactly as the subtype passed it.
  * @throws IllegalArgumentException If either declared name is blank, carries
- *   a spelling-grammar character, or contains whitespace.
+ *   a spelling-grammar character, or contains ASCII whitespace.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NONE)
 public sealed class MemberSubject(
@@ -90,8 +90,8 @@ public sealed class MemberSubject(
 
     init {
         val label = labelOf(kind)
-        require(this.owner.isNotBlank()) { "$label subject declares a blank class" }
-        require(name.isNotBlank()) { "$label subject '${this.owner}' declares a blank name" }
+        require(this.owner.isNotEmpty()) { "$label subject declares a blank class" }
+        require(name.isNotEmpty()) { "$label subject '${this.owner}' declares a blank name" }
         requirePlainIdentity(label, "class", this.owner)
         requirePlainIdentity(label, "name", name)
     }
@@ -276,9 +276,9 @@ private fun requirePlainIdentity(
     require(MEMBER_SEPARATOR !in value) { "$label subject $field contains '$MEMBER_SEPARATOR': '$value'" }
     require('$' !in value) { "$label subject $field contains '\$': '$value'" }
     require(!value.startsWith(NAMESPACE_PREFIX)) { "$label subject $field starts with '$NAMESPACE_PREFIX': '$value'" }
-    // No PHP identifier contains whitespace; a block-scalar spelling would
-    // otherwise smuggle its trailing newline into the identity.
-    require(value.none(Char::isWhitespace)) { "$label subject $field contains whitespace: '$value'" }
+    // PHP accepts high bytes in identifiers, including UTF-8 whitespace.
+    // Reject ASCII whitespace, including block-scalar trailing newlines.
+    require(value.none { it <= '\u007f' && it.isWhitespace() }) { "$label subject $field contains whitespace: '$value'" }
 }
 
 private fun simpleName(raw: String): String = raw.removePrefix(NAMESPACE_PREFIX)

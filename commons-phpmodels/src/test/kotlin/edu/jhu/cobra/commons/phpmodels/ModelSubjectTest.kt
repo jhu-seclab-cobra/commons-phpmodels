@@ -30,9 +30,10 @@ import kotlin.test.assertTrue
  *   stored name drops the `$`.
  * - `dollar prefix requires a non-empty name` — a bare `$`, alone or after
  *   an owner, fails.
+ * - `high-byte names are accepted` — UTF-8 non-breaking space can be a PHP identifier.
  * - `blank identity is rejected` — a blank name fails construction.
- * - `identity containing whitespace is rejected` — no PHP identifier
- *   contains whitespace; inner spaces and trailing newlines fail.
+ * - `identity containing whitespace is rejected` — ASCII spaces and trailing
+ *   newlines fail.
  * - `constructors fold like the creators` — direct construction folds the
  *   same identity fields the spelling creators fold.
  * - `direct construction rejects spelling characters` — `::`, `$`, or a
@@ -112,6 +113,14 @@ internal class ModelSubjectTest {
     fun `dollar prefix requires a non-empty name`() {
         assertFailsWith<IllegalArgumentException> { PropertySubject.parse("mysqli::\$") }
         assertFailsWith<IllegalArgumentException> { VariableSubject.parse("\$") }
+    }
+
+    @Test
+    fun `high-byte names are accepted`() {
+        assertEquals("\u00a0", FunctionSubject("\u00a0").name)
+        assertEquals("a\u00a0b", ClassSubject("A\u00a0B").name)
+        assertEquals("\u00a0", MethodSubject("\u00a0", "\u00a0").owner)
+        assertEquals("\u00a0", MethodSubject("\u00a0", "\u00a0").name)
     }
 
     @Test
