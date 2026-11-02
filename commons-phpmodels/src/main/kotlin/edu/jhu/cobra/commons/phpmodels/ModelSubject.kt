@@ -278,7 +278,9 @@ private fun requirePlainIdentity(
     require(!value.startsWith(NAMESPACE_PREFIX)) { "$label subject $field starts with '$NAMESPACE_PREFIX': '$value'" }
     // PHP accepts high bytes in identifiers, including UTF-8 whitespace.
     // Reject ASCII whitespace, including block-scalar trailing newlines.
-    require(value.none { it <= '\u007f' && it.isWhitespace() }) { "$label subject $field contains whitespace: '$value'" }
+    require(value.none { it <= '\u007f' && it.isWhitespace() }) {
+        "$label subject $field contains whitespace: '$value'"
+    }
 }
 
 private fun simpleName(raw: String): String = raw.removePrefix(NAMESPACE_PREFIX)
