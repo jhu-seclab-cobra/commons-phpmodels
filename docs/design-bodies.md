@@ -13,7 +13,7 @@ decoder: [design.md](design.md). Ports and propagations:
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
   `CharacterBound` contains optional `Port.Argument`s and an optional
-  `CharacterClass`; `SinkDecl` contains one `Port.Argument` and one
+  `CharacterClass`; `SinkDecl` contains one `Port.Sink` and one
   `VulnTypeId`; `SanitizerDecl` contains `VulnTypeId`s and an optional
   `ArgumentCheck`, which contains one `Port.Argument`, one `IPrimitiveVal`,
   an optional `CharacterClass` and an optional `DeclaredType`;
@@ -56,8 +56,8 @@ case-sensitive match, never a substring match.
 ### SinkDecl, SanitizerDecl
 
 **Responsibility:** One element of the sinks / sanitizers sections:
-`SinkDecl(port: Port.Argument, vulnType: VulnTypeId)` — one dangerously
-consumed argument port under one vulnerability type;
+`SinkDecl(port: Port.Sink, vulnType: VulnTypeId)` — one dangerously
+consumed argument or invocation selector under one vulnerability type;
 `SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check:
 ArgumentCheck? = null)` — the neutralized vulnerability type set of the
 call result, or, with a check, of the argument the call accepts (agent

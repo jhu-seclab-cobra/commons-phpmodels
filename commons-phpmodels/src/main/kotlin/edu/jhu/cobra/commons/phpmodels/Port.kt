@@ -4,13 +4,13 @@ import com.fasterxml.jackson.annotation.JsonCreator
 
 /**
  * One explicitly named location in a call. Decoded from the string spellings
- * `argument(n)`, `this`, `return`, `callback(argument(n)).parameter(m)` and
+ * `argument(n)`, `callee`, `this`, `return`, `callback(argument(n)).parameter(m)` and
  * `callback(argument(n)).return` — no bare integer and no sentinel value
  * exists anywhere in the port vocabulary.
  */
 public sealed interface Port {
     /**
-     * The ports a call reads values from: the arguments, the receiver and the
+     * The ports a call reads values from: the arguments, the selector, the receiver and the
      * results of the callables the call invokes. A from-side field typed as
      * this interface is input-typed instead of runtime-checked.
      */
@@ -26,6 +26,22 @@ public sealed interface Port {
         }
     }
 
+    /** A dangerously consumed argument or dynamic invocation selector. */
+    public sealed interface Sink : Input {
+        public companion object {
+            /** @throws IllegalArgumentException If [raw] names no argument or callee port. */
+            @JvmStatic
+            @JsonCreator
+            public fun parseSink(raw: String): Sink =
+                requireNotNull(parse(raw) as? Sink) { "Expected an argument or callee port, got '$raw'" }
+        }
+    }
+
+    /** The selector of a dynamic invocation, spelled `callee`. */
+    public object Callee : Sink {
+        override fun toString(): String = CALLEE_SPELLING
+    }
+
     /**
      * The argument at zero-based [position].
      *
@@ -33,7 +49,7 @@ public sealed interface Port {
      */
     public data class Argument(
         val position: Int,
-    ) : Input {
+    ) : Sink {
         init {
             require(position >= 0) { "Argument position must be non-negative: $position" }
         }
@@ -100,6 +116,7 @@ public sealed interface Port {
     public companion object {
         // The port spellings are fixed by the model format; each port's
         // string form and the parser read the same constant.
+        private const val CALLEE_SPELLING = "callee"
         private const val RETURN_SPELLING = "return"
         private const val RECEIVER_SPELLING = "this"
         private const val ARGUMENT_SPELLING = "argument"
@@ -114,7 +131,7 @@ public sealed interface Port {
         /**
          * The port the spelling [raw] names.
          *
-         * @throws IllegalArgumentException If [raw] is none of `return`, `this`,
+         * @throws IllegalArgumentException If [raw] is none of `return`, `this`, `callee`,
          *   `argument(n)`, `callback(argument(n)).parameter(m)` and
          *   `callback(argument(n)).return` with n, m >= 0.
          */
@@ -124,6 +141,7 @@ public sealed interface Port {
             when (raw) {
                 RETURN_SPELLING -> Return
                 RECEIVER_SPELLING -> Receiver
+                CALLEE_SPELLING -> Callee
                 else -> parseIndexed(raw)
             }
 
@@ -146,7 +164,7 @@ public sealed interface Port {
 
                 else -> {
                     throw IllegalArgumentException(
-                        "Port must be 'return', 'this', 'argument(n)', 'callback(argument(n)).parameter(m)' " +
+                        "Port must be 'return', 'this', 'callee', 'argument(n)', 'callback(argument(n)).parameter(m)' " +
                             "or 'callback(argument(n)).return', got '$raw'",
                     )
                 }

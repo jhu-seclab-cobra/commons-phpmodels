@@ -59,6 +59,14 @@ public data class ModelEntry(
         require(subject is MethodSubject || !body.namesReceiverPort) {
             "Entry for $subject names the receiver port; 'this' exists only in a call to a method"
         }
+        if (subject is OperationSubject) {
+            validateOperation()
+            return
+        }
+        require(body.sinks.orEmpty().none { it.port == Port.Callee } &&
+            body.propagation.orEmpty().none { it.from == Port.Callee || it.to == Port.Callee }) {
+            "Entry for $subject names callee; the selector belongs to an invocation operation"
+        }
         if (subject is FunctionSubject || subject is MethodSubject) return
         require(condition == null) {
             "Entry for $subject carries a when condition; conditions apply to callable subjects only"
@@ -68,6 +76,16 @@ public data class ModelEntry(
         }
         val admitted = if (subject is ClassSubject) body.isEmpty else body.isEmpty || body.declaresOnlySources
         require(admitted) { "Entry for $subject declares a section its kind does not admit" }
+    }
+
+    // Operations consume their selector; they declare no PHP signature or target-specific argument behavior.
+    private fun validateOperation() {
+        require(condition == null && signature == null) { "An operation admits no condition or signature: $subject" }
+        require(body.sinks != null && body.sinks.all { it.port == Port.Callee } &&
+            body.returns == null && body.propagation == null && body.characters == null &&
+            body.sources == null && body.sanitizers == null && body.throws == null) {
+            "An operation admits only callee sinks: $subject"
+        }
     }
 
     // A class signature's name states the entry's own class, and a class alias is a further name, never the subject.
@@ -144,7 +162,7 @@ public data class ModelEntry(
                 (pair.from as? Port.Argument)?.let(::add)
                 (pair.to as? Port.Argument)?.let(::add)
             }
-            body.sinks?.forEach { add(it.port) }
+            body.sinks?.forEach { (it.port as? Port.Argument)?.let(::add) }
             body.sanitizers?.forEach { sanitizer -> sanitizer.check?.argument?.let(::add) }
             body.sources?.forEach { source -> source.at?.let(::add) }
         }
@@ -195,7 +213,7 @@ public data class ModelEntry(
                 is ClassSubject -> ClassSignature::class
                 is ConstantSubject, is ClassConstantSubject -> TypedSignature::class
                 is PropertySubject -> PropertySignature::class
-                is VariableSubject -> null
+                is VariableSubject, is OperationSubject -> null
             }
     }
 }

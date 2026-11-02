@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 /**
- * The PHP declaration a model identifies. One subtype per declaration kind,
+ * The PHP declaration or library operation a model identifies. One subtype per kind,
  * holding exactly that kind's identity fields.
  *
  * The YAML form is a one-key mapping — the key names the kind, the value is
@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(value = PropertySubject::class, name = "property"),
     JsonSubTypes.Type(value = ConstantSubject::class, name = "constant"),
     JsonSubTypes.Type(value = VariableSubject::class, name = "variable"),
+    JsonSubTypes.Type(value = OperationSubject::class, name = "operation"),
 )
 public sealed interface ModelSubject {
     /** The subject's own declared name, folded or sensitive per its kind. */

@@ -16,20 +16,19 @@ vocabulary mapping: [model-sets.md](model-sets.md).
 - **Vocabulary** — The two closed sets: all declared Source Kinds and all
   declared Vulnerability Types. Every source kind or vulnerability type
   referenced by a policy row or a model must belong to it. Sole authority for what names exist.
-- **Matching Subject** — The PHP declaration a model identifies. Existence
-  condition: a declared subject kind together with exactly the identity
-  fields that kind requires. Seven kinds with PHP-native spellings:
-  [model-declarations.md](model-declarations.md). Callable kinds are
-  *function* and *method*; only they admit calls, ports, and conditions.
+- **Matching Subject** — The PHP declaration or library operation a model identifies. Existence
+  condition: a declared subject kind together with exactly the identity fields that kind requires. Seven kinds with PHP-native spellings:
+  [model-declarations.md](model-declarations.md). Callable declaration kinds are
+  *function* and *method*; they admit calls, ports, and conditions. The operation
+  kind names `dynamic_invocation`, admits only unconditional callee sinks and no signature.
 - **Port** — An explicitly named location in a call to a callable subject:
-  *argument(n)* with n ≥ 0, *this* — the receiver of a call to a method —
+  *argument(n)* with n ≥ 0, *callee* — the dynamic invocation selector — *this* — the receiver of a call to a method —
   *return*, or a *callback port*: *callback(argument(n)).parameter(m)*
   with m ≥ 0 — the m-th argument the subject passes when it calls the
   callable supplied at *argument(n)* — or *callback(argument(n)).return* —
   the value that call returns. The closed set of positional references; no
-  other location exists. The *input ports* — arguments, the receiver, and
-  callback returns — are the ports values enter the subject through;
-  *return* and callback parameters are never input ports. A subject calls
+  other location exists. The *input ports* — arguments, the selector, the receiver, and
+  callback returns — are the ports values enter the subject through; *return* and callback parameters are never input ports. A subject calls
   exactly the positions its callback ports name; a callable-typed parameter no callback port names is only
   inspected or stored (`is_callable`) and forwards nothing. A flow into a
   callback parameter carries the whole value at its from-port; binding
@@ -63,7 +62,7 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     (a by-reference out-parameter). An element may restrict production to
     the array elements whose key satisfies one of its Key Patterns; absent
     key patterns mean the whole value.
-  - *sinks* — each element names one argument port consumed under one
+  - *sinks* — each element names one argument or callee port consumed under one
     Vulnerability Type.
   - *sanitizers* — each element neutralizes Vulnerability Types in the call
     result, which still carries its input value, or is a *check* (agent
@@ -110,7 +109,7 @@ itself an effect.
 | Propagation | Port × Port | flows | N:— | Source kinds at the from-port reach the to-port; an undeclared pair carries nothing |
 | Model (sources) | Source Kind | produces | M:N | The source introduces these source kinds at its production site |
 | Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
-| Model (sinks) | Port × Vulnerability Type | consumes under | N:M | The named argument port is sensitive to that vulnerability type |
+| Model (sinks) | Port × Vulnerability Type | consumes under | N:M | The named argument or callee port is sensitive to that vulnerability type |
 | Model (sanitizers) | Vulnerability Type | neutralizes | M:N | These vulnerability types removed from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
 | Model (throws) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
 | Policy | Source Kind × Vulnerability Type | enables | M:N | This source kind reaching a sink of this vulnerability type is a vulnerability |
@@ -136,7 +135,7 @@ model, driven by the declarations defined here.
   field outside a section's closed set is a load failure, not an ignored key.
 - Each model declares exactly one subject kind. The subject kind fixes the
   identity fields exactly.
-- The port set is closed: *argument(n)* with n ≥ 0, *this*, *return*,
+- The port set is closed: *argument(n)* with n ≥ 0, *callee*, *this*, *return*,
   *callback(argument(n)).parameter(m)*, or *callback(argument(n)).return*
   with n, m ≥ 0. Any other port name, and any bare integer position, is a
   load failure.
@@ -144,8 +143,9 @@ model, driven by the declarations defined here.
   model for any other subject naming it, in any section, is a load failure.
 - A propagation's from-port is an input port; its to-port is any different
   port. *return* as a from-port, and from equals to, are load failures.
-- A sink element names argument ports only; it admits neither the receiver
-  nor the return port.
+- A sink names an argument of a callable declaration or the callee input of
+  the dynamic invocation operation; neither the receiver nor the return is a sink.
+  A callee port in declaration behavior or operation behavior besides callee sinks is a load failure.
 - A propagation section requires a returns section in the same declaration.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return

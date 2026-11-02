@@ -8,12 +8,12 @@ form: [design-entries.md](design-entries.md).
 ## Design Overview
 
 - **Sealed hierarchies:** `ModelSubject` (two sealed bases, `NamedSubject`
-  and `MemberSubject`, carrying the shared identity mechanics; seven
+  and `MemberSubject`, carrying the shared identity mechanics; eight
   concrete subtypes: `FunctionSubject`, `ClassSubject`, `MethodSubject`,
   `ClassConstantSubject`, `PropertySubject`, `ConstantSubject`,
-  `VariableSubject`); `Port` (`Argument`, `Receiver`, `Return`, with the
+  `VariableSubject`, `OperationSubject`); `Port` (`Argument`, `Receiver`, `Return`, with the
   sealed sub-interface `Port.Input` marking the ports a call supplies
-  values through: `Argument` and `Receiver`)
+  values through: `Argument`, `Callee`, `Receiver` and `CallbackReturn`)
 - **Classes:** `Propagation` (data class, private constructor, companion
   factory)
 - **Relationships:** `Propagation` contains one `Port.Input` and one
@@ -29,7 +29,7 @@ as [design.md](design.md).
 
 ### ModelSubject (sealed)
 
-**Responsibility:** The PHP declaration a model identifies. One subtype per
+**Responsibility:** The PHP declaration or library-defined operation a model identifies. One subtype per
 kind, holding exactly that kind's identity fields, case-folded per the table
 in [model-declarations.md](model-declarations.md). Equality over the folded
 identity, so a subject is usable as a lookup key. The interface declares
@@ -90,24 +90,34 @@ is confined to non-ASCII identifiers, which the PHP builtin namespace does
 not contain; an entry naming one folds more aggressively than PHP would,
 never less.
 
+### OperationSubject
+
+**State / construction:** a `NamedSubject` with private constructor and the library-defined
+`DYNAMIC_INVOCATION` identity. `parse(raw)` accepts exactly `dynamic_invocation`;
+unknown operation names throw `IllegalArgumentException`. YAML key: `operation`.
+It has no declaration signature. Admissibility: [entry design](design-entries.md).
+
 ### Port (sealed)
 
 **Responsibility:** One explicitly named location in a call, decoded from
-the string spellings `argument(n)`, `this`, `return`,
+the string spellings `argument(n)`, `callee`, `this`, `return`,
 `callback(argument(n)).parameter(m)` and `callback(argument(n)).return`. No
 bare integer and no sentinel value exists anywhere in the port vocabulary.
 
-**Subtypes:** `Argument(position: Int)` — `position >= 0`; `Receiver`
+**Subtypes:** `Argument(position: Int)` — `position >= 0`; `Callee` (object, spelling `callee`); `Receiver`
 (object, spelling `this`); `Return` (object);
 `CallbackParameter(callable: Int, position: Int)` — both `>= 0`, a to-port
 only; `CallbackReturn(callable: Int)` — `callable >= 0`. The sealed
 sub-interface `Port.Input` marks the ports a call reads values from
-(`Argument`, `Receiver`, `CallbackReturn`), so a from-side field is
+(`Argument`, `Callee`, `Receiver`, `CallbackReturn`), so a from-side field is
 input-typed instead of runtime-checked.
 `Port.Argument.parseArgument(raw: String): Argument` and
 `Port.Input.parseInput(raw: String): Input` are the narrowing creators (a
 field typed as a subtype does not consult the supertype's creator,
 [impl.md](impl.md)).
+
+`Port.Sink` narrows input ports to `Argument` and `Callee`; its creator
+`parseSink(raw)` rejects every other port at decode. `SinkDecl` uses this type.
 
 **Methods:** companion `parse(raw: String): Port` — the decode entry point;
 `IllegalArgumentException` on any other spelling.

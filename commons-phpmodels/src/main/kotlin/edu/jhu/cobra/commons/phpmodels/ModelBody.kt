@@ -169,11 +169,11 @@ public data class SourceDecl(
 /**
  * One dangerously consumed port of a sinks section.
  *
- * @property port The argument port consumed dangerously.
+ * @property port The argument or dynamic invocation selector consumed dangerously.
  * @property vulnType The vulnerability type a source kind reaching [port] enables.
  */
 public data class SinkDecl(
-    val port: Port.Argument,
+    val port: Port.Sink,
     val vulnType: VulnTypeId,
 )
 

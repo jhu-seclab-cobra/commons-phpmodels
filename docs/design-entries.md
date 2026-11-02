@@ -46,6 +46,8 @@ before the signature-derived returns completion and rejects any unknown
 key ([impl.md](impl.md)); the creator completes them into the body.
 
 **Validation (`init`):**
+- An operation subject admits only unconditional `Port.Callee` sinks and no
+  signature, propagation or other sections; declaration subjects reject callee ports.
 - `subject` admits only the sections its kind allows: a non-callable
   subject rejects returns, propagation, characters, throws, and the
   condition; a class subject
