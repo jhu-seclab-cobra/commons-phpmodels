@@ -164,8 +164,9 @@ public sealed interface Port {
 
                 else -> {
                     throw IllegalArgumentException(
-                        "Port must be 'return', 'this', 'callee', 'argument(n)', 'callback(argument(n)).parameter(m)' " +
-                            "or 'callback(argument(n)).return', got '$raw'",
+                        "Port must be 'return', 'this', 'callee', 'argument(n)', " +
+                            "'callback(argument(n)).parameter(m)' or " +
+                            "'callback(argument(n)).return', got '$raw'",
                     )
                 }
             }
