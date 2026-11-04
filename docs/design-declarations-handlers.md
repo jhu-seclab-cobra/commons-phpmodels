@@ -67,8 +67,8 @@ Every member has an immutable `slot: HandlerSlot`.
 | CAST | IS_STRING, IS_LONG, IS_DOUBLE, _IS_BOOL, _IS_NUMBER, IS_ARRAY, IS_RESOURCE |
 | OPERATION | ZEND_ADD, ZEND_SUB, ZEND_MUL, ZEND_DIV, ZEND_MOD, ZEND_POW, ZEND_SL, ZEND_SR, ZEND_BW_OR, ZEND_BW_AND, ZEND_BW_XOR, ZEND_BW_NOT, ZEND_CONCAT, ZEND_BOOL_XOR, ZEND_BOOL_NOT |
 
-COMPARE has no request member. The producer's source mapping is specified
-in [Handler Extraction](../../externs-phpstubs/docs/spec-extraction-handlers.md).
+COMPARE has no request member. The mapping from upstream sources to
+requests belongs to the producer.
 `StringDispatch` has NONE, METHOD_ONLY, METHOD_FIRST and NATIVE_FIRST;
 their meaning is owned by the handler model. It is never a success flag.
 

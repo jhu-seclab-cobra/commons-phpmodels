@@ -39,11 +39,9 @@ target type, or the opcode of the operation.
   or default path do not independently establish that the path is reached.
   Unknown native success retains feasible native results and method calls.
   Empty native results do not erase a language-level failure continuation.
-- A consumer finds the class candidates of an object through its LINK_WITH
-  and INSTANCE_OF relations, reads the declaration kind through DEFINED_BY,
-  and reaches the facts of an ancestor through the INHERIT_FROM lookup over
-  class parents only; interfaces are excluded. An enum has its own language
-  rule and takes no default of an ordinary user class.
+- The handler facts of an ancestor reach a class over class parents only;
+  interfaces contribute none. An enum has its own language rule and takes
+  no default of an ordinary user class.
 - An inherited user `__toString` decides a string conversion only when the
   native or standard dispatcher of the class uses it. SimpleXML does; tidy
   does not; COM falls back to it under a condition. A string method never
