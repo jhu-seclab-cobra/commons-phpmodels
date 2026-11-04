@@ -2,6 +2,7 @@
 
 | File | Content |
 |------|---------|
+| glossary/glossary.md | Glossary: declarations, models, taint vocabulary and document sets |
 | concept.md | Problem, scope, terminology, data flow, scenarios. |
 | concept-provenance.md | Set provenance: producer, verification kind, precedence over sets. |
 | model.md | Model sections, subjects, taint vocabulary, relations, invariants. |
