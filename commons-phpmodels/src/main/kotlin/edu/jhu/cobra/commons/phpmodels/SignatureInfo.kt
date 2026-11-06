@@ -141,8 +141,8 @@ public sealed interface SignatureInfo {
             ): ClassSignature =
                 ClassSignature(
                     classifier,
-                    parent?.lowercase(),
-                    interfaces.map(String::lowercase),
+                    parent?.asciiFold(),
+                    interfaces.map(String::asciiFold),
                     isFinal,
                     handlers,
                     name,

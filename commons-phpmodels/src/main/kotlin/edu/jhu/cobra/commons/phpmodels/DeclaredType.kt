@@ -33,7 +33,7 @@ public value class DeclaredType(
 
     /** True when the declaration is the `void` keyword: the callable produces no result. */
     public val isVoid: Boolean
-        get() = raw.equals(VOID, ignoreCase = true)
+        get() = raw.asciiFold() == VOID
 
     override fun toString(): String = raw
 }
@@ -161,7 +161,7 @@ private fun singleType(
     raw: String,
     spelled: String,
 ): String {
-    val folded = spelled.lowercase()
+    val folded = spelled.asciiFold()
     if (folded in KEYWORD_TYPES) return folded
     require(CLASS_NAME_SPELLING.matches(spelled)) {
         "Declared type holds '$spelled', neither a keyword nor a class name: '$raw'"

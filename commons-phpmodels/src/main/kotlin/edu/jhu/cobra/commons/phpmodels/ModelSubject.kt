@@ -87,7 +87,7 @@ public sealed class MemberSubject(
     final override val name: String,
     private val spelledPrefix: String = "",
 ) : ModelSubject {
-    public val owner: String = owner.lowercase()
+    public val owner: String = owner.asciiFold()
 
     init {
         val label = labelOf(kind)
@@ -108,7 +108,7 @@ public sealed class MemberSubject(
 /** A function declaration, identified by its case-folded name alone. */
 public class FunctionSubject(
     name: String,
-) : NamedSubject(KIND, name.lowercase()) {
+) : NamedSubject(KIND, name.asciiFold()) {
     public companion object {
         private const val KIND = "function"
 
@@ -125,7 +125,7 @@ public class FunctionSubject(
  */
 public class ClassSubject(
     name: String,
-) : NamedSubject(KIND, name.lowercase()) {
+) : NamedSubject(KIND, name.asciiFold()) {
     public companion object {
         private const val KIND = "class"
 
@@ -143,7 +143,7 @@ public class ClassSubject(
 public class MethodSubject(
     owner: String,
     name: String,
-) : MemberSubject(KIND, owner, name.lowercase()) {
+) : MemberSubject(KIND, owner, name.asciiFold()) {
     public companion object {
         private const val KIND = "method"
 
@@ -212,21 +212,19 @@ public class ConstantSubject(
     public companion object {
         private const val KIND = "constant"
 
-        // The only list of the root keyword constants.
-        private val ROOT_KEYWORDS = setOf("TRUE", "FALSE", "NULL")
+        // The only list of the root keyword constants, in folded form.
+        private val ROOT_KEYWORDS = setOf("true", "false", "null")
 
         /**
          * Whether [raw], with or without a leading namespace slash, spells a
          * root keyword constant in any ASCII case.
          */
         @JvmStatic
-        public fun isRootKeyword(raw: String): Boolean = asciiUpperCase(simpleName(raw)) in ROOT_KEYWORDS
+        public fun isRootKeyword(raw: String): Boolean = simpleName(raw).asciiFold() in ROOT_KEYWORDS
 
-        private fun canonicalName(name: String): String = asciiUpperCase(name).takeIf { it in ROOT_KEYWORDS } ?: name
-
-        // ASCII-only: Unicode case mapping would fold U+017F into the S of FALSE.
-        private fun asciiUpperCase(name: String): String =
-            name.map { if (it in 'a'..'z') it - ('a' - 'A') else it }.joinToString("")
+        // The stored upper-case form; ASCII folding keeps U+017F out of the S of FALSE.
+        private fun canonicalName(name: String): String =
+            name.asciiFold().takeIf { it in ROOT_KEYWORDS }?.uppercase() ?: name
 
         /** @throws IllegalArgumentException If [raw] is not a plain constant name. */
         @JvmStatic
@@ -241,7 +239,7 @@ public class ConstantSubject(
  */
 public class VariableSubject(
     name: String,
-) : NamedSubject(KIND, name.lowercase(), spelledPrefix = "$") {
+) : NamedSubject(KIND, name.asciiFold(), spelledPrefix = "$") {
     public companion object {
         private const val KIND = "variable"
 

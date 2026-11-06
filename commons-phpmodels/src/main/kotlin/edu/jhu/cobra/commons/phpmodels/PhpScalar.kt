@@ -35,10 +35,11 @@ internal fun JsonNode.toPhpScalar(role: String): IPrimitiveVal =
  */
 internal fun parsePhpScalarLiteral(spelled: String): IPrimitiveVal? {
     val quoted = spelled.length >= 2 && spelled.first() in "'\"" && spelled.last() == spelled.first()
+    val folded = spelled.asciiFold()
     return when {
-        spelled.lowercase() == "true" -> BoolVal(true)
-        spelled.lowercase() == "false" -> BoolVal(false)
-        spelled.lowercase() == "null" -> NullVal
+        folded == "true" -> BoolVal(true)
+        folded == "false" -> BoolVal(false)
+        folded == "null" -> NullVal
         quoted && '\\' !in spelled -> StrVal(spelled.substring(1, spelled.length - 1))
         INTEGER.matches(spelled) -> spelled.toLongOrNull()?.let(::IntVal)
         DECIMAL.matches(spelled) -> FloatVal(spelled.toDouble())
