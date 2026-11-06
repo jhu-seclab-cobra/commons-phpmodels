@@ -13,6 +13,9 @@ import kotlin.test.assertFailsWith
  * - `declared type reads keywords and class names as one alternative` — a
  *   single type, keyword lowercased, class name folded without its leading
  *   slash.
+ * - `class name accepts non-ASCII characters` — PHP labels admit bytes 0x80-0xff,
+ *   which a decoded string shows as characters above U+007F; folding stays
+ *   ASCII-only.
  * - `nullable type reads as the type or null` — `?T` is `T|null`.
  * - `union reads one alternative per member` — `A|B` keeps member order.
  * - `intersection reads as one alternative` — bare and parenthesized
@@ -30,6 +33,12 @@ internal class DeclaredTypeTest {
     fun `declared type reads keywords and class names as one alternative`() {
         assertEquals(listOf(setOf("string")), DeclaredType("String").alternatives)
         assertEquals(listOf(setOf("foo\\bar")), DeclaredType("\\Foo\\Bar").alternatives)
+    }
+
+    @Test
+    fun `class name accepts non-ASCII characters`() {
+        assertEquals(listOf(setOf("Ünïcode\\klasse")), DeclaredType("Ünïcode\\Klasse").alternatives)
+        assertEquals(listOf(setOf("\u00a0a")), DeclaredType("\u00a0A").alternatives)
     }
 
     @Test

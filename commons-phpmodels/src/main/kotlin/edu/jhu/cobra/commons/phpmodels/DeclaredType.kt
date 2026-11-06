@@ -90,15 +90,22 @@ private val SCALAR_RETURN_KINDS: Map<String, ReturnKind> =
         "false" to ReturnKind.BOOL,
     )
 
-// A class name, optionally namespace-qualified with a leading slash.
-private val CLASS_NAME_SPELLING = Regex("""\\?[A-Za-z_][A-Za-z0-9_]*(\\[A-Za-z_][A-Za-z0-9_]*)*""")
+// A class name, optionally namespace-qualified with a leading slash. PHP's label grammar admits the bytes 0x80-0xff in
+// every position; the string received is decoded text, where those bytes are the characters above U+007F, so every
+// non-ASCII character is a label character.
+private const val LABEL_START = """A-Za-z_\u0080-\uFFFF"""
+private const val LABEL_PART = """A-Za-z0-9_\u0080-\uFFFF"""
+private val CLASS_NAME_SPELLING = Regex("""\\?[$LABEL_START][$LABEL_PART]*(\\[$LABEL_START][$LABEL_PART]*)*""")
 
 private fun classifyAlternative(alternative: Set<String>): ReturnKind =
     alternative.singleOrNull()?.let(SCALAR_RETURN_KINDS::get) ?: ReturnKind.ANY
 
+// PHP accepts high bytes in identifiers, including UTF-8 whitespace; only ASCII whitespace separates tokens.
+private fun isAsciiWhitespace(char: Char): Boolean = char <= '\u007f' && char.isWhitespace()
+
 // The grammar's parser: the alternatives of a valid declaration, or IllegalArgumentException.
 private fun parseDeclaredType(raw: String): List<Set<String>> {
-    require(raw.isNotEmpty() && raw.none(Char::isWhitespace)) { "Declared type is blank or holds whitespace: '$raw'" }
+    require(raw.isNotEmpty() && raw.none(::isAsciiWhitespace)) { "Declared type is blank or holds whitespace: '$raw'" }
     val members = raw.split(UNION_SEPARATOR)
     return when {
         raw.first() == NULLABLE_PREFIX -> listOf(setOf(nullableTarget(raw, raw.drop(1))), setOf(NULL))
