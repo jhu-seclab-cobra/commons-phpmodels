@@ -10,10 +10,10 @@ import kotlin.test.assertTrue
 /**
  * Spelling grammar and folded identity of the seven [ModelSubject] kinds.
  *
- * - `folded kinds fold their identity` — function, class, method, and
- *   variable names compare case-insensitively.
- * - `sensitive kinds keep their case` — constant, class-constant, and
- *   property names compare exactly; owners still fold.
+ * - `folded kinds fold their identity` — function, class, and method names
+ *   compare case-insensitively.
+ * - `sensitive kinds keep their case` — constant, class-constant, property,
+ *   and variable names compare exactly; owners still fold.
  * - `root keyword constants compare case-insensitively` — `TRUE`, `FALSE`, and
  *   `NULL` equal every ASCII case variant, with or without a leading slash,
  *   as php-src 8.5.11 `zend_get_special_const` compares them; every other
@@ -27,7 +27,7 @@ import kotlin.test.assertTrue
  * - `dollar is forbidden outside property and variable spellings` — a `$`
  *   inside a function or method name fails.
  * - `variable spelling requires the dollar prefix` — a bare name fails; the
- *   stored name drops the `$`.
+ *   stored name drops the `$` and keeps its case.
  * - `dollar prefix requires a non-empty name` — a bare `$`, alone or after
  *   an owner, fails.
  * - `high-byte names are accepted` — UTF-8 non-breaking space can be a PHP identifier.
@@ -52,7 +52,6 @@ internal class ModelSubjectTest {
         assertEquals(FunctionSubject.parse("STRLEN"), FunctionSubject.parse("strlen"))
         assertEquals(ClassSubject.parse("MySQLi"), ClassSubject.parse("mysqli"))
         assertEquals(MethodSubject.parse("MySQLi::Query"), MethodSubject.parse("mysqli::query"))
-        assertEquals(VariableSubject.parse("\$_GET"), VariableSubject.parse("\$_get"))
     }
 
     @Test
@@ -66,6 +65,8 @@ internal class ModelSubjectTest {
             PropertySubject.parse("mysqli::\$insert_id"),
             PropertySubject.parse("mysqli::\$INSERT_ID"),
         )
+        assertNotEquals(VariableSubject.parse("\$_GET"), VariableSubject.parse("\$_get"))
+        assertNotEquals(VariableSubject.parse("\$A"), VariableSubject.parse("\$a"))
         assertEquals(
             ClassConstantSubject.parse("MYSQLI::REPORT_ERROR"),
             ClassConstantSubject.parse("mysqli::REPORT_ERROR"),
@@ -106,7 +107,7 @@ internal class ModelSubjectTest {
     @Test
     fun `variable spelling requires the dollar prefix`() {
         assertFailsWith<IllegalArgumentException> { VariableSubject.parse("_GET") }
-        assertEquals("_get", VariableSubject.parse("\$_GET").name)
+        assertEquals("_GET", VariableSubject.parse("\$_GET").name)
     }
 
     @Test
@@ -142,7 +143,7 @@ internal class ModelSubjectTest {
         assertEquals(FunctionSubject.parse("strlen"), FunctionSubject("STRLEN"))
         assertEquals(MethodSubject.parse("mysqli::query"), MethodSubject("MySQLi", "Query"))
         assertEquals(ClassConstantSubject.parse("mysqli::REPORT_ERROR"), ClassConstantSubject("MYSQLI", "REPORT_ERROR"))
-        assertEquals(VariableSubject.parse("\$_get"), VariableSubject("_GET"))
+        assertEquals(VariableSubject.parse("\$_GET"), VariableSubject("_GET"))
     }
 
     @Test
@@ -182,7 +183,7 @@ internal class ModelSubjectTest {
         assertEquals("class constant mysqli::REPORT_ERROR", ClassConstantSubject("mysqli", "REPORT_ERROR").toString())
         assertEquals("property mysqli::\$insert_id", PropertySubject("mysqli", "insert_id").toString())
         assertEquals("constant PHP_EOL", ConstantSubject("PHP_EOL").toString())
-        assertEquals("variable \$_get", VariableSubject("_GET").toString())
+        assertEquals("variable \$_GET", VariableSubject("_GET").toString())
     }
 
     private fun caseVariants(word: String): List<String> =

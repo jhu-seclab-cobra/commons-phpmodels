@@ -13,8 +13,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
  * The spelling encodes identity only, never kind.
  *
  * Identity is case-folded per kind, following PHP's own case rules: function,
- * class, and method names fold; constant and property names stay sensitive
- * with their owning class folded. Each subtype folds its identity fields
+ * class, and method names fold; constant, property, and variable names stay
+ * sensitive with their owning class folded. Each subtype folds its identity fields
  * itself rather than trusting its callers, and defines equality over the
  * folded form so a subject is usable as a lookup key.
  *
@@ -235,11 +235,12 @@ public class ConstantSubject(
 
 /**
  * A language-predefined variable, such as a superglobal array, identified by
- * its case-folded name; spelled `${'$'}name`, stored without the `$`.
+ * its case-sensitive name: `${'$'}_GET` and `${'$'}_get` are two variables; spelled
+ * `${'$'}name`, stored without the `$`.
  */
 public class VariableSubject(
     name: String,
-) : NamedSubject(KIND, name.asciiFold(), spelledPrefix = "$") {
+) : NamedSubject(KIND, name, spelledPrefix = "$") {
     public companion object {
         private const val KIND = "variable"
 

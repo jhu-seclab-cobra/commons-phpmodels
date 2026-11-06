@@ -76,7 +76,7 @@ and unextracted behavior never assert rejection.
 | class constant | `mysqli::MYSQLI_REPORT_ERROR` | (class, name) | class folded, name sensitive |
 | property | `mysqli::$insert_id` | (class, name) | class folded, name sensitive |
 | constant | `PHP_EOL` | name | sensitive; root keywords fold |
-| predefined variable | `$_GET` | name | folded |
+| predefined variable | `$_GET` | name | sensitive |
 
 The root keyword constants `TRUE`, `FALSE`, and `NULL` are the one exception
 in the constant kind: PHP matches them ASCII-case-insensitively (php-src
@@ -122,10 +122,7 @@ alternatives of the declared type itself.
   `$` mandatory for property names and forbidden elsewhere. Violation is a
   load failure, never a guess.
 - Case folding is fixed per kind by the table above, applied once at the
-  load boundary; PHP's own case rules are the authority. Exception:
-  predefined variable names are case-sensitive in PHP but fold here — the
-  superglobal set is closed and collision-free under folding, so lookups
-  tolerate spelling variance without merging two distinct variables.
+  load boundary; PHP's own case rules are the authority.
 - The signature section is one override unit: a higher layer replacing a
   subject's signature replaces it whole.
 - A signature never produces a taint statement. Sources, sinks, and

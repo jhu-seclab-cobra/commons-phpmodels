@@ -70,7 +70,7 @@ that kind's creator. Jackson mechanism verified in [impl.md](impl.md).
   stored upper-case. `ConstantSubject.isRootKeyword(raw)` is the one
   classification: it tells a consumer that a name, with or without a leading
   `\`, is such a keyword; the three names live only there.
-- `VariableSubject(name)` — `variable:`, folded; spelled `$name`, stored
+- `VariableSubject(name)` — `variable:`, sensitive; spelled `$name`, stored
   without the `$`.
 
 **Validation:** blank identity fields are rejected in `init`, and so is any

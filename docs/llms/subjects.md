@@ -22,7 +22,7 @@ model.subject == subject
 | `ClassConstantSubject(owner, name)` | `class_constant:` | `Exception::SEVERITY_ERROR` | owner folded, name sensitive |
 | `PropertySubject(owner, name)` | `property:` | `mysqli::$insert_id` | owner folded, name sensitive |
 | `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive |
-| `VariableSubject(name)` | `variable:` | `$_GET` | folded |
+| `VariableSubject(name)` | `variable:` | `$_GET` | sensitive |
 
 - **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
 - **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, framelessArities: Set<Int> = emptySet(), specialArities: Set<Int> = emptySet(), ropeFormat: String? = null)`** — function, method; `framelessArities` are the argument counts (at most 3) at which php-src selects a frameless function, `specialArities` the counts (2 or more) at which it always compiles a call bound when compiled to one opcode, `ropeFormat` the parameter php-src compiles into a rope; counts lie within the required..declared parameter count (any above it with a variadic tail), and a method declares none of the three.
@@ -42,7 +42,7 @@ model.subject == subject
 ## Gotchas
 
 - `::` grammar is closed: exactly one separator, both sides non-empty; `$` is mandatory for property names and forbidden elsewhere; leading namespace slashes are stripped.
-- `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_get")` matches the spelling `$_GET`.
+- `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_GET")` matches the spelling `$_GET` and not `$_get`.
 - A signature subtype that does not match the entry's subject kind is rejected at load.
 - `variable` entries never carry a signature — superglobals are hand-declared.
 - The returns classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.

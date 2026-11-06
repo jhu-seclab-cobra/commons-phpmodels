@@ -98,7 +98,7 @@ internal class ModelLoaderTest {
                 ClassConstantSubject("mysqli", "MYSQLI_REPORT_ERROR"),
                 PropertySubject("mysqli", "insert_id"),
                 ConstantSubject("PHP_EOL"),
-                VariableSubject("_get"),
+                VariableSubject("_GET"),
             ),
             subjects,
         )
