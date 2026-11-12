@@ -1,13 +1,16 @@
 # COBRA.COMMONS.PHPMODELS
 
+[![codecov](https://codecov.io/gh/jhu-seclab-cobra/commons-phpmodels/branch/main/graph/badge.svg)](https://codecov.io/gh/jhu-seclab-cobra/commons-phpmodels)
+![Kotlin JVM](https://img.shields.io/badge/Kotlin%20JVM-2.4.20%20%7C%20JVM%2021%2B-blue?logo=kotlin)
+[![Release](https://img.shields.io/badge/release-v0.12.0-blue.svg)](https://github.com/jhu-seclab-cobra/commons-phpmodels/releases/tag/v0.12.0)
+[![last commit](https://img.shields.io/github/last-commit/jhu-seclab-cobra/commons-phpmodels)](https://github.com/jhu-seclab-cobra/commons-phpmodels/commits/main)
+[![JitPack](https://jitpack.io/v/jhu-seclab-cobra/commons-phpmodels.svg)](https://jitpack.io/#jhu-seclab-cobra/commons-phpmodels)
+![Repo Size](https://img.shields.io/github/repo-size/jhu-seclab-cobra/commons-phpmodels)
+[![license](https://img.shields.io/github/license/jhu-seclab-cobra/commons-phpmodels)](./LICENSE)
+
 > Commons — the shared vocabulary: one declarative model format every Cobra PHP analyzer reads and writes.
 
 Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
-
-![Kotlin JVM](https://img.shields.io/badge/Kotlin%20JVM-2.4.20%20%7C%20JVM%2021-blue?logo=kotlin)
-[![Release](https://img.shields.io/badge/release-v0.12.0-blue.svg)](https://github.com/jhu-seclab-cobra/commons-phpmodels/releases)
-[![last commit](https://img.shields.io/github/last-commit/jhu-seclab-cobra/commons-phpmodels)](https://github.com/jhu-seclab-cobra/commons-phpmodels/commits/main)
-[![license](https://img.shields.io/badge/license-GPL--2.0-blue.svg)](./LICENSE)
 
 ## Install
 
