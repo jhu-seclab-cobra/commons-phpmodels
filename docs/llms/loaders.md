@@ -1,13 +1,19 @@
 # Loaders
 
-> Public decode surface: `DocumentSetLoader` over one document set, `VocabularyMappingLoader` over a consumer's mapping document.
+> Public decode surface: `DocumentSetLoader` over one Document Set, `VocabularyMappingLoader` over a consumer's mapping document.
 
 ## Quick Start
 
 ```kotlin
-val set = DocumentSetLoader.load(opener, context = Vocabulary.EMPTY)
-val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
-val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mapping = mapping)
+import edu.jhu.cobra.commons.phpmodels.DocumentSetLoader
+import edu.jhu.cobra.commons.phpmodels.ResourceOpener
+val yaml = "- subject: {function: example}
+  returns: str
+"
+val files = mapOf("index.txt" to "models.yaml
+", "models.yaml" to yaml)
+val set = DocumentSetLoader.load(ResourceOpener { files[it]?.byteInputStream() })
+set.entries.single().body.returns
 ```
 
 ## API
@@ -15,13 +21,13 @@ val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mappi
 - **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
 - **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes a consumer's translation table.
 
-The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, `ProvenanceLoader`) are internal: a consumer loads a set, never a single document.
+- Load one complete set rather than an individual document.
 
 ## Configuration
 
 - No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
 - Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`.
-- Policy row keys: `sourceKind` (one source kind name), `enables` (list of vulnerability type names).
+- Policy row keys: `sourceKind` (one Source kind name), `enables` (list of Vulnerability type names).
 
 ## Gotchas
 

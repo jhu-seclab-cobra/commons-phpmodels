@@ -1,7 +1,7 @@
 # PHP Models — Condition Design
 
-The type carrying the optional `when:` condition and its one match
-operation. Semantics: [model-conditions.md](model-conditions.md). The
+The type carrying the optional `when:` condition and its two match
+operations. Semantics: [model-conditions.md](model-conditions.md). The
 entry that carries it: [design-entries.md](design-entries.md).
 
 ## Design Overview
@@ -68,8 +68,7 @@ non-wildcard element; no element is an `Unsure`.
   `actual`, stands as the scalar `defaults` holds at that position (the
   callable's declared default, [ParameterInfo](design-declarations.md#parameterinfo)
   `defaultValue`) and fails when `defaults` holds none. A failing position
-  decides over an undecidable one. Positions are independent: the work is the sum of the alternatives
-  over the non-wildcard positions, with no combination across positions.
+  decides over an undecidable one. The [matching specification](spec-conditions.md) owns the reduction and its complexity.
 - `val positions: List<Int>` — the non-wildcard positions, for the
   entry-level arity check ([design-entries.md](design-entries.md)).
 
@@ -80,3 +79,13 @@ non-wildcard element; no element is an `Unsure`.
   boundary with every other malformed-entry failure.
 
 Domain semantics: [model-conditions.md](model-conditions.md).
+
+## Caller Examples
+
+```kotlin
+import edu.jhu.cobra.commons.phpmodels.ArgPattern
+import edu.jhu.cobra.commons.value.BoolVal
+val pattern = ArgPattern(listOf(BoolVal(true)))
+val result = pattern.matchesAlternatives(listOf(setOf(BoolVal(true))))
+result
+```

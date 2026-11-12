@@ -81,14 +81,7 @@ identity.
 The base-class invariant covers both construction paths, so a directly
 constructed subject and a parsed spelling always agree on one identity.
 
-**Folding:** case folding happens inside the subject creators, once; every
-consumer downstream compares folded identities for folded kinds and exact
-identities for sensitive kinds. Identity fields fold with Kotlin
-`String.lowercase()` — Unicode full case mapping — while PHP folds
-identifiers ASCII-only. The divergence
-is confined to non-ASCII identifiers, which the PHP builtin namespace does
-not contain; an entry naming one folds more aggressively than PHP would,
-never less.
+**Folding:** Subject creators fold only ASCII A–Z to a–z and preserve every other character, matching PHP identifier comparison.
 
 ### OperationSubject
 
@@ -128,7 +121,7 @@ The ports and the position a subject calls: [model.md](model.md) Port.
 
 **Responsibility:** One declared flow between two ports — `from:
 Port.Input`, `to: Port`: a `data class` over the resolved pair with a
-private constructor. The companion `invoke` factory — also the Jackson
+private constructor. The companion `invoke` factory — the Jackson
 creator — takes the synonym spellings `from`/`input` and `to`/`output` as
 four nullable parameters and resolves each side; a Jackson alias would let
 a pair naming both spellings decode silently ([impl.md](impl.md)).

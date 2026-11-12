@@ -1,11 +1,13 @@
 # commons-phpmodels
 
-> Typed decode of declarative PHP models — taint effects, value units, and declaration signatures — from YAML.
+> Typed decode of declarative PHP models — taint effects, Value unit instances, and declaration signatures — from YAML.
 
-Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate `com.github.jhu-seclab-cobra:commons-phpmodels`. `DocumentSetLoader` decodes one document set (manifest, optional vocabulary, policy, and provenance, listed documents) into immutable typed entries, optionally translating another producer's vulnerability type and source kind names through a `VocabularyMapping`; every format violation raises `IllegalArgumentException` at load. `ArgPattern.matches` and `ArgPattern.matchesAlternatives` are the condition-match operations over commons-value primitives, the second over a set of alternatives per argument. Consumers own document location, set ordering, the fold that applies `Precedence` to two sets' entries, what a call's arguments are, and every query over the decoded entries.
+Kotlin/JVM format library; consumers own candidate selection and the combination of decoded sets.
+
+## Instructions for Agents
 
 - Call `DocumentSetLoader.load(opener, context, mapping)` to load a whole set; pass the vocabulary accumulated from earlier sets as `context` and union `set.vocabulary` back into it.
-- Pass a `VocabularyMapping` when a set's vulnerability type or source kind names are not the consumer's; never rename the consumer's vocabulary to match a source.
+- Pass a `VocabularyMapping` when a set's Vulnerability type or Source kind names are not the consumer's; never rename the consumer's vocabulary to match a source.
 - Read `set.provenance` and rank sets with `Precedence.DEFAULT` (or a consumer-built `Precedence`) before letting a later set override an earlier one; never rank by mount order alone.
 - Ship `provenance.yaml` beside `index.txt` in every published set; state `verification: generated` for extraction output and `manual` for hand-reviewed entries.
 - Catch `IllegalArgumentException` at the load boundary; it covers every decode failure, including `VocabularyException`.
@@ -16,113 +18,22 @@ Kotlin/JVM library, package `edu.jhu.cobra.commons.phpmodels`, Gradle coordinate
 ## Loading
 
 - [Loaders](llms/loaders.md): The two public loader objects, their inputs, and decode strictness.
-- [Document Sets](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `VocabularyMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
+- [Document Set instances](llms/sets.md): `DocumentSetLoader`, `ResourceOpener`, `VocabularyMapping`, `SetProvenance`, `Precedence`, accumulation across sets.
 
 ## Decoded Types
 
-- [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation.
-- [Subjects and Signatures](llms/subjects.md): The seven subject kinds, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
-- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, interned identifiers, `TaintPolicy`.
+- [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation, the character bound.
+- [Subjects and Signatures](llms/subjects.md): The seven declaration kinds and dynamic invocation operation, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
+- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, normalized identifiers, `TaintPolicy`.
+
+- [Usage index](llms/index.md): All usage modules.
 
 ## Optional
 
 - [Concepts](concept.md): Problem, scope, terminology, data flow, scenarios.
-- [Set provenance](concept-provenance.md): Producer, verification kind, precedence between sets.
+- [Set Provenance](concept-provenance.md): Producer, verification kind, precedence between sets.
 - [Domain model](model.md): Model sections, subjects, taint vocabulary, invariants.
 - [Design](design.md): Full type specifications and validation rules.
-
----
-
-# Referenced Documents
-
-## Source: llms/loaders.md
-
-# Loaders
-
-> Public decode surface: `DocumentSetLoader` over one document set, `VocabularyMappingLoader` over a consumer's mapping document.
-
-## Quick Start
-
-```kotlin
-val set = DocumentSetLoader.load(opener, context = Vocabulary.EMPTY)
-val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
-val mapped = DocumentSetLoader.load(otherOpener, context = set.vocabulary, mapping = mapping)
-```
-
-## API
-
-- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
-- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes a consumer's translation table.
-
-The single-document loaders (`VocabularyLoader`, `PolicyLoader`, `ModelLoader`, `ProvenanceLoader`) are internal: a consumer loads a set, never a single document.
-
-## Configuration
-
-- No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
-- Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`.
-- Policy row keys: `sourceKind` (one source kind name), `enables` (list of vulnerability type names).
-
-## Gotchas
-
-- Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
-- `VocabularyException` and `DocumentSetException` extend `IllegalArgumentException`; one catch covers all.
-- Every stream the opener yields is closed by the set load; the mapping loader consumes its stream without closing it.
-- Load order inside a set: provenance, vocabulary, policy, then model documents in manifest order; every entry is verified against the accumulated vocabulary.
-
-## Source: llms/sets.md
-
-# Document Sets
-
-> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a vocabulary mapping.
-
-## Quick Start
-
-```kotlin
-val opener = ResourceOpener { path -> javaClass.getResourceAsStream("/models/$path") }
-var vocabulary = Vocabulary.EMPTY
-val stubs = DocumentSetLoader.load(opener, vocabulary)
-vocabulary = vocabulary.merge(stubs.vocabulary)
-
-val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
-val upstream = DocumentSetLoader.load(upstreamOpener, vocabulary, mapping)
-val entries = stubs.entries + upstream.entries
-val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstream.provenance!!.verification) > 0
-```
-
-## API
-
-- **`ResourceOpener.open(path: String): InputStream?`** — `fun interface`; the caller's storage. Path is relative to the set root; null when absent.
-- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice, listed document malformed — the decode failure is the cause), `VocabularyException` (conflicting redeclaration, undeclared reference naming the document, undeclared mapping target, unlisted mapped name), `IllegalArgumentException` (malformed vocabulary, policy, or mapping document).
-- **`DocumentSetLoader.MANIFEST`**, **`VOCABULARY`**, **`POLICY`**, **`PROVENANCE`** — The four fixed file names, directly under the root.
-- **`DocumentSet(vocabulary: Vocabulary, policy: List<PolicyRow>, documents: List<Document>, provenance: SetProvenance? = null)`** — `vocabulary` is what this set contributed (empty for a mapped set); `entries` flattens the documents in order; `provenance` is null when `provenance.yaml` is absent.
-- `provenance.yaml` decodes `producer:` and `verification:` inside the set load. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
-- **`SetProvenance(producer: String, verification: Verification)`** — One set's declared provenance; `producer` non-blank.
-- **`Verification`** — `GENERATED`, `MANUAL`.
-- **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind)` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
-- **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
-- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes two maps, `vulnTypes:` and `sourceKinds:`, source name to target name or the literal `ignore` (`VocabularyMappingLoader.IGNORE`).
-- **`VocabularyMapping.vulnType(source)`**, **`sourceKind(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
-- **`VocabularyMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
-- **`VocabularyMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
-- **`DocumentSetException(path, detail, cause?)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
-
-## Configuration
-
-- Manifest `index.txt`: one document path per line, relative to the root; blank lines and lines starting with `#` are not entries; a path listed twice fails.
-- Mapping document: `vulnTypes:` and `sourceKinds:` maps; both sections required (`{}` when empty); every target is declared in `context` at load; a null target or a source spelled `ignore` fails.
-- Provenance document `provenance.yaml`: `producer: <identifier>` and `verification: generated|manual`; read for declared and mapped loads alike.
-
-## Gotchas
-
-- Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
-- With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
-- Translation never touches subjects, ports, conditions, signatures, value units, or the set provenance.
-- `SetProvenance` is where a set's statements come from; `SourceKindId` is the source kind of a tainted value. Neither substitutes for the other.
-- The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
-- Every stream the opener yields is closed by the load, whether or not the decode succeeds.
-
-## Source: llms/entries.md
-
 # Entries and Bodies
 
 > Decoded model entries: one subject, an optional argument-pattern condition, an optional signature, and the sectioned assertion body.
@@ -130,11 +41,11 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 ## Quick Start
 
 ```kotlin
-val set = DocumentSetLoader.load(opener)
-for (entry in set.entries) {
-    entry.subject to entry.body
-    entry.condition?.matches(callArguments) // true, false, or null (undecidable)
-}
+import edu.jhu.cobra.commons.phpmodels.ArgPattern
+import edu.jhu.cobra.commons.value.BoolVal
+val pattern = ArgPattern(listOf(BoolVal(true)))
+val result = pattern.matchesAlternatives(listOf(setOf(BoolVal(true))))
+result
 ```
 
 ## API
@@ -142,16 +53,22 @@ for (entry in set.entries) {
 - **`ModelEntry(subject: ModelSubject, condition: ArgPattern?, signature: SignatureInfo?, body: ModelBody)`** — One entry: a named subject with its assertions. Several entries for one subject are alternatives; `(subject, condition)` is unique within one document.
 - **`ArgPattern(expected: List<IPrimitiveVal?>)`** — The `when:` condition: one expected commons-value scalar per argument position, `null` for the wildcard `_`. `matches(actual: List<IPrimitiveVal?>): Boolean?` — `false` when the pattern is longer than the call or a known argument differs; `true` when every listed position holds an equal known argument; `null` when an unknown (`null` or `Unsure`) argument decides. `matchesAlternatives(actual: List<Set<IPrimitiveVal?>?>, defaults: List<IPrimitiveVal?> = emptyList()): Boolean?` — the same outcome over a call whose arguments each hold a set of alternatives, a `null` entry or a position past the end marking an omitted argument, which reads as the scalar `defaults` gives at that position: `false` when a listed position is omitted and has no default, or every alternative of a listed position differs; `true` when every alternative of every listed position equals its scalar; `null` otherwise. The positions stay independent, so no combination of alternatives across positions is formed. `positions: List<Int>` lists the non-wildcard indexes.
 - **`ModelBody`** — Seven optional sections: `returns: ReturnKind?`, `propagation: List<Propagation>?`, `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`, `sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (the exception classes the implementation may throw; the empty set states it throws none). `isEmpty: Boolean`; `declaresOnlySources: Boolean`; `namesReceiverPort: Boolean`; `declaresExplicitSourceSite: Boolean`; `valueUnit(): ValueUnit?` returns null when `returns` is undeclared.
-- **`ValueUnit(returns: ReturnKind, propagation: List<Propagation>, characters: CharacterBound?)`** — The whole value unit; absent propagation section decodes to the empty list (no flow, not unknown flow); absent characters section stays null (no bound).
+- **`ValueUnit(returns: Set<ReturnKind>, propagation: List<Propagation>, characters: CharacterBound?)`** — The whole Value unit; `returns` is non-empty, and the constructor taking one `ReturnKind` builds the unit of a single declared kind. `join(other: ValueUnit): ValueUnit` unions the kinds and the flows and keeps `characters` only when both are equal. Absent propagation section decodes to the empty list (no flow, not unknown flow); absent characters section stays null (no bound).
 - **`CharacterBound(of: Set<Port.Argument>?, within: CharacterClass?)`** — The bytes a call result may hold: only bytes of the `of` ports' values, only bytes of the `within` class; at least one field declared, a declared `of` non-empty.
 - **`CharacterClass(pattern: String)`** — Regex matched against one byte read as one Latin-1 character; `contains(byte: Int): Boolean` over 0..255. Decoded from a bare string scalar; equality over the pattern text.
-- **`Propagation(from: Port.Input, to: Port)`** — One declared flow; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.
-- **`Port`** — Sealed: `Port.Argument(position: Int)` (spelling `argument(n)`, `n >= 0`), `Port.Receiver` (spelling `this`), `Port.Return` (spelling `return`). `Port.Input` is the sealed sub-interface of `Argument` and `Receiver`. `Port.parse(raw: String): Port`; `Port.Argument.parseArgument(raw: String): Port.Argument` and `Port.Input.parseInput(raw: String): Port.Input` narrow to the subtype.
-- **`SourceDecl(sourceKinds: Set<SourceKindId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced source kind set; optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
+- **`Propagation(from: Port.Input, to: Port)`** — One declared Propagation; file spellings `from`/`input` and `to`/`output` (one per side). The from side is input-typed: `return` as a from side fails to decode.
+- **`Port`** — Sealed call locations: Argument, Callee, Receiver, Return, CallbackParameter and CallbackReturn; spellings are `argument(n)`, `callee`, `this`, `return`, `callback(argument(n)).parameter(m)` and `callback(argument(n)).return`.
+- **`Port.parse(raw: String): Port`** — Reads a port spelling; raises `IllegalArgumentException` on an invalid spelling.
+- **`Port.Input`** — Argument, Callee, Receiver or CallbackReturn.
+- **`Port.Sink`** — Argument or Callee; Models admit callee only as a sink of the dynamic invocation operation.
+- **`Port.Argument.parseArgument(raw: String): Port.Argument`** — Narrows a spelling to an argument port.
+- **`Port.Input.parseInput(raw: String): Port.Input`** — Narrows a spelling to an input port.
+
+- **`SourceDecl(sourceKinds: Set<SourceKindId>, at: Port.Argument?, keys: List<KeyPattern>?)`** — Non-empty produced Source kind set; optional explicit production site (`at:`, a by-ref out-parameter) and non-empty key-pattern list (`keys:`).
 - **`KeyPattern(pattern: String)`** — Regex over array keys, matched entire-key and case-sensitively; `matches(key: String): Boolean`. Decoded from a bare string scalar.
-- **`SinkDecl(port: Port.Argument, vulnType: VulnTypeId)`** — One dangerously consumed argument under one vulnerability type.
-- **`SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized vulnerability type set of the result (non-empty without a check), or of the argument a check accepts.
-- **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's vulnerability types and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
+- **`SinkDecl(port: Port.Sink, vulnType: VulnTypeId)`** — One consumed argument or dynamic invocation selector under one Vulnerability type.
+- **`SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check: ArgumentCheck? = null)`** — Neutralized Vulnerability type set of the result (non-empty without a check), or of the argument a check accepts.
+- **`ArgumentCheck(argument: Port.Argument, accepts: IPrimitiveVal, within: CharacterClass? = null, types: DeclaredType? = null)`** — YAML `check: {argument: argument(0), accepts: true, within: "[0-9]"}`; on a call returning `accepts`, the argument is free of the element's Vulnerability type entries and its bytes lie in `within`; `types` holds exactly when the call returns `accepts`.
 - **`ReturnKind`** — Enum `STR`, `NUM`, `BOOL`, `ANY`; `join(other: ReturnKind): ReturnKind` gives itself when equal, `ANY` otherwise.
 
 ## Configuration
@@ -164,7 +81,7 @@ for (entry in set.entries) {
 ## Gotchas
 
 - An entry asserting nothing — no signature, empty body — is rejected at load.
-- `propagation` without `returns` is rejected; the value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
+- `propagation` without `returns` is rejected; the Value unit is asserted whole. With a callable `signature`, `returns` is derived from the declared return type instead.
 - `characters` without `returns` is rejected, like `propagation`; beside a callable `signature:` it needs a `propagation` section for `returns` to be derived. Each `of:` port must be the `from:` of a declared flow into `return`.
 - Explicit `returns:` beside a callable `signature:` is rejected — one fact, one source.
 - A callable `signature:` fixes the arity: an argument port (condition position, propagation side, sink, source `at:` site) outside the declared parameter list is rejected, unless the last parameter is variadic. An entry without a signature is not arity-checked.
@@ -176,9 +93,102 @@ for (entry in set.entries) {
 - Section admissibility follows subject kind: `returns`/`propagation`/`characters`, `throws`, and `when:` belong to `function` and `method` entries; `class` entries declare nothing besides their signature; other non-callable kinds declare sources only.
 - Two entries of one document sharing subject and condition are rejected; an unconditional entry beside conditional ones is the subject's default. Which alternative applies to a call is the consumer's decision over `matches`.
 - Equality in `matches` is commons-value equality: `IntVal(1)` and `FloatVal(1.0)` are unequal, as are `BoolVal(true)` and `StrVal("true")`.
+# commons-phpmodels llms — documentation navigation
 
-## Source: llms/subjects.md
+| File | Content |
+|------|---------|
+| [entries.md](entries.md) | Entries reference |
+| [full.txt](full.txt) | Concatenated agent index and usage modules |
+| [loaders.md](loaders.md) | Loaders reference |
+| [sets.md](sets.md) | Sets reference |
+| [subjects.md](subjects.md) | Subjects reference |
+| [vocabulary.md](vocabulary.md) | Vocabulary reference |
+# Loaders
 
+> Public decode surface: `DocumentSetLoader` over one Document Set, `VocabularyMappingLoader` over a consumer's mapping document.
+
+## Quick Start
+
+```kotlin
+import edu.jhu.cobra.commons.phpmodels.DocumentSetLoader
+import edu.jhu.cobra.commons.phpmodels.ResourceOpener
+val yaml = "- subject: {function: example}
+  returns: str
+"
+val files = mapOf("index.txt" to "models.yaml
+", "models.yaml" to yaml)
+val set = DocumentSetLoader.load(ResourceOpener { files[it]?.byteInputStream() })
+set.entries.single().body.returns
+```
+
+## API
+
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Loads one set: manifest, `provenance.yaml`, `vocabulary.yaml`, `policy.yaml`, listed model documents ([sets.md](sets.md)).
+- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes a consumer's translation table.
+
+- Load one complete set rather than an individual document.
+
+## Configuration
+
+- No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
+- Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`.
+- Policy row keys: `sourceKind` (one Source kind name), `enables` (list of Vulnerability type names).
+
+## Gotchas
+
+- Decode is strict: an unknown or stray key anywhere raises `IllegalArgumentException`.
+- `VocabularyException` and `DocumentSetException` extend `IllegalArgumentException`; one catch covers all.
+- Every stream the opener yields is closed by the set load; the mapping loader consumes its stream without closing it.
+- Load order inside a set: provenance, vocabulary, policy, then model documents in manifest order; every entry is verified against the accumulated vocabulary.
+# Document Set instances
+
+> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a Vocabulary Mapping.
+
+## Quick Start
+
+```kotlin
+import edu.jhu.cobra.commons.phpmodels.DocumentSetLoader
+import edu.jhu.cobra.commons.phpmodels.ResourceOpener
+val yaml = "- subject: {function: example}
+  returns: str
+"
+val files = mapOf("index.txt" to "models.yaml
+", "models.yaml" to yaml)
+val set = DocumentSetLoader.load(ResourceOpener { files[it]?.byteInputStream() })
+set.entries.single().body.returns
+```
+
+## API
+
+- **`ResourceOpener.open(path: String): InputStream?`** — `fun interface`; the caller's storage. Path is relative to the set root; null when absent.
+- **`DocumentSetLoader.load(open: ResourceOpener, context: Vocabulary = Vocabulary.EMPTY, mapping: VocabularyMapping? = null): DocumentSet`** — Reads `index.txt`, then `vocabulary.yaml` and `policy.yaml` when present, then every listed document in manifest order. Raises `DocumentSetException` (manifest or listed document absent, path listed twice, listed document malformed — the decode failure is the cause), `VocabularyException` (conflicting redeclaration, undeclared reference naming the document, undeclared mapping target, unlisted mapped name), `IllegalArgumentException` (malformed vocabulary, policy, or mapping document).
+- **`DocumentSetLoader.MANIFEST`**, **`VOCABULARY`**, **`POLICY`**, **`PROVENANCE`** — The four fixed file names, directly under the root.
+- **`DocumentSet(vocabulary: Vocabulary, policy: List<PolicyRow>, documents: List<Document>, provenance: SetProvenance? = null)`** — `vocabulary` is what this set contributed (empty for a mapped set); `entries` flattens the documents in order; `provenance` is null when `provenance.yaml` is absent.
+- `provenance.yaml` decodes `producer:` and `verification:` inside the set load. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
+- **`SetProvenance(producer: String, verification: Verification)`** — One set's declared provenance; `producer` non-blank.
+- **`Verification`** — `GENERATED`, `MANUAL`.
+- **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind: Verification): Int` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
+- **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
+- **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes two maps, `vulnTypes:` and `sourceKinds:`, source name to target name or the literal `ignore` (`VocabularyMappingLoader.IGNORE`).
+- **`VocabularyMapping.vulnType(source: VulnTypeId): VulnTypeId?`**, **`sourceKind(source: SourceKindId): SourceKindId?`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
+- **`VocabularyMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
+- **`VocabularyMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded Source kind or emptied row drops.
+- **`DocumentSetException(path: String, detail: String, cause: Throwable? = null)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
+
+## Configuration
+
+- Manifest `index.txt`: one document path per line, relative to the root; blank lines and lines starting with `#` are not entries; a path listed twice fails.
+- Mapping document: `vulnTypes:` and `sourceKinds:` maps; both sections required (`{}` when empty); every target is declared in `context` at load; a null target or a source spelled `ignore` fails.
+- Provenance document `provenance.yaml`: `producer: <identifier>` and `verification: generated|manual`; read for declared and mapped loads alike.
+
+## Gotchas
+
+- Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
+- With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
+- Translation never touches subjects, ports, conditions, signatures, Value unit instances, or the Set Provenance.
+- `SetProvenance` is where a set's statements come from; `SourceKindId` is the Source kind of a tainted value. Neither substitutes for the other.
+- The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
+- Every stream the opener yields is closed by the load, whether or not the decode succeeds.
 # Subjects and Signatures
 
 > The PHP declaration a model identifies, and the decoded signature section per declaration kind.
@@ -186,9 +196,10 @@ for (entry in set.entries) {
 ## Quick Start
 
 ```kotlin
+import edu.jhu.cobra.commons.phpmodels.MethodSubject
 val subject = MethodSubject.parse("mysqli::query")
-val model = DocumentSetLoader.load(opener).entries.single()
-model.subject == subject
+val name = subject.name
+name
 ```
 
 ## API
@@ -202,12 +213,13 @@ model.subject == subject
 | `MethodSubject(owner, name)` | `method:` | `mysqli::query` | both folded |
 | `ClassConstantSubject(owner, name)` | `class_constant:` | `Exception::SEVERITY_ERROR` | owner folded, name sensitive |
 | `PropertySubject(owner, name)` | `property:` | `mysqli::$insert_id` | owner folded, name sensitive |
-| `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive |
-| `VariableSubject(name)` | `variable:` | `$_GET` | folded |
+| `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive except root TRUE/FALSE/NULL |
+| `VariableSubject(name)` | `variable:` | `$_GET` | sensitive |
+| `OperationSubject.DYNAMIC_INVOCATION` | `operation:` | `dynamic_invocation` | exact library spelling |
 
 - **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
 - **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, framelessArities: Set<Int> = emptySet(), specialArities: Set<Int> = emptySet(), ropeFormat: String? = null)`** — function, method; `framelessArities` are the argument counts (at most 3) at which php-src selects a frameless function, `specialArities` the counts (2 or more) at which it always compiles a call bound when compiled to one opcode, `ropeFormat` the parameter php-src compiles into a rope; counts lie within the required..declared parameter count (any above it with a variadic tail), and a method declares none of the three.
-- **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String?, interfaces: List<String>, name: String?, aliases: List<String>)`** — class; parent, interfaces and aliases case-folded; name in the letter case the declaration spells, null when the source states none.
+- **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String? = null, interfaces: List<String> = emptyList(), isFinal: Boolean? = null, handlers: List<HandlerTable> = emptyList(), name: String? = null, aliases: List<String> = emptyList())`** — class; isFinal records registered FINAL status, handlers retain possible native tables, parent, interfaces and aliases ASCII-case-folded; name in the letter case the declaration spells, null when the source states none.
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
 - **`ParameterInfo(name: String, type: DeclaredType, optional: Boolean, byRef: Boolean, variadic: Boolean, namedExtras: NamedExtras? = null, default: String? = null)`** — one declared parameter; position is list order. `default` spells the scalar literal the stub declares (`true`, `false`, `null`, a decimal number, a quoted string without an escape) and needs `optional` and not `variadic`; `defaultValue: IPrimitiveVal?` is the scalar it spells, null when absent.
@@ -217,45 +229,47 @@ model.subject == subject
 
 ## Configuration
 
-- Keyword type vocabulary: `string`, `int`, `float`, `bool`, `array`, `object`, `callable`, `resource`, `mixed`, `void`, `null`, `iterable`. Any other spelling must be a class name.
+- Keyword type vocabulary: `string`, `int`, `float`, `bool`, `array`, `object`, `callable`, `resource`, `mixed`, `void`, `null`, `iterable`, `true`, `false`, `never`. Any other spelling must be a class name.
 - Enum values decode case-insensitively from lowercase file vocabulary (`classifier: class`, `visibility: public`).
 
 ## Gotchas
 
 - `::` grammar is closed: exactly one separator, both sides non-empty; `$` is mandatory for property names and forbidden elsewhere; leading namespace slashes are stripped.
-- `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_get")` matches the spelling `$_GET`.
+- `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_GET")` matches the spelling `$_GET` and not `$_get`.
 - A signature subtype that does not match the entry's subject kind is rejected at load.
 - `variable` entries never carry a signature — superglobals are hand-declared.
-- The returns classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.
-
-## Source: llms/vocabulary.md
-
+- The Return Classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.
 # Vocabulary and Policy
 
-> The two closed declared sets — vulnerability types and source kinds — and the source kind → vulnerability types taint policy.
+> The two closed declared sets — Vulnerability type entries and Source kind entries — and the Source kind → Vulnerability type entries taint policy.
 
 ## Quick Start
 
 ```kotlin
-val set = DocumentSetLoader.load(opener)
-val vocabulary = set.vocabulary
-val policy = TaintPolicy(set.policy)
-policy.isDangerous(vocabulary.requireSourceKind("remote"), vocabulary.requireVulnType("sqli"))
+import edu.jhu.cobra.commons.phpmodels.SourceKindDecl
+import edu.jhu.cobra.commons.phpmodels.SourceKindId
+import edu.jhu.cobra.commons.phpmodels.Vocabulary
+import edu.jhu.cobra.commons.phpmodels.VulnTypeDecl
+import edu.jhu.cobra.commons.phpmodels.VulnTypeId
+val source = SourceKindDecl(SourceKindId("remote"), "Remote input")
+val vuln = VulnTypeDecl(VulnTypeId("sqli"), "SQL injection")
+val vocabulary = Vocabulary(mapOf(vuln.id to vuln), mapOf(source.id to source))
+vocabulary.requireSourceKind("remote")
 ```
 
 ## API
 
-- **`Vocabulary(vulnTypes: Map<VulnTypeId, VulnTypeDecl>, sourceKinds: Map<SourceKindId, SourceKindDecl>)`** — Sole authority for what vulnerability type and source kind names exist.
-- **`Vocabulary.requireVulnType(raw: String): VulnTypeId`** — Interns and validates a vulnerability type name. Raises `VocabularyException` when undeclared.
-- **`Vocabulary.requireSourceKind(raw: String): SourceKindId`** — Interns and validates a source kind name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary(vulnTypes: Map<VulnTypeId, VulnTypeDecl>, sourceKinds: Map<SourceKindId, SourceKindDecl>)`** — Sole authority for what Vulnerability type and Source kind names exist.
+- **`Vocabulary.requireVulnType(raw: String): VulnTypeId`** — Normalizes and validates a Vulnerability type name. Raises `VocabularyException` when undeclared.
+- **`Vocabulary.requireSourceKind(raw: String): SourceKindId`** — Normalizes and validates a Source kind name. Raises `VocabularyException` when undeclared.
 - **`Vocabulary.merge(other: Vocabulary): Vocabulary`** — Union in declaration order; an identical redeclaration is one declaration. Raises `VocabularyException` when a name is declared in both with different descriptions.
-- **`Vocabulary.verify(entry: ModelEntry)`** — Checks every vulnerability type and source kind the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
+- **`Vocabulary.verify(entry: ModelEntry): Unit`** — Checks every Vulnerability type and Source kind the entry's sources, sinks, and sanitizers name is declared. Raises `VocabularyException` otherwise.
 - **`Vocabulary.EMPTY`** — The vocabulary declaring nothing; the starting accumulator of a load.
-- **`VulnTypeId(raw: String)`**, **`SourceKindId(raw: String)`** — Interned lowercase reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
+- **`VulnTypeId(raw: String)`**, **`SourceKindId(raw: String)`** — Lowercased reference tokens (value classes; companion `invoke`, constructor private, `id` is the lowercased name). Use past the load boundary instead of raw strings.
 - **`VulnTypeDecl(id: VulnTypeId, description: String)`**, **`SourceKindDecl(id: SourceKindId, description: String)`** — One declared vocabulary entry.
 - **`PolicyRow(sourceKind: SourceKindId, enables: Set<VulnTypeId>)`** — One policy statement.
-- **`TaintPolicy(rows: List<PolicyRow>)`** — The folded source kind → vulnerability types matrix; rows sharing a source kind accumulate by union.
-- **`TaintPolicy.isDangerous(sourceKind: SourceKindId, vulnType: VulnTypeId): Boolean`** — Whether the source kind enables the vulnerability type.
+- **`TaintPolicy(rows: List<PolicyRow>)`** — The folded Source kind → Vulnerability type entries matrix; rows sharing a Source kind accumulate by union.
+- **`TaintPolicy.isDangerous(sourceKind: SourceKindId, vulnType: VulnTypeId): Boolean`** — Whether the Source kind enables the Vulnerability type.
 
 ## Configuration
 
@@ -264,7 +278,7 @@ policy.isDangerous(vocabulary.requireSourceKind("remote"), vocabulary.requireVul
 
 ## Gotchas
 
-- Identifiers are lowercased at interning; declare and reference names in lowercase.
+- Identifiers are lowercased at construction; declare and reference names in lowercase.
 - A repeated name within a vocabulary section raises `VocabularyException` at load.
 - `VocabularyException` extends `IllegalArgumentException`.
 - `DocumentSetLoader` verifies every entry it returns; `verify(entry)` serves a consumer that builds entries by hand.

@@ -67,9 +67,8 @@ key ([impl.md](impl.md)); the creator completes them into the body.
   non-wildcard positions — to the parameter list, with the
   write-direction and `void` rules of
   [design-declarations.md](design-declarations.md).
-- Explicit `returns` beside a `CallableSignature` is rejected (one fact, one
-  source); a propagation section beside a callable signature is completed
-  into the value unit with the derived classification before body
+- During YAML decoding, explicit `returns` beside a `CallableSignature` is rejected; a propagation section beside a callable signature is completed
+  into the Value unit with the derived classification before body
   construction, so `ModelBody`'s propagation-requires-returns rule holds.
   A characters section beside a callable signature joins that completion;
   without a propagation section no returns is derived, so it is rejected.
@@ -102,3 +101,7 @@ absorb ([impl.md](impl.md)).
 
 Domain semantics: [model.md](model.md),
 [model-conditions.md](model-conditions.md).
+
+## Open Gaps
+
+- Direct `ModelEntry` construction does not perform the YAML creator's explicit-returns check; `ModelEntry.decode` enforces the format prohibition in [declaration invariants](model-declarations.md#invariants), while `ModelEntry.init` checks admissibility and port bounds only.

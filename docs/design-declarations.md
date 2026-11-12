@@ -38,7 +38,7 @@ describable kind, holding exactly the fields
 - `CallableSignature` — `params: List<ParameterInfo>`,
   `returnType: DeclaredType` (function, method); `maxArguments` is the
   parameter count, unbounded with a variadic last parameter, and the
-  entry-level argument-port bound reads it too; a function also states how
+  entry-level argument-port bound reads it too; a function states how
   php-src compiles a call of it to one opcode:
   - `framelessArities: Set<Int>`: the argument counts at which php-src
     selects a frameless function for a call of the function; each count is
@@ -60,7 +60,7 @@ describable kind, holding exactly the fields
   `interfaces: List<String>`, `isFinal: Boolean? = null`,
   `handlers: List<HandlerTable> = emptyList()`, `name: String?`,
   `aliases: List<String>`; a `data class` with a private constructor whose
-  companion `invoke` factory — also the Jackson creator — folds the
+  companion `invoke` factory — the Jackson creator — folds the
   inheritance edges and the class aliases into the stored, compared form and
   keeps `name` as written ([impl.md](impl.md)). A missing final status
   decodes as null; omitted handlers decode as empty. Table alternatives and
@@ -80,7 +80,7 @@ signature key carries no discriminator of its own; entry-level validation
 rejects a signature subtype that does not match the entry's subject kind,
 and rejects `returns:` beside a `CallableSignature` (one fact, one source;
 [design-entries.md](design-entries.md)). It runs with the
-section-admissibility validations, before any vocabulary interning by the
+section-admissibility validations, before any vocabulary normalization by the
 caller.
 
 **Entry-level constraints of a declared `CallableSignature`** (enforced in
@@ -143,7 +143,7 @@ function the validation and every derived member call.
 - `fun toReturnKind(): ReturnKind` — the classification derivation: each
   alternative by the table in [model-declarations.md](model-declarations.md),
   joined with `ReturnKind.join`; it runs where the consumer materializes the
-  value unit and is never written into a file that carries a
+  Value unit and is never written into a file that carries a
   signature.
 - `val isVoid: Boolean` — true when the declaration is the `void` keyword.
 

@@ -1,19 +1,19 @@
-# Document Sets
+# Document Set instances
 
-> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a vocabulary mapping.
+> One stored source of models — manifest, optional vocabulary, policy, and provenance, listed documents — loaded as a unit under the consumer's accumulated vocabulary, optionally translated through a Vocabulary Mapping.
 
 ## Quick Start
 
 ```kotlin
-val opener = ResourceOpener { path -> javaClass.getResourceAsStream("/models/$path") }
-var vocabulary = Vocabulary.EMPTY
-val stubs = DocumentSetLoader.load(opener, vocabulary)
-vocabulary = vocabulary.merge(stubs.vocabulary)
-
-val mapping = VocabularyMappingLoader.load(mappingYaml.byteInputStream())
-val upstream = DocumentSetLoader.load(upstreamOpener, vocabulary, mapping)
-val entries = stubs.entries + upstream.entries
-val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstream.provenance!!.verification) > 0
+import edu.jhu.cobra.commons.phpmodels.DocumentSetLoader
+import edu.jhu.cobra.commons.phpmodels.ResourceOpener
+val yaml = "- subject: {function: example}
+  returns: str
+"
+val files = mapOf("index.txt" to "models.yaml
+", "models.yaml" to yaml)
+val set = DocumentSetLoader.load(ResourceOpener { files[it]?.byteInputStream() })
+set.entries.single().body.returns
 ```
 
 ## API
@@ -25,13 +25,13 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 - `provenance.yaml` decodes `producer:` and `verification:` inside the set load. Raises `IllegalArgumentException` on a stray key, a missing field, a blank producer, or a kind other than `generated`/`manual`.
 - **`SetProvenance(producer: String, verification: Verification)`** — One set's declared provenance; `producer` non-blank.
 - **`Verification`** — `GENERATED`, `MANUAL`.
-- **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind)` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
+- **`Precedence(order: List<Verification>)`** — `Comparator<Verification>`, highest first; `rank(kind: Verification): Int` is the position, `0` highest; `DEFAULT` is manual above generated. Raises `IllegalArgumentException` when a kind is missing or repeated.
 - **`Document(path: String, entries: List<ModelEntry>)`** — One listed document.
 - **`VocabularyMappingLoader.load(input: InputStream): VocabularyMapping`** — Decodes two maps, `vulnTypes:` and `sourceKinds:`, source name to target name or the literal `ignore` (`VocabularyMappingLoader.IGNORE`).
-- **`VocabularyMapping.vulnType(source)`**, **`sourceKind(source)`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
+- **`VocabularyMapping.vulnType(source: VulnTypeId): VulnTypeId?`**, **`sourceKind(source: SourceKindId): SourceKindId?`** — Target name, or null when discarded. Raises `VocabularyException` when unlisted.
 - **`VocabularyMapping.apply(entry: ModelEntry): ModelEntry?`** — Translates sources, sinks, and sanitizers; null when an entry without a signature loses its last section.
-- **`VocabularyMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded origin or emptied row drops.
-- **`DocumentSetException(path, detail, cause?)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
+- **`VocabularyMapping.apply(rows: List<PolicyRow>): List<PolicyRow>`** — Translates rows; a discarded Source kind or emptied row drops.
+- **`DocumentSetException(path: String, detail: String, cause: Throwable? = null)`** — Extends `IllegalArgumentException`; `path` names the manifest or document; `cause` carries a malformed document's decode failure.
 
 ## Configuration
 
@@ -43,7 +43,7 @@ val stubsWin = Precedence.DEFAULT.compare(stubs.provenance!!.verification, upstr
 
 - Without a mapping, `vocabulary.yaml` merges into `context`: a redeclaration is admitted only when its description is identical.
 - With a mapping, `vocabulary.yaml` is ignored, the mapping must list every name the set uses, and the returned `vocabulary` is empty — a mapped set contributes no names.
-- Translation never touches subjects, ports, conditions, signatures, value units, or the set provenance.
-- `SetProvenance` is where a set's statements come from; `SourceKindId` is the source kind of a tainted value. Neither substitutes for the other.
+- Translation never touches subjects, ports, conditions, signatures, Value unit instances, or the Set Provenance.
+- `SetProvenance` is where a set's statements come from; `SourceKindId` is the Source kind of a tainted value. Neither substitutes for the other.
 - The library ranks verification kinds only; folding two sets' entries for one subject is the consumer's, with mount order as the tie-break.
 - Every stream the opener yields is closed by the load, whether or not the decode succeeds.

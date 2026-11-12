@@ -1,23 +1,27 @@
-# commons-phpmodels — the declarative model format for PHP declarations
+# commons-phpmodels — documentation index
 
 | File | Content |
 |------|---------|
-| glossary/glossary.md | Glossary: declarations, models, taint vocabulary and document sets |
-| concept.md | Problem, scope, terminology, data flow, scenarios. |
-| concept-provenance.md | Set provenance: producer, verification kind, precedence over sets. |
-| model.md | Model sections, subjects, taint vocabulary, relations, invariants. |
-| model-conditions.md | Conditional models: argument condition, match outcome, alternatives. |
-| model-declarations.md | Declaration entries: subject kinds, signatures, generated layer. |
-| model-declarations-handlers.md | Effective object handler facts and inherited string behavior. |
-| model-declarations-class-names.md | Class name and class aliases of a class signature. |
-| model-sets.md | Document sets, accumulated vocabulary, vocabulary mapping, set provenance rank. |
-| design.md | Vocabulary, policy, decoder, loaders. |
-| design-bodies.md | The model body, its section element types, the character bound. |
-| design-subjects.md | Subject kinds, ports, and the propagation pair. |
-| design-entries.md | The entry form, its creator, and entry-level validation. |
-| design-conditions.md | The argument pattern type and its match operation. |
-| design-declarations.md | Signature types, parameters, declared-type vocabulary. |
-| design-declarations-handlers.md | Table alternatives, requests, target results and dispatch types. |
-| design-sets.md | Set loader, resource opener, vocabulary mapping, provenance, precedence. |
-| impl.md | Verified Jackson YAML decoding APIs and their version-dependent defaults. |
-| llms.txt | Agent documentation index in llmstxt.org format, routing to llms/. |
+| [concept-provenance.md](concept-provenance.md) | Set Provenance: producer, verification kind, precedence over sets. |
+| [concept.md](concept.md) | Problem, scope, terminology, data flow, scenarios. |
+| [model-conditions.md](model-conditions.md) | Conditional models: argument condition, match outcome, alternatives. |
+| [model-declarations-class-names.md](model-declarations-class-names.md) | Class name and class aliases of a class signature. |
+| [model-declarations-handlers.md](model-declarations-handlers.md) | Effective object handler facts and inherited string behavior. |
+| [model-declarations.md](model-declarations.md) | Declaration entries: subject kinds, signatures, Generated Layer. |
+| [model-sets.md](model-sets.md) | Document Set instances, accumulated vocabulary, Vocabulary Mapping, Set Provenance rank. |
+| [model.md](model.md) | Model sections, subjects, taint vocabulary, relations, invariants. |
+| [design-bodies.md](design-bodies.md) | The model body, its section element types, the character bound. |
+| [design-conditions.md](design-conditions.md) | The argument pattern type and its match operation. |
+| [design-declarations-handlers.md](design-declarations-handlers.md) | Table alternatives, requests, target results and dispatch types. |
+| [design-declarations.md](design-declarations.md) | Signature types, parameters, declared-type vocabulary. |
+| [design-entries.md](design-entries.md) | The entry form, its creator, and entry-level validation. |
+| [design-sets.md](design-sets.md) | Set loader, resource opener, Vocabulary Mapping, provenance, precedence. |
+| [design-subjects.md](design-subjects.md) | Subject kinds, ports, and the propagation pair. |
+| [design.md](design.md) | Vocabulary, policy, decoder, loaders. |
+| [spec-conditions.md](spec-conditions.md) | Spec conditions reference |
+| [spec-declared-types.md](spec-declared-types.md) | Spec declared types reference |
+| [impl.md](impl.md) | Jackson YAML decoding APIs and their version-dependent defaults. |
+| [glossary/index.md](glossary/index.md) | Glossary/index reference |
+| [llms.txt](llms.txt) | Agent documentation index in llmstxt.org format, routing to llms/. |
+| [llms/index.md](llms/index.md) | Llms/index reference |
+| [references.bib](references.bib) | References reference |

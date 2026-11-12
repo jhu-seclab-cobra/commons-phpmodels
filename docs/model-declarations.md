@@ -7,16 +7,14 @@ declaration kind, with no nesting of one declaration inside another.
 
 ## Entities
 
-- **Declaration Entry** — An entry whose subject names one PHP declaration
+- **Model with a Signature** — An entry whose subject names one PHP declaration
   and whose signature section describes it. Existence condition: a subject
   plus at least one section; a signature section alone is a complete entry —
   it states "this declaration exists", which is the existence statement a
   consumer consults for unresolved names.
-- **Signature** — The descriptive section of an entry: what the declaration
-  looks like, never what an analysis believes about it. Content per subject
-  kind:
+- **[Signature](glossary/glossary-models.md#signature)** — Supplies declaration information for consumer lookup. Content per subject kind:
   - *function*, *method* — parameter list, declared return type. A
-    function may also state how php-src compiles a call of it to one opcode:
+    function may state how php-src compiles a call of it to one opcode:
     the argument counts that select a frameless function, the argument
     counts that always compile to one opcode reading two or more arguments,
     and the parameter whose constant value php-src compiles into a rope. A
@@ -36,21 +34,21 @@ declaration kind, with no nesting of one declaration inside another.
     is the constant's spelled literal, stored losslessly; absent when the
     declaring source does not state one (hand-written entries). Consumers
     that materialize built-in constants read it; it never influences the
-    returns classification.
+    Return Classification.
   - *property* — declared type, visibility, static.
   - *predefined variable* — no signature; superglobals are hand-declared.
 - **Parameter** — One declared parameter: name, declared type, optional,
   by-reference, variadic. Position is list order; position 0 is the first
   declared parameter.
 
-A builtin variadic parameter carries `namedExtras: NamedExtras?`, one of REJECT(k) (named extras are refused at reception position k), FORWARD (they reach a target callable) or null (not extracted). The extractor reads the value from the builtin's argument parsing in php-src.
+A variadic parameter may state that extra named arguments are rejected at a reception position, forwarded to another callable, or unestablished; the producer reads that policy from builtin argument parsing.
 
 The reception position is the zero-based start of the parsing group that
 refuses extra names, which may precede the declared variadic tail. An
 unrecognized builtin has no extracted policy; forwarding, accept-and-ignore
 and unextracted behavior never assert rejection.
 
-- **Declared Type** — A PHP type declaration in the grammar of the PHP
+- **[Declared Type](glossary/glossary-declarations.md#declared-type)** — A PHP type declaration in the grammar of the PHP
   manual: a single type, a nullable type (`?T`), a union (`A|B`), an
   intersection of class names (`A&B`), or a union whose members are single
   types or parenthesized intersections (`(A&B)|null`). A single type is a
@@ -58,9 +56,9 @@ and unextracted behavior never assert rejection.
   callable, iterable, resource, mixed, void, never, null) or a class name.
   Read as a union of alternatives, each an intersection of single types: `?T`
   is `T|null`, a single type is a union of one alternative. Spelled without
-  whitespace, as PHP reflection prints it. Stored losslessly; the four-kind returns classification is derived from it at
+  whitespace, as PHP reflection prints it. Stored losslessly; the four-kind Return Classification is derived from it at
   load and never stored beside it.
-- **Generated Layer** — The lowest configuration layer of a consumer: files
+- **[Generated Layer](glossary/glossary-sets.md#generated-layer)** — The lowest configuration layer of a consumer: files
   emitted by an extraction producer from upstream sources. Structurally
   marked by provenance (directory and file header naming source and producer
   version); never hand-edited — a correction is a higher-layer entry
@@ -110,8 +108,8 @@ alternatives of the declared type itself.
 
 | From | To | Relation | Cardinality | Meaning |
 |------|----|----------|-------------|---------|
-| Declaration Entry | PHP declaration | describes | 1:1 | One entry per declaration; a member references its class by identity, and a class entry never holds its member entries |
-| Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the returns classification when propagation is asserted |
+| Model with a Signature | PHP declaration | describes | 1:1 | One entry per declaration; a member references its class by identity, and a class entry never holds its member entries |
+| Signature | assertion sections | completes | 1:0..1 | A declared return type supplies the Return Classification when propagation is asserted |
 | Generated Layer | Configuration Source | is lowest | 1:1 | Every hand-written layer overrides it per (subject, condition, unit) |
 
 ## Invariants
@@ -148,7 +146,7 @@ alternatives of the declared type itself.
   - Signature present, propagation declared → the unit is asserted: returns
     derived from the declared return type, flows and characters exactly as
     declared.
-  - Signature present, no propagation → **no value unit**. Existence
+  - Signature present, no propagation → **no Value unit**. Existence
     is asserted; value flow stays at the consumer's conservative default in
     which every argument influences the result. Absence of a flow annotation
     in the upstream data is not purity, so a characters section here is a

@@ -1,101 +1,68 @@
-# PHP Models — Conditional Models (Condition)
-
-Domain semantics of conditional model entries. Base entities — Model,
-Matching Subject, Port, Override Unit: [model.md](model.md).
+# PHP Models — Conditional Models
 
 ## Entities
 
-- **Condition** — An optional argument pattern attached to one model entry:
-  a sequence of expected values by argument position, each either one
-  scalar (boolean, integer, float, string, null) or the *wildcard*. The
-  condition holds at a call exactly when, for every position of the
-  sequence, the call supplies an argument at that position, or omits it
-  where the callable declares a scalar default, and, unless the position is
-  the wildcard, that argument or default is that scalar. Identity is the
-  sequence. Equality is the only predicate.
-- **Conditional Entry** — One model entry for a subject that carries a
-  Condition. Its sections describe the subject's whole behavior under that
-  condition, never a delta over another entry.
-- **Unconditional Entry** — The model entry for a subject that carries no
-  Condition. It describes the subject's behavior at every call the
-  consumer does not attribute to a conditional entry.
-- **Call Arguments** — What a consumer knows about one call: the argument
-  count, and per position the scalar value when every interpretation of
-  that argument is one concrete scalar, or *unknown* otherwise. Owned by
-  the consumer; the format only defines the match against it.
-- **Match Outcome** — The result of matching one Condition against one
-  Call Arguments: *holds*, *fails*, or *undecidable*.
+- **[Condition](glossary/glossary-models.md#condition)** constrains scalar argument positions of one Model; `_` leaves a position unconstrained.
+- A Model with a Condition is a complete alternative for that pattern; its Sections are not deltas over another entry.
+- A Model without a Condition supplies the consumer's unconditional alternative.
+- The consumer supplies its knowledge of call arguments; the library compares that knowledge with the Condition.
 
 ## Relations
 
-| From | To | Relation | Cardinality | Meaning |
-|------|----|----------|-------------|---------|
-| Matching Subject | Conditional Entry | has | 1:N | Alternatives; each a complete model for its condition |
-| Matching Subject | Unconditional Entry | has | 1:0..1 | At most one per override unit |
-| Condition | position × scalar | expects | 1:N | Position i carries scalar i, or anything when wildcard |
-| Condition | Call Arguments | matches | N:N | Yields one Match Outcome |
+| From | To | Cardinality | Meaning |
+|------|----|-------------|---------|
+| Matching Subject | Model with a Condition | 1:N | Alternatives describing one subject |
+| Condition | Constrained argument position | 1:N | Equality to one expected Primitive Value |
+| Model | Condition | 1:0..1 | The entry's optional argument constraint |
 
 ## State Model
 
-### Match Outcome
-
-Positions are compared in order; the first decisive position decides.
+A constrained position has one of three outcomes.
 
 | Outcome | Condition |
 |---------|-----------|
-| fails | A non-wildcard position is omitted and the callable declares no scalar default there |
-| fails | Some non-wildcard position holds a known argument, or an omitted position's declared default, not equal to its scalar |
-| holds | Every non-wildcard position holds a known argument, or an omitted position the callable's declared default, equal to its scalar |
-| undecidable | Neither: some non-wildcard position holds an unknown argument and no position fails |
+| holds | Every supplied alternative is the expected scalar, or the position is omitted and its declared scalar default equals that scalar |
+| fails | Every supplied alternative is a known unequal scalar, or an omitted position has no scalar default or a different default |
+| undecidable | Supplied alternatives are mixed, empty, or contain an unknown value |
 
-The argument count is always known to the consumer: a call site lists its
-arguments. A position beyond the count is omitted, and PHP binds an omitted
-argument to the parameter's declared default, so the position answers as
-that scalar; with no scalar default it fails. A condition on a defaulted
-parameter therefore holds at a call that omits the argument exactly when the
-condition names the default.
+Any failing constrained position makes the whole Condition fail; otherwise an undecidable position makes it undecidable; otherwise it holds.
+Wildcard positions do not participate in this reduction.
+A scalar-list match has the additional precondition that the supplied list covers the entire pattern; it fails when the list is shorter, including an omitted trailing wildcard.
+An alternatives match reads omitted constrained positions from the supplied scalar defaults and ignores omitted wildcard positions.
+[Condition matching](spec-conditions.md) owns the procedure.
 
 ## Invariants
 
-- The condition is optional. A subject with only an Unconditional Entry has
-  that entry in force at every call.
-- A Condition is declared only on a callable subject (function, method).
-  A condition on a non-callable subject is a load failure.
-- A Condition sequence is non-empty and contains at least one non-wildcard
-  position. An all-wildcard or empty sequence is a load failure.
-- Every scalar in a Condition is one commons-value primitive; a list, map,
-  or any other value shape is a load failure.
-- Every entry satisfies every model invariant of [model.md](model.md)
-  independently; no entry is validated against another.
-- Two entries of one document for the same subject with equal Conditions,
-  or both unconditional, are a load failure.
-- Match Outcome depends only on the Condition and the Call Arguments; the
-  format ranks no entry above another and orders no alternatives.
-- What a consumer does with *undecidable* — keep the entry, drop it, fall
-  back to the Unconditional Entry — is the consumer's rule per section
-  kind and is not fixed by the format.
+- Only function and method Models admit a Condition.
+- A Condition has at least one position and at least one constrained position.
+- An expected scalar is a Primitive Value other than Uncertain Value; nested lists and maps are invalid.
+- Scalar equality preserves the concrete Value form: integer one and floating-point one are unequal.
+- Each Model satisfies its section invariants independently.
+- Two entries in one document with equal Matching Subject and Condition, including two unconditional entries, are invalid.
+- The consumer determines the number and alternatives of supplied arguments; argument unpacking may leave that knowledge incomplete.
+- A missing scalar default differs from the declared null scalar.
 
 ## Cross-Structure Contracts
 
-- **Call Arguments are the consumer's knowledge, not the model's.** A model
-  states conditions; how precisely a call's arguments are known is a
-  property of the consuming phase. Every-position-unknown is always
-  admissible and yields *undecidable* for every condition.
-- **Entry ≡ complete model.** No section of one entry leaks into another:
-  a consumer that attributes a call to an entry reads every unit from that
-  entry, never from a sibling.
-- **Join of value units.** A call whose conditional entries are not all
-  decided has every candidate's value unit in force. The join of two value
-  units holds the union of their returns classifications and of their
-  flows, and the characters bound only when both declare it identically;
-  a call's returns is then a non-empty set of classifications, not one
-  (`print_r($v, $flag)` returns the string when `$flag` is true and `true`
-  otherwise, so an unknown `$flag` gives string and boolean).
-- **Merging is downstream.** Which entry is in force per (subject,
-  condition, override unit) when several document sets state one subject
-  is decided by the consumer that merges sets, by set provenance rank
-  ([model-sets.md](model-sets.md)); the format contributes only the
-  (subject, condition, unit) key.
+- The library defines matching and [Value unit](glossary/glossary-models.md#value-unit) join; the consumer selects the participating entries and decides how to use an undecidable outcome.
+- Joining two Value unit instances unions their Return Classification values and Propagation values, retaining the characters bound only when both operands state equal bounds.
+- The join operation selects no Model and assigns no priority to a Condition.
+- Combining Document Set entries uses the consumer's rule for Matching Subject, Condition and Override Unit, ranked by Set Provenance where that consumer requires it.
 
-Rationale: [concept.md](concept.md). Software structure:
-[design-conditions.md](design-conditions.md).
+A declared scalar default participates in matching after PHP parameter reception:
+
+```php
+<?php
+function flag($value, $binary = false) { return $binary; }
+var_dump(flag('x'));
+var_dump(strlen(md5('x')), strlen(md5('x', true)));
+```
+
+```text
+bool(false)
+int(32)
+int(16)
+```
+
+A Condition requiring the second argument to be false holds for the omitted default of either call with that declaration; an unknown supplied second argument remains undecidable.
+Software mapping: [ArgPattern](design-conditions.md).

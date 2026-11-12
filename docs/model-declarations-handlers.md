@@ -4,12 +4,18 @@ The handler facts of the class signature in a declaration entry
 ([model-declarations.md](model-declarations.md)). Software structure:
 [design-declarations-handlers.md](design-declarations-handlers.md).
 
-The class signature states how a builtin class's native object handlers
-behave, for a consumer that must decide what a conversion or comparison of
-an object of that class yields. The signature groups facts by effective
-object-handler table alternative. Each fact describes one slot of that
-table (cast, comparison, arithmetic operation) for one request: the cast
-target type, or the opcode of the operation.
+## Entities
+
+A class Signature supplies [HandlerTable](glossary/glossary-handlers.md#handlertable) alternatives for native object conversion, comparison and arithmetic. Each [HandlerFact](glossary/glossary-handlers.md#handlerfact) describes one slot and request, retaining its possible [HandlerTarget](glossary/glossary-handlers.md#handlertarget) values.
+
+## Relations
+
+| From | To | Cardinality | Meaning |
+|------|----|-------------|---------|
+| Signature | HandlerTable | 1:N | Possible effective native tables |
+| HandlerFact | HandlerTarget | 1:N | Possible native targets of a present fact |
+
+## Invariants
 
 - Each target alternative keeps its source identity, established normal-result
   kinds and string dispatch together. Result kinds use
@@ -65,8 +71,7 @@ string(8) "override"
 bool(false)
 ```
 
-The string cast of the grandchild uses the inherited user method; its
-boolean cast keeps the native SimpleXML slot.
+The string cast uses the inherited user method; the boolean cast keeps the native SimpleXML slot.
 
 ```php
 <?php
@@ -84,8 +89,7 @@ bool(false)
 bool(true)
 ```
 
-The string cast of a tidy object is the native string, whatever the user
-class declares.
+The string cast of a tidy object is the native string, whatever the user class declares.
 
 An object of `stdClass` has a present string cast with no normal result, a
 boolean cast that yields true, and a NULL arithmetic slot:
@@ -111,7 +115,7 @@ bool(true)
 TypeError: Unsupported operand types: stdClass + int
 ```
 
-A standard-dispatched descendant method is retained despite its anchor's empty string bound:
+A standard-dispatched descendant method is retained despite its native ancestor's empty string bound:
 
 ```php
 <?php

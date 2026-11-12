@@ -6,8 +6,8 @@ single-document loaders. The sectioned model body:
 [design-subjects.md](design-subjects.md).
 The entry form: [design-entries.md](design-entries.md). Conditions:
 [design-conditions.md](design-conditions.md). Signatures:
-[design-declarations.md](design-declarations.md). Document sets and
-vocabulary mapping: [design-sets.md](design-sets.md).
+[design-declarations.md](design-declarations.md). Document Set instances and
+Vocabulary Mapping: [design-sets.md](design-sets.md).
 
 ## Design Overview
 
@@ -43,39 +43,35 @@ analyzer.
 
 ### VulnTypeId, SourceKindId
 
-**Responsibility:** Interned reference tokens (`@JvmInline value class` over
-`String`, lowercased) for a declared vulnerability type and source kind.
-Replace raw strings past the load boundary so a name mismatch cannot occur
-downstream. Decode from the bare scalar.
+**Responsibility:** Lowercased value-class identifiers for Vulnerability type and Source kind. Equality compares the normalized name; the token constructor does not establish Vocabulary membership. Decode from the bare scalar.
 
 ### VulnTypeDecl, SourceKindDecl
 
-**Responsibility:** One declared vocabulary entry: interned identity plus a
+**Responsibility:** One declared vocabulary entry: normalized identity plus a
 human description that self-documents the file and enriches the
 undeclared-reference error message.
 
 ### Vocabulary
 
 **Responsibility:** The two closed declared sets. Sole authority for what
-vulnerability type and source kind names exist.
+Vulnerability type and Source kind names exist.
 
 **State/Fields:** `vulnTypes: Map<VulnTypeId, VulnTypeDecl>`,
 `sourceKinds: Map<SourceKindId, SourceKindDecl>`.
 
 **Methods:**
-- `fun requireVulnType(raw: String): VulnTypeId` — interns and validates;
+- `fun requireVulnType(raw: String): VulnTypeId` — normalizes and validates;
   `VocabularyException` when undeclared.
-- `fun requireSourceKind(raw: String): SourceKindId` — same for source
-  kinds.
+- `fun requireSourceKind(raw: String): SourceKindId` — same for Source kind entries.
 
 ### PolicyRow, TaintPolicy
 
-**Responsibility:** `PolicyRow` — one statement: a source kind and the
-vulnerability types it enables. `TaintPolicy` — the folded source kind →
-vulnerability types matrix; rows sharing a source kind accumulate by union.
+**Responsibility:** `PolicyRow` — one statement: a Source kind and the
+Vulnerability type entries it enables. `TaintPolicy` — the folded Source kind →
+Vulnerability type entries matrix; rows sharing a Source kind accumulate by union.
 
 **Validation (`init`):** `enables` non-empty — a row enabling no
-vulnerability type asserts nothing, like every other empty declared section.
+Vulnerability type asserts nothing, like every other empty declared section.
 
 **Methods:** `TaintPolicy.isDangerous(sourceKind, vulnType): Boolean`.
 
@@ -101,7 +97,7 @@ Jackson type crosses the API.
 a single document, so the set loader is the only place these run.
 
 **Methods:**
-- `VocabularyLoader.load(input): Vocabulary` — interns names; a repeated
+- `VocabularyLoader.load(input): Vocabulary` — normalizes names; a repeated
   name within a section is a `VocabularyException` (one of the two
   declarations would be lost).
 - `PolicyLoader.load(input, vocabulary): List<PolicyRow>` — validates every
@@ -110,13 +106,12 @@ a single document, so the set loader is the only place these run.
   entries ([design-entries.md](design-entries.md)); construction-time
   validation runs during the decode; two entries sharing subject and
   condition are rejected (`IllegalArgumentException` naming the subject).
-  Vocabulary verification of the entries' source kind and vulnerability
-  type references runs in the set loader, which owns the cross-document load order.
+  Vocabulary verification of the entries' Source kind and Vulnerability type references runs in the set loader, which owns the cross-document load order.
 
 ## Exception / Error Types
 
 - `VocabularyException` (extends `IllegalArgumentException`) — undeclared
-  source kind or vulnerability type reference, duplicate vocabulary entry. Never raised past
+  Source kind or Vulnerability type reference, duplicate vocabulary entry. Never raised past
   the load boundary.
 - `IllegalArgumentException` — every other format violation, raised in
   `init` blocks and creators while Jackson instantiates, so one catch at the

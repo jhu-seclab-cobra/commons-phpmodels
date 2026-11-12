@@ -5,9 +5,10 @@
 ## Quick Start
 
 ```kotlin
+import edu.jhu.cobra.commons.phpmodels.MethodSubject
 val subject = MethodSubject.parse("mysqli::query")
-val model = DocumentSetLoader.load(opener).entries.single()
-model.subject == subject
+val name = subject.name
+name
 ```
 
 ## API
@@ -21,12 +22,13 @@ model.subject == subject
 | `MethodSubject(owner, name)` | `method:` | `mysqli::query` | both folded |
 | `ClassConstantSubject(owner, name)` | `class_constant:` | `Exception::SEVERITY_ERROR` | owner folded, name sensitive |
 | `PropertySubject(owner, name)` | `property:` | `mysqli::$insert_id` | owner folded, name sensitive |
-| `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive |
+| `ConstantSubject(name)` | `constant:` | `PHP_EOL` | sensitive except root TRUE/FALSE/NULL |
 | `VariableSubject(name)` | `variable:` | `$_GET` | sensitive |
+| `OperationSubject.DYNAMIC_INVOCATION` | `operation:` | `dynamic_invocation` | exact library spelling |
 
 - **`SignatureInfo`** — Sealed; the subtype is selected from the entry's subject kind, never from a discriminator key.
 - **`SignatureInfo.CallableSignature(params: List<ParameterInfo>, returnType: DeclaredType, framelessArities: Set<Int> = emptySet(), specialArities: Set<Int> = emptySet(), ropeFormat: String? = null)`** — function, method; `framelessArities` are the argument counts (at most 3) at which php-src selects a frameless function, `specialArities` the counts (2 or more) at which it always compiles a call bound when compiled to one opcode, `ropeFormat` the parameter php-src compiles into a rope; counts lie within the required..declared parameter count (any above it with a variadic tail), and a method declares none of the three.
-- **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String?, interfaces: List<String>, name: String?, aliases: List<String>)`** — class; parent, interfaces and aliases case-folded; name in the letter case the declaration spells, null when the source states none.
+- **`SignatureInfo.ClassSignature(classifier: Classifier, parent: String? = null, interfaces: List<String> = emptyList(), isFinal: Boolean? = null, handlers: List<HandlerTable> = emptyList(), name: String? = null, aliases: List<String> = emptyList())`** — class; isFinal records registered FINAL status, handlers retain possible native tables, parent, interfaces and aliases ASCII-case-folded; name in the letter case the declaration spells, null when the source states none.
 - **`SignatureInfo.TypedSignature(type: DeclaredType, value: String?)`** — constant, class constant; `value` is the spelled literal, null when the source states none.
 - **`SignatureInfo.PropertySignature(type: DeclaredType, visibility: Visibility, static: Boolean)`** — property.
 - **`ParameterInfo(name: String, type: DeclaredType, optional: Boolean, byRef: Boolean, variadic: Boolean, namedExtras: NamedExtras? = null, default: String? = null)`** — one declared parameter; position is list order. `default` spells the scalar literal the stub declares (`true`, `false`, `null`, a decimal number, a quoted string without an escape) and needs `optional` and not `variadic`; `defaultValue: IPrimitiveVal?` is the scalar it spells, null when absent.
@@ -36,7 +38,7 @@ model.subject == subject
 
 ## Configuration
 
-- Keyword type vocabulary: `string`, `int`, `float`, `bool`, `array`, `object`, `callable`, `resource`, `mixed`, `void`, `null`, `iterable`. Any other spelling must be a class name.
+- Keyword type vocabulary: `string`, `int`, `float`, `bool`, `array`, `object`, `callable`, `resource`, `mixed`, `void`, `null`, `iterable`, `true`, `false`, `never`. Any other spelling must be a class name.
 - Enum values decode case-insensitively from lowercase file vocabulary (`classifier: class`, `visibility: public`).
 
 ## Gotchas
@@ -45,4 +47,4 @@ model.subject == subject
 - `PropertySubject` and `VariableSubject` store names without the `$`; `VariableSubject("_GET")` matches the spelling `$_GET` and not `$_get`.
 - A signature subtype that does not match the entry's subject kind is rejected at load.
 - `variable` entries never carry a signature — superglobals are hand-declared.
-- The returns classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.
+- The Return Classification is derived from `returnType` only when the entry declares propagation; a signature-only entry asserts existence, not purity.

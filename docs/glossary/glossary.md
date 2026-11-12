@@ -4,7 +4,7 @@ Established vocabulary of commons-phpmodels. Every term names one concept, and a
 
 ## Conventions
 
-Source locations are relative to `commons-phpmodels/src/main/kotlin/edu/jhu/cobra/commons/phpmodels/`. A Source that names a document starts at the repository root.
+Source locations are relative to `commons-phpmodels/src/main/kotlin/edu/jhu/cobra/commons/phpmodels/`. A Source that names a document starts at the repository root. Citations resolve in `docs/references.bib`.
 
 ## Files
 
@@ -12,10 +12,11 @@ Read the entry files in the order listed below.
 
 | File | Concern |
 |------|---------|
-| [glossary-declarations.md](glossary-declarations.md) | Declared types, returns classification, class names and class aliases |
-| [glossary-models.md](glossary-models.md) | Models, their subjects, sections, ports, conditions and value units |
-| [glossary-vocabulary.md](glossary-vocabulary.md) | Source kinds, vulnerability types, the vocabulary and the policy |
-| [glossary-sets.md](glossary-sets.md) | Document sets, vocabulary mappings, set provenance and the generated layer |
+| [glossary-declarations.md](glossary-declarations.md) | Declared types, Return Classification, class names and class aliases |
+| [glossary-models.md](glossary-models.md) | Models, their subjects, sections, ports, conditions and Value unit instances |
+| [glossary-vocabulary.md](glossary-vocabulary.md) | Source kind entries, Vulnerability type entries, the vocabulary and the policy |
+| [glossary-handlers.md](glossary-handlers.md) | Object-handler table facts, requests and string dispatch |
+| [glossary-sets.md](glossary-sets.md) | Document Set instances, Vocabulary Mapping instances, Set Provenance and the Generated Layer |
 
 ## Imported Terms
 
@@ -26,3 +27,5 @@ Terms of commons-value 0.1.1, the version this build declares. Each is defined o
 | Value | [commons-value Value](https://github.com/jhu-seclab-cobra/commons-value/blob/v0.1.1/docs/glossary/glossary-values.md#value) |
 | Primitive Value | [commons-value Primitive Value](https://github.com/jhu-seclab-cobra/commons-value/blob/v0.1.1/docs/glossary/glossary-values.md#primitive-value) |
 | Uncertain Value | [commons-value Uncertain Value](https://github.com/jhu-seclab-cobra/commons-value/blob/v0.1.1/docs/glossary/glossary-values.md#uncertain-value) |
+
+[Retired names](glossary-retired.md).

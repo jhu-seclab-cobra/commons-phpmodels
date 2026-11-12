@@ -1,27 +1,26 @@
 # PHP Models — Domain Model
 
 Semantics of the assertion axis: sections, subjects, ports, and the
-two-axis taint vocabulary of source kinds and vulnerability types. Declaration axis: [model-declarations.md](model-declarations.md).
-Conditional entries: [model-conditions.md](model-conditions.md). Document sets and
-vocabulary mapping: [model-sets.md](model-sets.md).
+two-axis taint vocabulary of Source kind entries and Vulnerability type entries. Declaration axis: [model-declarations.md](model-declarations.md).
+Conditional entries: [model-conditions.md](model-conditions.md). Document Set instances and
+Vocabulary Mapping: [model-sets.md](model-sets.md).
 
 ## Entities
 
-- **Source Kind** — A declared kind of untrusted input. Existence
+- **[Source kind](glossary/glossary-vocabulary.md#source-kind)** — Supplies a declared category for source effects. Existence
   condition: declared in the vocabulary. Identity is its declared name,
   lowercased. Carries a human description.
-- **Vulnerability Type** — A declared category of vulnerability. Existence
+- **[Vulnerability type](glossary/glossary-vocabulary.md#vulnerability-type)** — Supplies a declared sink sensitivity. Existence
   condition: declared in the vocabulary. Identity is its declared name,
   lowercased. Sink-side only.
-- **Vocabulary** — The two closed sets: all declared Source Kinds and all
-  declared Vulnerability Types. Every source kind or vulnerability type
+- **[Vocabulary](glossary/glossary-vocabulary.md#vocabulary)** — Validates the names Models and Policy rows reference. Every Source kind or Vulnerability type
   referenced by a policy row or a model must belong to it. Sole authority for what names exist.
-- **Matching Subject** — The PHP declaration or library operation a model identifies. Existence
+- **[Matching Subject](glossary/glossary-models.md#matching-subject)** — The PHP declaration or library operation a model identifies. Existence
   condition: a declared subject kind together with exactly the identity fields that kind requires. Seven kinds with PHP-native spellings:
   [model-declarations.md](model-declarations.md). Callable declaration kinds are
   *function* and *method*; they admit calls, ports, and conditions. The operation
   kind names `dynamic_invocation`, admits only unconditional callee sinks and no signature.
-- **Port** — An explicitly named location in a call to a callable subject:
+- **[Port](glossary/glossary-models.md#port)** — An explicitly named location in a call to a callable subject:
   *argument(n)* with n ≥ 0, *callee* — the dynamic invocation selector — *this* — the receiver of a call to a method —
   *return*, or a *callback port*: *callback(argument(n)).parameter(m)*
   with m ≥ 0 — the m-th argument the subject passes when it calls the
@@ -33,18 +32,17 @@ vocabulary mapping: [model-sets.md](model-sets.md).
   inspected or stored (`is_callable`) and forwards nothing. A flow into a
   callback parameter carries the whole value at its from-port; binding
   each array element or shifting a variadic tail has no spelling.
-- **Model** — The single declarative statement attached to one Matching
-  Subject. Composed of sections; existence condition: at least one section
+- **[Model](glossary/glossary-models.md#model)** — The single declarative statement attached to one Matching Subject. Composed of sections; existence condition: at least one section
   present. An entry may carry a Condition, making it one alternative of
   the subject's model ([model-conditions.md](model-conditions.md)). Section kinds:
   - *returns* — the classification of the call result.
   - *propagation* — a set of declared flows, each from one input port to a
     different port of the same call. Together with *returns* it
-    forms the **value unit**: declaring *returns* asserts the flow
+    forms the **[Value unit](glossary/glossary-models.md#value-unit)**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
     without *returns* does not exist. A unit holds a non-empty set of
     classifications; its join: [model-conditions.md](model-conditions.md).
-  - *characters* (agent decision CH-1) — the bytes the call result may
+  - *characters*  — the bytes the call result may
     hold: only bytes of the listed argument ports (*of*), only bytes of one
     Character Class (*within*), or both, each bound narrowing the other.
     The bytes of an argument are those of the strings the call converts it
@@ -52,10 +50,10 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     array the call reads element by element, each element's conversion, a
     nested array converting to `Array` (PHP 8.5.11 gives `Arrayb` for
     `str_replace(["a"], [["x"]], "ab")`). Third part of the
-    value unit: it requires *returns*, and its absence states no
+    Value unit: it requires *returns*, and its absence states no
     bound. `basename` declares *of* `argument(0)` *within* every byte but
     `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
-  - *sources* — each element produces a non-empty set of Source Kinds at
+  - *sources* — each element produces a non-empty set of Source kind entries at
     one production site. The site defaults per subject kind — the call
     result for a callable, the variable's value for a predefined variable —
     and a callable's element may instead name one argument port as its site
@@ -63,13 +61,11 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     the array elements whose key satisfies one of its Key Patterns; absent
     key patterns mean the whole value.
   - *sinks* — each element names one argument or callee port consumed under one
-    Vulnerability Type.
-  - *sanitizers* — each element neutralizes Vulnerability Types in the call
-    result, which still carries its input value, or is a *check* (agent
-    decision CK-1): one argument port and the result value accepting it,
-    with the vulnerability types the accepted argument is free of, the Character
-    Class its bytes belong to, or the type set it holds; a type set also
-    rules out the accepting value for an argument of any other type.
+    Vulnerability type.
+  - *sanitizers* — each element neutralizes Vulnerability type entries in the call
+    result, which still carries its input value, or is a *check* : one argument port and the result value accepting it,
+    with the Vulnerability type entries the accepted argument is free of, the Character
+    Class its bytes belong to, or the type set it holds; a type set rules out the accepting value for an argument of any other type.
   - *throws* — the set of exception classes the subject's own
     implementation may throw. It excludes three kinds of throw, each decided
     elsewhere: binding the arguments to the declared parameters (the
@@ -80,40 +76,37 @@ vocabulary mapping: [model-sets.md](model-sets.md).
     value. The empty set states that the implementation throws none.
   - *signature* — the descriptive section:
     [model-declarations.md](model-declarations.md).
-- **Key Pattern** — A regular expression over one array key at a source's
+- **[Key Pattern](glossary/glossary-models.md#key-pattern)** — A regular expression over one array key at a source's
   production site. Satisfied only when the entire key matches,
   case-sensitively — array keys are runtime data, not identifiers, so no
   case folding applies.
-- **Character Class** — A regular expression matched against one byte read as one
+- **[Character Class](glossary/glossary-models.md#character-class)** — A regular expression matched against one byte read as one
   Latin-1 character; the class holds every byte it matches: `[^/]`, `[0-9a-f]`.
-- **Policy** — The global relation from each Source Kind to the set of
-  Vulnerability Types it can trigger. One instance for the whole analysis.
-  Rows sharing a source kind accumulate by union.
-- **Override Unit** — The granularity at which one declaration replaces
-  another for the same subject: the value unit (returns together
+- **[Policy](glossary/glossary-vocabulary.md#policy)** — Supplies the enabled source-to-sink category relation. One instance serves the whole analysis.
+  Rows sharing a Source kind accumulate by union.
+- **[Override Unit](glossary/glossary-models.md#override-unit)** — The granularity at which one declaration replaces
+  another for the same subject: the Value unit (returns together
   with propagation and characters), sources, sinks, sanitizers, throws, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
 
-A subject whose model has no taint section has no taint effect; the absence
-is the statement. No section expresses "carries its argument" as a role —
-argument flow is the propagation section, and having no taint effect is not
-itself an effect.
+An absent sources, sinks or sanitizers Section asserts nothing about that aspect.
+Propagation describes argument flow independently of these Sections.
 
 ## Relations
 
 | From | To | Relation | Cardinality | Meaning |
 |------|----|----------|-------------|---------|
 | Model | Matching Subject | identifies | 1:1 | The model states this subject's semantics and taint effects |
-| Propagation | Port × Port | flows | N:— | Source kinds at the from-port reach the to-port; an undeclared pair carries nothing |
-| Model (sources) | Source Kind | produces | M:N | The source introduces these source kinds at its production site |
+| Propagation | Port × Port | flows | N:— | Source kind entries at the from-port reach the to-port; an undeclared pair carries nothing |
+| Model (sources) | Source kind | produces | M:N | The source introduces these Source kind entries at its production site |
 | Model (characters) | Port, Character Class | bounds | N:1 | Every byte of the call result is a byte of a listed port's value and a member of the class |
-| Model (sinks) | Port × Vulnerability Type | consumes under | N:M | The named argument or callee port is sensitive to that vulnerability type |
-| Model (sanitizers) | Vulnerability Type | neutralizes | M:N | These vulnerability types removed from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
+| Model (sinks) | Port × Vulnerability type | consumes under | N:M | The named argument or callee port is sensitive to that Vulnerability type |
+| Model (sanitizers) | Vulnerability type | neutralizes | M:N | These Vulnerability type entries removed from the carried value, or, for a check, from the argument a call returning the accepting value accepted |
 | Model (throws) | class | may throw | M:N | A call's own implementation may throw an instance of this exact class; a class outside the set is never thrown by it |
-| Policy | Source Kind × Vulnerability Type | enables | M:N | This source kind reaching a sink of this vulnerability type is a vulnerability |
-| Model / Policy | Vocabulary | references | N:1 | Every named source kind and vulnerability type must be declared in the vocabulary |
+| Policy | Source kind × Vulnerability type | enables | M:N | This Source kind reaching a sink of this Vulnerability type is a vulnerability |
+| Model / Policy | Vocabulary | references | N:1 | Every named Source kind and Vulnerability type must be declared in the vocabulary |
 
 ## State Model
 
@@ -122,10 +115,10 @@ itself an effect.
 | State | Trigger | Target |
 |-------|---------|--------|
 | Undeclared | — | a referenced name that is not declared → load failure |
-| Declared | vocabulary parsed | interned, referenceable |
+| Declared | vocabulary parsed | normalized, referenceable |
 | Referenced | policy row or model names it | validated against Declared |
 
-What a source kind set does along a value's flow — production, propagation,
+What a Source kind set does along a value's flow — production, propagation,
 sanitization, the vulnerability verdict — is the consuming analysis's state
 model, driven by the declarations defined here.
 
@@ -163,11 +156,10 @@ model, driven by the declarations defined here.
 - The *returns*, *propagation*, *characters*, and *throws* sections are declared only for
   callable subjects. A class subject declares no assertion section. Every other non-callable
   kind — constant, class constant, property, predefined variable — admits only *sources*.
-- A sources section produces a non-empty source kind set. A sinks section
+- A sources section produces a non-empty Source kind set. A sinks section
   is non-empty and each element names one argument port and one
-  vulnerability type. A sanitizers element names a non-empty vulnerability
-  type set, or a check: one argument port, a scalar accepting value, and
-  vulnerability types, a class, or a type set other than `void`. A throws
+  Vulnerability type. A sanitizers element names a non-empty Vulnerability type set, or a check: one argument port, a scalar accepting value, and
+  Vulnerability type entries, a class, or a type set other than `void`. A throws
   section is the one section a declared empty value is a statement of: no
   class, distinct from the absent section, which asserts nothing. Each
   throws element is a class name, spelled and folded as a class subject.
@@ -181,20 +173,18 @@ model, driven by the declarations defined here.
   consuming analysis, never of a model.
 - Every closed-vocabulary field admits only its declared members. An
   unrecognized value is a load failure, never a widening default.
-- Every Source Kind and Vulnerability Type referenced by any policy row or
+- Every Source kind and Vulnerability type referenced by any policy row or
   model is declared in the vocabulary. An undeclared reference is a load
   failure.
-- Policy enables relates only declared source kinds to declared vulnerability types.
+- Policy enables relates only declared Source kind entries to declared Vulnerability type entries.
 
 ## Cross-Structure Contracts
 
 - **Superglobal ≡ sources section over a variable subject.** An
   external-input superglobal is an ordinary model whose sources section
-  produces the user-input Source Kind, differing from a function source
+  produces the user-input Source kind, differing from a function source
   only in its declared subject kind.
-- **Interned identity.** After load, source kinds and vulnerability types
-  are referenced by interned identity, not by raw string, so a name
-  mismatch cannot occur past the load boundary.
+- **Normalized identity.** Source kind and Vulnerability type identifiers compare by lowercased name; the loader verifies membership in the Vocabulary.
 
 Concept and rationale: [concept.md](concept.md). Software structure:
 [design.md](design.md), [design-subjects.md](design-subjects.md).

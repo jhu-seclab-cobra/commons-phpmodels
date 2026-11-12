@@ -32,7 +32,7 @@ Package `edu.jhu.cobra.commons.phpmodels`; every type is public.
 ### SourceDecl
 
 **Responsibility:** One element of the sources section: a non-empty
-produced source kind set, an optional explicit production site, and optional key
+produced Source kind set, an optional explicit production site, and optional key
 patterns restricting production to matching array keys.
 
 **State/Fields:** `sourceKinds: Set<SourceKindId>`, `at: Port.Argument?`
@@ -57,9 +57,9 @@ case-sensitive match, never a substring match.
 
 **Responsibility:** One element of the sinks / sanitizers sections:
 `SinkDecl(port: Port.Sink, vulnType: VulnTypeId)` — one dangerously
-consumed argument or invocation selector under one vulnerability type;
+consumed argument or invocation selector under one Vulnerability type;
 `SanitizerDecl(vulnTypes: Set<VulnTypeId> = emptySet(), check:
-ArgumentCheck? = null)` — the neutralized vulnerability type set of the
+ArgumentCheck? = null)` — the neutralized Vulnerability type set of the
 call result, or, with a check, of the argument the call accepts (agent
 decision CK-1, [model.md](model.md)).
 
@@ -118,7 +118,7 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 element decoded by the `ClassSubject` creator; empty = throws none).
 
 **Validation (`init`):** propagation and characters each require returns
-(the value unit is asserted whole or not at all — the
+(the Value unit is asserted whole or not at all — the
 signature-derived completion happens in the entry, before construction);
 each `characters.of` port is the from-port of a declared flow into
 `Port.Return`; a declared section other than `throws` is non-empty.
@@ -131,8 +131,7 @@ each `characters.of` port is the from-port of a declared flow into
 
 ### ValueUnit
 
-**Responsibility:** The value unit a lookup serves: the set of returns
-classifications (`returns: Set<ReturnKind>`, never empty), the exhaustive
+**Responsibility:** The Value unit a lookup serves: the set of Return Classification values (`returns: Set<ReturnKind>`, never empty), the exhaustive
 propagation set, and `characters: CharacterBound?`. A body declares one
 classification, so `ValueUnit(returns: ReturnKind, ...)` builds the unit of
 that one kind; the set grows only through `join`. An absent propagation

@@ -5,17 +5,17 @@ class entry of [model-declarations.md](model-declarations.md).
 
 ## Entities
 
-- **Class name** — the name of the class in the letter case its declaration
-  spells, namespace included, without a leading namespace separator. Null when
+- **[Class name](glossary/glossary-declarations.md#class-name)** — the name of the class in the letter case its declaration
+  spells, namespace included, without a leading namespace separator. Absent when
   the declaring source states none.
-- **Class alias** — a further name the engine registers for the class, stored
+- **[Class alias](glossary/glossary-declarations.md#class-alias)** — a further name the engine registers for the class, stored
   case-folded and without a leading namespace separator.
 
 ## Relations
 
 | From | To | Relation | Cardinality | Meaning |
 |------|----|----------|-------------|---------|
-| Class Signature | class alias | states | 1:0..N | A class signature can state further names the engine registers the class under |
+| Signature | Class alias | states | 1:0..N | A class signature can state further names the engine registers the class under |
 
 ## Invariants
 
