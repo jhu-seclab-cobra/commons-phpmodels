@@ -97,12 +97,12 @@ Value placement: the four fixed file names are constants on `DocumentSetLoader` 
 
 ### Vocabulary (extension)
 
-**Methods:** `fun merge(other: Vocabulary): Vocabulary` — union; `VocabularyException` on a name declared in both with different description. `companion val EMPTY`. `fun verify(entry: ModelEntry)` — every Vulnerability type and Source kind the entry references is declared; it validates references against this Vocabulary.
+**Methods:** `fun merge(other: Vocabulary): Vocabulary` — union; `VocabularyException` on a name declared in both with a different description or Tokenizer language. `companion val EMPTY`. `fun verify(entry: ModelEntry)` — every Vulnerability type and Source kind the entry references is declared; it validates references against this Vocabulary.
 
 ## Exception / Error Types
 
 - `DocumentSetException(path, detail, cause?)` extends `IllegalArgumentException` — manifest absent, listed document absent, duplicate manifest line, listed document malformed (the format failure is the cause); message and `path` name the document.
-- `VocabularyException` — conflicting redeclaration (names the name and both descriptions), undeclared reference in a listed document (names the name and the document), unmapped name (names the name and the set), mapping target undeclared (names the target).
+- `VocabularyException` — conflicting redeclaration (names the name and both declarations), undeclared reference in a listed document (names the name and the document), unmapped name (names the name and the set), mapping target undeclared (names the target).
 
 Domain semantics: [model-sets.md](model-sets.md). The entry form: [design-entries.md](design-entries.md).
 

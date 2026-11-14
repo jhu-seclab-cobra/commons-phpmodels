@@ -26,7 +26,7 @@ set.entries.single().body.returns
 ## Configuration
 
 - No configuration. Document location — classpath resource, file, artifact — is the caller's choice; the set loader takes a `ResourceOpener`, the mapping loader a stream.
-- Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`.
+- Vocabulary document keys: `vulnTypes`, `sourceKinds` — both required (`[]` when empty); each entry carries `name` and `description`; a Vulnerability type may carry `tokenizer` ([vocabulary.md](vocabulary.md)).
 - Policy row keys: `sourceKind` (one Source kind name), `enables` (list of Vulnerability type names).
 
 ## Gotchas

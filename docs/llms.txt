@@ -24,7 +24,7 @@ Kotlin/JVM format library; consumers own candidate selection and the combination
 
 - [Entries and Bodies](llms/entries.md): `ModelEntry`, `ArgPattern` conditions, `ModelBody`, ports, propagation, the character bound.
 - [Subjects and Signatures](llms/subjects.md): The seven declaration kinds and dynamic invocation operation, spellings, case folding, `SignatureInfo` subtypes, `DeclaredType`.
-- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, normalized identifiers, `TaintPolicy`.
+- [Vocabulary and Policy](llms/vocabulary.md): `Vocabulary`, normalized identifiers, `TaintPolicy`, optional `TokenizerLanguage`.
 
 - [Usage index](llms/index.md): All usage modules.
 

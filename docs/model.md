@@ -12,7 +12,8 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
   lowercased. Carries a human description.
 - **[Vulnerability type](glossary/glossary-vocabulary.md#vulnerability-type)** — Supplies a declared sink sensitivity. Existence
   condition: declared in the vocabulary. Identity is its declared name,
-  lowercased. Sink-side only.
+  lowercased. Sink-side only. Its optional Tokenizer language obeys
+  [model-tokenizer.md](model-tokenizer.md).
 - **[Vocabulary](glossary/glossary-vocabulary.md#vocabulary)** — Validates the names Models and Policy rows reference. Every Source kind or Vulnerability type
   referenced by a policy row or a model must belong to it. Sole authority for what names exist.
 - **[Matching Subject](glossary/glossary-models.md#matching-subject)** — The PHP declaration or library operation a model identifies. Existence
