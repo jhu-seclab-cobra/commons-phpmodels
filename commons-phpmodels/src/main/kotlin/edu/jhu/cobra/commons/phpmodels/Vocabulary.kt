@@ -49,10 +49,13 @@ public value class SourceKindId private constructor(
  * @property id Interned vulnerability type identity.
  * @property description Human-readable summary; self-documents the vocabulary
  *   file and enriches the undeclared-reference error message.
+ * @property tokenizer The lexical language of the text a value of this type is written into,
+ *   or null when the type declares none.
  */
 public data class VulnTypeDecl(
     val id: VulnTypeId,
     val description: String,
+    val tokenizer: TokenizerLanguage? = null,
 )
 
 /**
@@ -119,17 +122,17 @@ public data class Vocabulary(
 
     /**
      * Unions this vocabulary with [other]. A name declared in both is one
-     * declaration when the descriptions match; a differing description is a
-     * conflicting redeclaration, never a silent override.
+     * declaration when the declarations are equal; a differing description or
+     * tokenizer is a conflicting redeclaration, never a silent override.
      *
      * @param other The vocabulary a later document set contributes.
      * @return The union, this vocabulary's entries first.
-     * @throws VocabularyException If a name is declared in both with different descriptions.
+     * @throws VocabularyException If a name is declared in both with different declarations.
      */
     public fun merge(other: Vocabulary): Vocabulary =
         Vocabulary(
-            vulnTypes = vulnTypes.merged(other.vulnTypes, "vulnerability type") { it.description },
-            sourceKinds = sourceKinds.merged(other.sourceKinds, "source kind") { it.description },
+            vulnTypes = vulnTypes.merged(other.vulnTypes, "vulnerability type"),
+            sourceKinds = sourceKinds.merged(other.sourceKinds, "source kind"),
         )
 
     /**
@@ -156,15 +159,12 @@ public data class Vocabulary(
     private fun <K, V> Map<K, V>.merged(
         other: Map<K, V>,
         kind: String,
-        description: (V) -> String,
     ): Map<K, V> {
         val union = LinkedHashMap(this)
         for ((id, decl) in other) {
             val existing = union.put(id, decl) ?: continue
-            if (description(existing) != description(decl)) {
-                throw VocabularyException(
-                    "Conflicting $kind redeclaration '$id': '${description(existing)}' vs '${description(decl)}'",
-                )
+            if (existing != decl) {
+                throw VocabularyException("Conflicting $kind redeclaration '$id': $existing vs $decl")
             }
         }
         return union
