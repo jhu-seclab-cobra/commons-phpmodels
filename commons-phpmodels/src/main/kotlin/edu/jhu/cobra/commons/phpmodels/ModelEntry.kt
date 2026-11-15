@@ -120,6 +120,9 @@ public data class ModelEntry(
         require(beyond == null) {
             "Entry for $subject names $beyond beyond its $limit-parameter signature"
         }
+        val trailing = body.callbacks.orEmpty().mapNotNull { it.callable as? CallbackSelector.Trailing }
+            .firstOrNull { it.distance > limit }
+        require(trailing == null) { "Entry for $subject selects a callable beyond its $limit inputs" }
         val beyondCallable = calledPositions().firstOrNull { it >= limit }
         require(beyondCallable == null) {
             "Entry for $subject calls argument($beyondCallable) beyond its $limit-parameter signature"
@@ -132,6 +135,8 @@ public data class ModelEntry(
             body.callbacks?.forEach { invocation ->
                 when (val selector = invocation.callable) {
                     is CallbackSelector.Argument -> add(selector.position)
+                    is CallbackSelector.Elements -> add(selector.position)
+                    is CallbackSelector.Trailing -> Unit
                 }
             }
             body.propagation?.forEach { pair ->
@@ -166,6 +171,9 @@ public data class ModelEntry(
             body.callbacks?.forEach { invocation ->
                 when (val supply = invocation.supply) {
                     is CallbackSupply.ArrayElements -> add(Port.Argument(supply.start))
+                    is CallbackSupply.ArrayValue -> add(Port.Argument(supply.position))
+                    is CallbackSupply.Unpacked -> add(Port.Argument(supply.position))
+                    is CallbackSupply.JoinedInputs -> Unit
                 }
             }
             body.propagation?.forEach { pair ->

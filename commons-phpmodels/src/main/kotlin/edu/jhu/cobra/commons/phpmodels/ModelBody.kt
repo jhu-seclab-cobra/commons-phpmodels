@@ -222,6 +222,9 @@ public data class ModelBody(
             "Callbacks without returns: the value unit is asserted whole or not at all"
         }
         requireDeclaredNonEmpty(callbacks, "callbacks")
+        require(callbacks.orEmpty().none { (it as CallbackInvocation?) == null }) {
+            "Callbacks cannot contain null"
+        }
         val copied = characters?.of.orEmpty() - flowSourcesIntoResult()
         require(copied.isEmpty()) { "Characters copied from $copied, which has no declared flow into the result" }
         requireDeclaredNonEmpty(propagation, "propagation")

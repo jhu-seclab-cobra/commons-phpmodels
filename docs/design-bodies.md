@@ -148,9 +148,11 @@ characters bound when both units carry equal bounds, else null. Callback declara
 
 **Responsibility:** The called operand (`callable: CallbackSelector`) and its input supply (`supply: CallbackSupply`), as data with no consumer value or graph type. Both sealed interfaces decode by `kind` through the existing strict mapper.
 
-`CallbackSelector.Argument(position)` selects the input at a non-negative position. `CallbackSupply.ArrayElements(start)` supplies one element value from each array input in the tail beginning at the non-negative `start`. A consumer may join possible elements and include null padding; it never omits a possible input. Entry validation checks both positions against a declared signature. The declaration belongs to the value unit; callbacks without returns fail decoding. Unknown tags, missing fields and negative positions fail loading.
+`CallbackSelector.Argument(position)` selects an input; `Trailing(distance)` counts inputs backwards from the end, starting at 1; `Elements(position)` selects each callable held by an input array. Positions and starts are non-negative; distances and parameter counts are positive. Missing fields, unknown tags and invalid numbers fail loading. Entry validation checks absolute input positions against a declared signature and admits trailing selection only within its possible arity.
 
-YAML: `callbacks: [{callable: {kind: argument, position: 0}, supply: {kind: array-elements, start: 1}}]`.
+The closed input supplies are `ArrayElements(start)` (one element from each array input in a tail), `JoinedInputs(count)` (the joined input alternatives for each of `count` parameters), `ArrayValue(position)` (one array whose members depend on the selected input), and `Unpacked(position)` (array elements supplied across possible argument positions). Joined inputs include every non-callable input, its reachable values, and the receiver. Consumers may admit extra values or positions, never omit a possible input; interpretation and value representation belong to the consumer.
+
+YAML kinds: selectors `argument`, `trailing`, `elements`; supplies `array-elements`, `joined-inputs`, `array-value`, `unpacked`. Example: `callbacks: [{callable: {kind: argument, position: 0}, supply: {kind: array-elements, start: 1}}]`.
 
 ### ReturnKind
 
