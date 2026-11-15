@@ -114,8 +114,7 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
-`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?`, `callbacks: List<CallbackInvocation>?` (each
-element decoded by the `ClassSubject` creator; empty = throws none).
+`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (each element decoded by the `ClassSubject` creator; empty = throws none), `callbacks: List<CallbackInvocation>?`.
 
 **Validation (`init`):** propagation, characters and callbacks each require returns
 (the Value unit is asserted whole or not at all — the
@@ -150,7 +149,7 @@ characters bound when both units carry equal bounds, else null. Callback declara
 
 `CallbackSelector.Argument(position)` selects an input; `Trailing(distance)` counts inputs backwards from the end, starting at 1; `Elements(position)` selects each callable held by an input array. Positions and starts are non-negative; distances and parameter counts are positive. Missing fields, unknown tags and invalid numbers fail loading. Entry validation checks absolute input positions against a declared signature and admits trailing selection only within its possible arity.
 
-The closed input supplies are `ArrayElements(start)` (one element from each array input in a tail), `JoinedInputs(count)` (the joined input alternatives for each of `count` parameters), `ArrayValue(position)` (one array whose members depend on the selected input), and `Unpacked(position)` (array elements supplied across possible argument positions). Joined inputs include every non-callable input, its reachable values, and the receiver. Consumers may admit extra values or positions, never omit a possible input; interpretation and value representation belong to the consumer.
+The closed input supplies are `ArrayElements(start)` (one element from each array input in a tail), `JoinedInputs(count)` (the joined input alternatives for each of `count` parameters), `ArrayValue(position)` (one array whose members depend on the selected input), and `Unpacked(position)` (array elements supplied across possible argument positions). Joined inputs include every non-callable input, its reachable values, and the receiver. Consumers may admit extra values or positions, but retain original value candidates and the omitted-parameter alternative wherever an input may be absent. Different declared supplies remain alternative complete inputs, including their arities; interpretation and value representation belong to the consumer.
 
 YAML kinds: selectors `argument`, `trailing`, `elements`; supplies `array-elements`, `joined-inputs`, `array-value`, `unpacked`. Example: `callbacks: [{callable: {kind: argument, position: 0}, supply: {kind: array-elements, start: 1}}]`.
 
