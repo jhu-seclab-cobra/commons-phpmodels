@@ -178,9 +178,9 @@ public data class SinkDecl(
 )
 
 /**
- * The sectioned statement of one model: seven optional assertion sections.
+ * The sectioned statement of one model: eight optional assertion sections.
  *
- * `returns`, `propagation`, and `characters` form one value unit:
+ * `returns`, `propagation`, `characters`, and `callbacks` form one value unit:
  * declaring `returns` asserts the flow set exhaustively, so an absent
  * propagation section means the result is unrelated to the arguments.
  * Declaring `propagation` or `characters` alone is a load failure — the unit
@@ -209,6 +209,7 @@ public data class ModelBody(
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
     val throws: Set<ClassSubject>? = null,
+    val callbacks: List<CallbackInvocation>? = null,
 ) {
     init {
         require(propagation == null || returns != null) {
@@ -217,6 +218,10 @@ public data class ModelBody(
         require(characters == null || returns != null) {
             "Characters without returns: the value unit is asserted whole or not at all"
         }
+        require(callbacks == null || returns != null) {
+            "Callbacks without returns: the value unit is asserted whole or not at all"
+        }
+        requireDeclaredNonEmpty(callbacks, "callbacks")
         val copied = characters?.of.orEmpty() - flowSourcesIntoResult()
         require(copied.isEmpty()) { "Characters copied from $copied, which has no declared flow into the result" }
         requireDeclaredNonEmpty(propagation, "propagation")
@@ -239,7 +244,7 @@ public data class ModelBody(
     // Every section other than sources is absent.
     private val declaresNothingBesidesSources: Boolean
         get() =
-            returns == null && propagation == null && characters == null &&
+            returns == null && propagation == null && characters == null && callbacks == null &&
                 sinks == null && sanitizers == null && throws == null
 
     /** True when no section is declared. */
@@ -262,7 +267,8 @@ public data class ModelBody(
         get() = sources.orEmpty().any { it.at != null }
 
     /** The value unit this body asserts, or null when returns is undeclared. */
-    public fun valueUnit(): ValueUnit? = returns?.let { ValueUnit(it, propagation.orEmpty(), characters) }
+    public fun valueUnit(): ValueUnit? =
+        returns?.let { ValueUnit(it, propagation.orEmpty(), characters, callbacks.orEmpty()) }
 }
 
 /**
@@ -276,6 +282,7 @@ public data class ModelBody(
  *
  * @property returns Classifications of the call's result; never empty.
  * @property propagation Every declared port-to-port flow.
+ * @property callbacks The explicitly invoked callables and their input supplies.
  * @property characters The bytes the result may hold, or null when unbounded.
  * @throws IllegalArgumentException If [returns] is empty.
  */
@@ -283,6 +290,7 @@ public data class ValueUnit(
     val returns: Set<ReturnKind>,
     val propagation: List<Propagation>,
     val characters: CharacterBound? = null,
+    val callbacks: List<CallbackInvocation> = emptyList(),
 ) {
     init {
         require(returns.isNotEmpty()) { "A value unit holds at least one returns classification" }
@@ -293,7 +301,8 @@ public data class ValueUnit(
         returns: ReturnKind,
         propagation: List<Propagation>,
         characters: CharacterBound? = null,
-    ) : this(setOf(returns), propagation, characters)
+        callbacks: List<CallbackInvocation> = emptyList(),
+    ) : this(setOf(returns), propagation, characters, callbacks)
 
     /**
      * The unit covering both: the union of the classifications and of the
@@ -305,5 +314,6 @@ public data class ValueUnit(
             returns = returns + other.returns,
             propagation = (propagation + other.propagation).distinct(),
             characters = characters.takeIf { it == other.characters },
+            callbacks = (callbacks + other.callbacks).distinct(),
         )
 }

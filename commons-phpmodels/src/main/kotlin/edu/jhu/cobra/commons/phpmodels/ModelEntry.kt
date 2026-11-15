@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 /**
  * One model: the subject it identifies and the sectioned statement asserted
  * for it, under an optional condition. The subject is the entry's identity —
- * the form carries no name. The seven section fields decode flat beside
+ * the form carries no name. The eight section fields decode flat beside
  * `subject`, with no wrapper key.
  *
  * An entry carrying a `when:` condition holds for the calls its pattern
@@ -82,7 +82,7 @@ public data class ModelEntry(
     private fun validateOperation() {
         require(condition == null && signature == null) { "An operation admits no condition or signature: $subject" }
         require(body.sinks != null && body.sinks.all { it.port == Port.Callee } &&
-            body.returns == null && body.propagation == null && body.characters == null &&
+            body.returns == null && body.propagation == null && body.characters == null && body.callbacks == null &&
             body.sources == null && body.sanitizers == null && body.throws == null) {
             "An operation admits only callee sinks: $subject"
         }
@@ -129,6 +129,11 @@ public data class ModelEntry(
     // The argument position of the callable each callback port names.
     private fun calledPositions(): List<Int> =
         buildList {
+            body.callbacks?.forEach { invocation ->
+                when (val selector = invocation.callable) {
+                    is CallbackSelector.Argument -> add(selector.position)
+                }
+            }
             body.propagation?.forEach { pair ->
                 (pair.from as? Port.CallbackReturn)?.let { add(it.callable) }
                 (pair.to as? Port.CallbackParameter)?.let { add(it.callable) }
@@ -158,6 +163,11 @@ public data class ModelEntry(
     private fun namedArgumentPorts(): List<Port.Argument> =
         buildList {
             condition?.positions?.forEach { add(Port.Argument(it)) }
+            body.callbacks?.forEach { invocation ->
+                when (val supply = invocation.supply) {
+                    is CallbackSupply.ArrayElements -> add(Port.Argument(supply.start))
+                }
+            }
             body.propagation?.forEach { pair ->
                 (pair.from as? Port.Argument)?.let(::add)
                 (pair.to as? Port.Argument)?.let(::add)
@@ -188,7 +198,8 @@ public data class ModelEntry(
             }
             val effectiveReturns =
                 sections.returns
-                    ?: callable?.returnType?.toReturnKind()?.takeIf { sections.propagation != null }
+                    ?: callable?.returnType?.toReturnKind()
+                        ?.takeIf { sections.propagation != null || sections.callbacks != null }
             return ModelEntry(subject, condition, decoded, sections.complete(effectiveReturns))
         }
 
@@ -219,7 +230,7 @@ public data class ModelEntry(
 }
 
 /**
- * The seven section fields as they decode flat beside `subject`, gathered into
+ * The eight section fields as they decode flat beside `subject`, gathered into
  * the creator through one `@JsonUnwrapped` parameter — before the
  * signature-derived returns completion, so [ModelBody]'s
  * propagation-requires-returns rule stays out of the raw decode. Each
@@ -234,10 +245,11 @@ internal data class SectionFields(
     val sinks: List<SinkDecl>? = null,
     val sanitizers: List<SanitizerDecl>? = null,
     val throws: Set<ClassSubject>? = null,
+    val callbacks: List<CallbackInvocation>? = null,
 ) {
     /** The entry's body, with [returns] completed by the enclosing creator. */
     fun complete(returns: ReturnKind?): ModelBody =
-        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, throws)
+        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, throws, callbacks)
 
     // The unwrapped path funnels every key the creator does not name into this
     // holder and would ignore the unknown ones; this rejector restores the

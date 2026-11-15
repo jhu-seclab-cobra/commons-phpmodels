@@ -13,7 +13,7 @@
 - **Source:** `ModelSubject.kt` `ModelSubject`; `OperationSubject.kt` `OperationSubject`
 
 ### Section
-- **Definition:** One aspect of a Model: returns, propagation, characters, sources, sinks, sanitizers, throws or signature, with omission leaving that aspect unstated unless declared returns fixes omitted propagation to the empty flow set.
+- **Definition:** One aspect of a Model: returns, propagation, characters, callbacks, sources, sinks, sanitizers, throws or signature, with omission leaving that aspect unstated unless declared returns fixes omitted propagation to the empty flow set.
 - **Example:** `returns: str` → the returns Section of a Model.
 - **Source:** `ModelBody.kt` `ModelBody`; `docs/model.md` Entities
 
@@ -38,7 +38,7 @@
 - **Source:** `ArgPattern.kt` `ArgPattern`; `docs/model-conditions.md`
 
 ### Value unit
-- **Definition:** The coupled statement of the returns, propagation and characters sections of a Model, which one declaration replaces whole: a non-empty set of Return Classification values, the exhaustive set of propagations, and an optional character bound.
+- **Definition:** The coupled statement of the returns, propagation, characters and callbacks sections of a Model, which one declaration replaces whole: a non-empty set of Return Classification values, the exhaustive set of propagations, an optional character bound, and the declared callable invocations with their input supplies.
 - **Example:** A model declaring returns `str` and no propagation → the Value unit of classification str with no flow.
 - **Source:** `ModelBody.kt` `ValueUnit`, `ModelBody` method `valueUnit`
 

@@ -9,7 +9,7 @@ decoder: [design.md](design.md). Ports and propagations:
 
 - **Classes:** `ModelBody`, `ValueUnit`, `CharacterBound`,
   `CharacterClass`, `SourceDecl`, `KeyPattern`, `SinkDecl`, `SanitizerDecl`,
-  `ArgumentCheck` (data classes)
+  `ArgumentCheck`, `CallbackInvocation` (data classes)
 - **Enums:** `ReturnKind` (STR, NUM, BOOL, ANY)
 - **Relationships:** `ModelBody` contains the optional section values;
   `CharacterBound` contains optional `Port.Argument`s and an optional
@@ -106,7 +106,7 @@ misuse (`IllegalArgumentException`).
 
 ### ModelBody
 
-**Responsibility:** The sectioned statement of one model: seven optional
+**Responsibility:** The sectioned statement of one model: eight optional
 assertion sections. An all-absent body is constructible — a signature-only
 entry has one — and the at-least-one-section rule therefore lives at the
 entry level, where the signature is visible: `ModelEntry` requires a
@@ -114,10 +114,10 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
-`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (each
+`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?`, `callbacks: List<CallbackInvocation>?` (each
 element decoded by the `ClassSubject` creator; empty = throws none).
 
-**Validation (`init`):** propagation and characters each require returns
+**Validation (`init`):** propagation, characters and callbacks each require returns
 (the Value unit is asserted whole or not at all — the
 signature-derived completion happens in the entry, before construction);
 each `characters.of` port is the from-port of a declared flow into
@@ -132,7 +132,7 @@ each `characters.of` port is the from-port of a declared flow into
 ### ValueUnit
 
 **Responsibility:** The Value unit a lookup serves: the set of Return Classification values (`returns: Set<ReturnKind>`, never empty), the exhaustive
-propagation set, and `characters: CharacterBound?`. A body declares one
+propagation set, `characters: CharacterBound?`, and `callbacks: List<CallbackInvocation>` (empty by default). A body declares one
 classification, so `ValueUnit(returns: ReturnKind, ...)` builds the unit of
 that one kind; the set grows only through `join`. An absent propagation
 section in the declaring body becomes the empty list — no flow, not unknown
@@ -142,7 +142,15 @@ flow; an absent characters section stays null — no bound.
 
 **Methods:** `fun join(other: ValueUnit): ValueUnit` — the union of the
 classifications, the distinct flows of both (this unit's first), and the
-characters bound when both units carry equal bounds, else null.
+characters bound when both units carry equal bounds, else null. Callback declarations join by distinct union in declaration order.
+
+### CallbackInvocation
+
+**Responsibility:** The called operand (`callable: CallbackSelector`) and its input supply (`supply: CallbackSupply`), as data with no consumer value or graph type. Both sealed interfaces decode by `kind` through the existing strict mapper.
+
+`CallbackSelector.Argument(position)` selects the input at a non-negative position. `CallbackSupply.ArrayElements(start)` supplies one element value from each array input in the tail beginning at the non-negative `start`. A consumer may join possible elements and include null padding; it never omits a possible input. Entry validation checks both positions against a declared signature. The declaration belongs to the value unit; callbacks without returns fail decoding. Unknown tags, missing fields and negative positions fail loading.
+
+YAML: `callbacks: [{callable: {kind: argument, position: 0}, supply: {kind: array-elements, start: 1}}]`.
 
 ### ReturnKind
 

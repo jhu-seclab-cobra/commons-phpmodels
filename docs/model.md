@@ -29,10 +29,9 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
   the value that call returns. The closed set of positional references; no
   other location exists. The *input ports* — arguments, the selector, the receiver, and
   callback returns — are the ports values enter the subject through; *return* and callback parameters are never input ports. A subject calls
-  exactly the positions its callback ports name; a callable-typed parameter no callback port names is only
-  inspected or stored (`is_callable`) and forwards nothing. A flow into a
-  callback parameter carries the whole value at its from-port; binding
-  each array element or shifting a variadic tail has no spelling.
+  the callables its value unit explicitly declares as invoked. A callable type alone
+  states no invocation. Callback ports describe input and return flows; the invocation
+  declaration supplies the callback inputs, including an element of each array in an argument tail.
 - **[Model](glossary/glossary-models.md#model)** — The single declarative statement attached to one Matching Subject. Composed of sections; existence condition: at least one section
   present. An entry may carry a Condition, making it one alternative of
   the subject's model ([model-conditions.md](model-conditions.md)). Section kinds:
@@ -41,7 +40,7 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
     different port of the same call. Together with *returns* it
     forms the **[Value unit](glossary/glossary-models.md#value-unit)**: declaring *returns* asserts the flow
     set exhaustively (absent propagation means no flow); *propagation*
-    without *returns* does not exist. A unit holds a non-empty set of
+    without *returns* does not exist. Optional *callbacks* declarations belong to the same whole unit; absence declares no immediate invocation. Each declaration selects a callable argument and a supply of its input values. A unit holds a non-empty set of
     classifications; its join: [model-conditions.md](model-conditions.md).
   - *characters*  — the bytes the call result may
     hold: only bytes of the listed argument ports (*of*), only bytes of one
@@ -87,7 +86,7 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
   Rows sharing a Source kind accumulate by union.
 - **[Override Unit](glossary/glossary-models.md#override-unit)** — The granularity at which one declaration replaces
   another for the same subject: the Value unit (returns together
-  with propagation and characters), sources, sinks, sanitizers, throws, or the signature. A
+  with propagation, characters and callbacks), sources, sinks, sanitizers, throws, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
@@ -140,6 +139,7 @@ model, driven by the declarations defined here.
 - A sink names an argument of a callable declaration or the callee input of
   the dynamic invocation operation; neither the receiver nor the return is a sink.
   A callee port in declaration behavior or operation behavior besides callee sinks is a load failure.
+- A callbacks section requires returns, is non-empty when declared, and is admitted only for callable subjects. Its declarations are replaced with the whole Value unit and unioned when candidate units join.
 - A propagation section requires a returns section in the same declaration.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return

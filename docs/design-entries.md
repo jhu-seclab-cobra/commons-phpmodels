@@ -39,7 +39,7 @@ document sharing subject and condition ([design.md](design.md)).
 
 **State/Fields:** `val subject: ModelSubject`, `val condition: ArgPattern?`
 (decoded from the optional `when:` field), `val signature: SignatureInfo?`,
-`val body: ModelBody`. The seven assertion sections decode flat beside
+`val body: ModelBody`. The eight assertion sections decode flat beside
 `subject` — no wrapper key — gathered into the creator through one
 unwrapped parameter of `SectionFields`, which carries the raw sections
 before the signature-derived returns completion and rejects any unknown
@@ -49,7 +49,7 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 - An operation subject admits only unconditional `Port.Callee` sinks and no
   signature, propagation or other sections; declaration subjects reject callee ports.
 - `subject` admits only the sections its kind allows: a non-callable
-  subject rejects returns, propagation, characters, throws, and the
+  subject rejects returns, propagation, characters, callbacks, throws, and the
   condition; a class subject
   declares nothing besides its signature; every other non-callable kind
   declares only sources.
@@ -67,11 +67,11 @@ key ([impl.md](impl.md)); the creator completes them into the body.
   non-wildcard positions — to the parameter list, with the
   write-direction and `void` rules of
   [design-declarations.md](design-declarations.md).
-- During YAML decoding, explicit `returns` beside a `CallableSignature` is rejected; a propagation section beside a callable signature is completed
+- During YAML decoding, explicit `returns` beside a `CallableSignature` is rejected; a propagation or callbacks section beside a callable signature is completed
   into the Value unit with the derived classification before body
   construction, so `ModelBody`'s propagation-requires-returns rule holds.
   A characters section beside a callable signature joins that completion;
-  without a propagation section no returns is derived, so it is rejected.
+  without either propagation or callbacks no returns is derived, so it is rejected.
 - At least one section present: a signature or a non-empty body — an entry
   asserting nothing is a load failure.
 - Body-internal validation lives in `ModelBody`
@@ -80,14 +80,14 @@ key ([impl.md](impl.md)); the creator completes them into the body.
 **Decoding:** the companion creator takes `subject`, the optional `when`,
 the raw `signature` node, and the unwrapped sections; it narrows the
 signature by the subject kind (the mapping carries no discriminator) and
-derives `returns` from a callable signature when a propagation section is
+derives `returns` from a callable signature when propagation or callbacks is
 present ([impl.md](impl.md)).
 
 ### SectionFields (internal)
 
-**Responsibility:** The seven section fields as they decode flat beside
+**Responsibility:** The eight section fields as they decode flat beside
 `subject`: `returns`, `propagation`, `characters`, `sources`, `sinks`,
-`sanitizers`, `throws`, all optional.
+`sanitizers`, `throws`, `callbacks`, all optional.
 `fun complete(returns: ReturnKind?): ModelBody` builds the body after the
 creator's returns completion. A throwing any-setter restores the
 strict unknown-key failure the unwrapped decode path would otherwise

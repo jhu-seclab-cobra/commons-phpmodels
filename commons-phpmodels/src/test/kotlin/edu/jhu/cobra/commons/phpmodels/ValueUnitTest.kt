@@ -12,6 +12,7 @@ import kotlin.test.assertNull
  * otherwise (PHP 8.5.11): a call whose flag is unknown has the kinds
  * {STR, BOOL}.
  *
+ * - `join preserves distinct callback declarations` — possible invoked callables survive joins.
  * - `a unit built from one kind holds that kind alone` — the kind-set view of
  *   a single declared returns.
  * - `a unit holds a set of kinds` — two kinds are one unit, not `ANY`.
@@ -26,6 +27,20 @@ import kotlin.test.assertNull
  *   with itself is the unit.
  */
 internal class ValueUnitTest {
+    @Test
+    fun `join preserves distinct callback declarations`() {
+        val first = CallbackInvocation(
+            CallbackSelector.Argument(position = 0), CallbackSupply.ArrayElements(start = 1),
+        )
+        val second = CallbackInvocation(
+            CallbackSelector.Argument(position = 1), CallbackSupply.ArrayElements(start = 2),
+        )
+        val left = ValueUnit(ReturnKind.ANY, emptyList(), callbacks = listOf(first))
+        val right = ValueUnit(ReturnKind.ANY, emptyList(), callbacks = listOf(first, second))
+        assertEquals(listOf(first, second), left.join(right).callbacks)
+        assertEquals(left, left.join(left))
+    }
+
     private val argumentToReturn = Propagation(from = Port.Argument(0), to = Port.Return)
     private val receiverToReturn = Propagation(from = Port.Receiver, to = Port.Return)
 

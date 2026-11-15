@@ -80,6 +80,7 @@ public data class VocabularyMapping(
             sinks = body.sinks?.mapNotNull(::apply)?.ifEmpty { null },
             sanitizers = body.sanitizers?.mapNotNull(::apply)?.ifEmpty { null },
             throws = body.throws,
+            callbacks = body.callbacks,
         )
 
     private fun apply(source: SourceDecl): SourceDecl? {
