@@ -13,7 +13,7 @@
 - **Source:** `ModelSubject.kt` `ModelSubject`; `OperationSubject.kt` `OperationSubject`
 
 ### Section
-- **Definition:** One aspect of a Model: returns, propagation, characters, callbacks, sources, sinks, sanitizers, throws or signature, with omission leaving that aspect unstated unless declared returns fixes omitted propagation to the empty flow set.
+- **Definition:** One aspect of a Model: returns, propagation, characters, callbacks, effects, sources, sinks, sanitizers, throws or signature, with omission leaving that aspect unstated unless declared returns fixes omitted propagation to the empty flow set.
 - **Example:** `returns: str` → the returns Section of a Model.
 - **Source:** `ModelBody.kt` `ModelBody`; `docs/model.md` Entities
 
@@ -38,7 +38,7 @@
 - **Source:** `ArgPattern.kt` `ArgPattern`; `docs/model-conditions.md`
 
 ### Value unit
-- **Definition:** The coupled statement of the returns, propagation, characters and callbacks sections of a Model, which one declaration replaces whole: a non-empty set of Return Classification values, the exhaustive set of propagations, an optional character bound, and the declared callable invocations with their input supplies.
+- **Definition:** The coupled statement of the returns, propagation, characters, callbacks and effects sections of a Model, which one declaration replaces whole: a non-empty set of Return Classification values, the exhaustive set of propagations, an optional character bound, the immediate callback declarations with their input supplies, and the optional effects assertion `effects: []`, which states that after parameter reception the native operation terminates normally apart from separately declared raises, depends only on the declared inputs, and has no observable interaction besides its declared port flows, immediate invocations and separately modeled raises.
 - **Example:** A model declaring returns `str` and no propagation → the Value unit of classification str with no flow.
 - **Source:** `ModelBody.kt` `ValueUnit`, `ModelBody` method `valueUnit`
 

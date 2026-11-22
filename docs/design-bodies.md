@@ -106,7 +106,7 @@ misuse (`IllegalArgumentException`).
 
 ### ModelBody
 
-**Responsibility:** The sectioned statement of one model: eight optional
+**Responsibility:** The sectioned statement of one model: nine optional
 assertion sections. An all-absent body is constructible — a signature-only
 entry has one — and the at-least-one-section rule therefore lives at the
 entry level, where the signature is visible: `ModelEntry` requires a
@@ -114,13 +114,15 @@ signature or a non-empty body ([design-entries.md](design-entries.md)).
 
 **State/Fields:** `returns: ReturnKind?`, `propagation: List<Propagation>?`,
 `characters: CharacterBound?`, `sources: List<SourceDecl>?`, `sinks: List<SinkDecl>?`,
-`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (each element decoded by the `ClassSubject` creator; empty = throws none), `callbacks: List<CallbackInvocation>?`.
+`sanitizers: List<SanitizerDecl>?`, `throws: Set<ClassSubject>?` (each element decoded by the `ClassSubject` creator; empty = throws none), `callbacks: List<CallbackInvocation>?`, `effects: List<Nothing>?` (null = no assertion; the empty list = the effects assertion `effects: []`; the element type admits no element).
 
-**Validation (`init`):** propagation, characters and callbacks each require returns
+**Validation (`init`):** propagation, characters, callbacks and effects each require returns
 (the Value unit is asserted whole or not at all — the
-signature-derived completion happens in the entry, before construction);
-each `characters.of` port is the from-port of a declared flow into
-`Port.Return`; a declared section other than `throws` is non-empty.
+signature-derived completion happens in the entry, before construction),
+so a present effects section is empty and requires returns in the
+constructed body; each `characters.of` port is the from-port of a declared
+flow into `Port.Return`; a declared section other than `throws` and
+`effects` is non-empty.
 
 **Methods:** `isEmpty: Boolean`; `declaresOnlySources: Boolean`;
 `namesReceiverPort: Boolean` — a propagation side names `Port.Receiver`;
@@ -131,17 +133,19 @@ each `characters.of` port is the from-port of a declared flow into
 ### ValueUnit
 
 **Responsibility:** The Value unit a lookup serves: the set of Return Classification values (`returns: Set<ReturnKind>`, never empty), the exhaustive
-propagation set, `characters: CharacterBound?`, and `callbacks: List<CallbackInvocation>` (empty by default). A body declares one
+propagation set, `characters: CharacterBound?`, `callbacks: List<CallbackInvocation>` (empty by default), and `effects: List<Nothing>?` (null by default). A body declares one
 classification, so `ValueUnit(returns: ReturnKind, ...)` builds the unit of
 that one kind; the set grows only through `join`. An absent propagation
 section in the declaring body becomes the empty list — no flow, not unknown
-flow; an absent characters section stays null — no bound.
+flow; an absent characters section stays null — no bound. The immutable
+Value unit carries the effects assertion from the body that declares it;
+an absent effects section stays null — no assertion.
 
 **Validation (`init`):** the classification set is non-empty.
 
 **Methods:** `fun join(other: ValueUnit): ValueUnit` — the union of the
 classifications, the distinct flows of both (this unit's first), and the
-characters bound when both units carry equal bounds, else null. Callback declarations join by distinct union in declaration order.
+characters bound when both units carry equal bounds, else null. Callback declarations join by distinct union in declaration order. A join retains the effects assertion only if every operand states it, else null.
 
 ### CallbackInvocation
 

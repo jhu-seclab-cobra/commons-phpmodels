@@ -35,13 +35,22 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
 - **[Model](glossary/glossary-models.md#model)** — The single declarative statement attached to one Matching Subject. Composed of sections; existence condition: at least one section
   present. An entry may carry a Condition, making it one alternative of
   the subject's model ([model-conditions.md](model-conditions.md)). Section kinds:
-  - *returns* — the classification of the call result.
-  - *propagation* — a set of declared flows, each from one input port to a
-    different port of the same call. Together with *returns* it
-    forms the **[Value unit](glossary/glossary-models.md#value-unit)**: declaring *returns* asserts the flow
-    set exhaustively (absent propagation means no flow); *propagation*
-    without *returns* does not exist. Optional *callbacks* declarations belong to the same whole unit; absence declares no immediate invocation. Each declaration selects a callable argument and a supply of its input values. A unit holds a non-empty set of
+  - *returns* — the classification of the call result. Together with *propagation*, *characters*, *callbacks* and *effects* it forms the
+    **[Value unit](glossary/glossary-models.md#value-unit)**: the return classifications, exhaustive port flows, character bound, immediate
+    callback declarations and optional effects assertion. Each of the four other sections requires *returns*. A unit holds a non-empty set of
     classifications; its join: [model-conditions.md](model-conditions.md).
+  - *propagation* — a set of declared flows, each from one input port to a different port of the same call. Declaring *returns* asserts
+    the flow set exhaustively: absent propagation means no flow.
+  - *callbacks* — the immediate callback declarations. Each declaration selects a callable argument and a supply of its input values;
+    absence declares no immediate invocation.
+  - *effects* — the optional effects assertion. For the subject and inputs of a unit, `effects: []` asserts that after parameter reception
+    the native operation terminates normally apart from separately declared raises, its observable results depend only on the declared
+    inputs, and its declared port flows, immediate invocations and separately modeled raises exhaust its observable interactions. This
+    assertion covers observable reads as well as writes, diagnostics, output, changes to declarations, engine or external state and deferred
+    work. Reception, conversions, implicit invocation and the effects of invoked code require separate coverage. Omission supplies no
+    assertion. `strlen` declares `effects: []`: `strlen("abc")` returns `3`, the length in bytes of the received string, and reads, writes
+    and emits nothing else; `strlen([])` raises `TypeError` during parameter reception, which the assertion does not cover. Admissibility:
+    [model-declarations.md](model-declarations.md).
   - *characters*  — the bytes the call result may
     hold: only bytes of the listed argument ports (*of*), only bytes of one
     Character Class (*within*), or both, each bound narrowing the other.
@@ -49,7 +58,7 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
     to: a scalar's string form, an object's `__toString` result, and for an
     array the call reads element by element, each element's conversion, a
     nested array converting to `Array` (PHP 8.5.11 gives `Arrayb` for
-    `str_replace(["a"], [["x"]], "ab")`). Third part of the
+    `str_replace(["a"], [["x"]], "ab")`). Part of the
     Value unit: it requires *returns*, and its absence states no
     bound. `basename` declares *of* `argument(0)` *within* every byte but
     `/`: PHP 8.5.11 gives `passwd` for `basename("../../etc/passwd")`.
@@ -86,7 +95,7 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
   Rows sharing a Source kind accumulate by union.
 - **[Override Unit](glossary/glossary-models.md#override-unit)** — The granularity at which one declaration replaces
   another for the same subject: the Value unit (returns together
-  with propagation, characters and callbacks), sources, sinks, sanitizers, throws, or the signature. A
+  with propagation, characters, callbacks and effects), sources, sinks, sanitizers, throws, or the signature. A
   declaration replaces a unit whole, never merges inside one. How layered
   configuration sources apply this granularity is consumer behavior; the
   unit boundaries are fixed here.
@@ -140,6 +149,7 @@ model, driven by the declarations defined here.
   the dynamic invocation operation; neither the receiver nor the return is a sink.
   A callee port in declaration behavior or operation behavior besides callee sinks is a load failure.
 - A callbacks section requires returns, is non-empty when declared, and is admitted only for callable subjects. Its declarations are replaced with the whole Value unit and unioned when candidate units join.
+- An effects section requires returns, is the empty sequence when declared, and is admitted only on a function or method entry without a signature ([model-declarations.md](model-declarations.md)). It is replaced with the whole Value unit; a join retains it only if every operand states it.
 - A propagation section requires a returns section in the same declaration.
   Propagation without returns is a load failure. Exception: a declaration
   carrying a signature derives its returns half from the declared return
@@ -157,13 +167,11 @@ model, driven by the declarations defined here.
 - The *returns*, *propagation*, *characters*, and *throws* sections are declared only for
   callable subjects. A class subject declares no assertion section. Every other non-callable
   kind — constant, class constant, property, predefined variable — admits only *sources*.
-- A sources section produces a non-empty Source kind set. A sinks section
-  is non-empty and each element names one argument port and one
+- A sources section produces a non-empty Source kind set. A sinks section is non-empty and each element names one argument port and one
   Vulnerability type. A sanitizers element names a non-empty Vulnerability type set, or a check: one argument port, a scalar accepting value, and
-  Vulnerability type entries, a class, or a type set other than `void`. A throws
-  section is the one section a declared empty value is a statement of: no
-  class, distinct from the absent section, which asserts nothing. Each
-  throws element is a class name, spelled and folded as a class subject.
+  Vulnerability type entries, a class, or a type set other than `void`. The throws and effects sections are the two sections a declared
+  empty value is a statement of: `throws: []` states no class, `effects: []` is the effects assertion, and each absent section asserts
+  nothing. Each throws element is a class name, spelled and folded as a class subject.
 - A source element's explicit production site is an argument port of a
   callable subject: explicit *return* is a load failure (the default
   already states it), and a non-callable subject admits no explicit site.

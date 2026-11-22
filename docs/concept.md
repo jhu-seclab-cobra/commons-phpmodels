@@ -63,7 +63,7 @@ vocabulary mapping (consumer-supplied) ── translates a set's names ───
 
 **[Section](glossary/glossary-models.md#section)** — Role: Separates independently declared aspects of a Model.
 - Scope: omission follows the coupling invariants of [the model](model.md#invariants); *returns*,
-  *propagation*, and *characters* form one coupled statement, the Value unit
+  *propagation*, *characters*, *callbacks* and *effects* form one coupled statement, the Value unit
   ([model.md](model.md)).
 - Relationships: composes a Model; its positional references are Ports.
 

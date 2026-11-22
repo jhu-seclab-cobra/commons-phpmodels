@@ -143,19 +143,20 @@ alternatives of the declared type itself.
 - Value-unit coupling — the unit stays one exhaustive statement
   ([model.md](model.md)); the signature changes only where its returns half
   comes from:
-  - Signature present, propagation declared → the unit is asserted: returns
-    derived from the declared return type, flows and characters exactly as
-    declared.
-  - Signature present, no propagation → **no Value unit**. Existence
-    is asserted; value flow stays at the consumer's conservative default in
-    which every argument influences the result. Absence of a flow annotation
-    in the upstream data is not purity, so a characters section here is a
-    load failure: it has no returns to complete.
-  - Signature present, explicit `returns` → load failure: one fact, one
-    source. A purity assertion (returns with an empty flow set) is a
-    hand-written statement and belongs in a higher layer without a signature.
-  - No signature (hand-written form) → explicit returns asserts the unit
-    exhaustively.
+  - Signature present, propagation or callbacks declared → the unit is asserted: returns derived from the declared return type,
+    flows, characters and callback declarations exactly as declared.
+  - Signature present, neither propagation nor callbacks → **no Value unit**. Existence is asserted; value flow stays at the
+    consumer's conservative default in which every argument influences the result. Absence of a flow annotation in the upstream
+    data is not purity, so a characters section here is a load failure: it has no returns to complete.
+  - Signature present, explicit `returns` → load failure: one fact, one source. A purity assertion (returns with an empty flow
+    set) is a hand-written statement and belongs in a higher layer without a signature.
+  - Signature present, effects declared → load failure. An effects assertion belongs to a hand-written function or method entry
+    with explicit returns and no signature. Before deriving returns, the entry creator checks the raw subject, signature and
+    explicit returns and rejects an inadmissible assertion.
+  - No signature (hand-written form) → explicit returns asserts the unit exhaustively; on a function or method subject it may carry
+    the effects assertion. At the section decoding boundary, omission and an explicitly empty sequence remain distinct through
+    serialization: an omitted effects section decodes to no assertion, `effects: []` to the assertion. An explicit null, a nonempty
+    sequence or any other value is invalid.
 
 
 ## Cross-Structure Contracts

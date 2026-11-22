@@ -45,7 +45,7 @@ An alternatives match reads omitted constrained positions from the supplied scal
 ## Cross-Structure Contracts
 
 - The library defines matching and [Value unit](glossary/glossary-models.md#value-unit) join; the consumer selects the participating entries and decides how to use an undecidable outcome.
-- Joining two Value unit instances unions their Return Classification values and Propagation values, retaining the characters bound only when both operands state equal bounds.
+- Joining two Value unit instances unions their Return Classification values, Propagation values and callback declarations, retaining the characters bound only when both operands state equal bounds and the effects assertion only if every operand states it.
 - The join operation selects no Model and assigns no priority to a Condition.
 - Combining Document Set entries uses the consumer's rule for Matching Subject, Condition and Override Unit, ranked by Set Provenance where that consumer requires it.
 
