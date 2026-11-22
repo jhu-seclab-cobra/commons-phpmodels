@@ -18,7 +18,8 @@ import kotlin.test.assertTrue
  *   only vulnerability types is removed.
  * - `entry emptied …` — an entry without a signature that loses its last
  *   section is null; one with a signature keeps the signature.
- * - `value units pass through` — returns and propagation are untouched.
+ * - `value units pass through` — returns, propagation and the effects
+ *   assertion are untouched.
  * - `throws passes through` — the throws section names classes, not
  *   vocabulary names, and is untouched.
  * - `subject condition signature and ports pass through` — translation
@@ -148,6 +149,7 @@ internal class VocabularyMappingTest {
                 propagation:
                   - from: argument(0)
                     to: return
+                effects: []
                 sinks:
                   - port: argument(0)
                     vulnType: html
@@ -155,6 +157,7 @@ internal class VocabularyMappingTest {
             )
         val translated = assertIs<ModelEntry>(mapping.apply(entry))
         assertEquals(entry.body.valueUnit(), translated.body.valueUnit())
+        assertEquals(emptyList(), translated.body.effects)
         val sinks = translated.body.sinks.orEmpty()
         assertEquals(listOf(VulnTypeId("xss")), sinks.map { it.vulnType })
     }

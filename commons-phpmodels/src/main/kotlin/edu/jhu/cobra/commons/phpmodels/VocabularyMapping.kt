@@ -81,6 +81,7 @@ public data class VocabularyMapping(
             sanitizers = body.sanitizers?.mapNotNull(::apply)?.ifEmpty { null },
             throws = body.throws,
             callbacks = body.callbacks,
+            effects = body.effects,
         )
 
     private fun apply(source: SourceDecl): SourceDecl? {

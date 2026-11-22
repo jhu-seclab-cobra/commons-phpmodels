@@ -25,6 +25,8 @@ import kotlin.test.assertNull
  *   it when the bounds differ or one unit has none.
  * - `join is commutative on the kind set and idempotent` — the join of a unit
  *   with itself is the unit.
+ * - `join keeps the effects assertion only when both units state it` — a unit
+ *   without the assertion withholds it from the join, in either order.
  */
 internal class ValueUnitTest {
     @Test
@@ -99,5 +101,15 @@ internal class ValueUnitTest {
         val right = ValueUnit(ReturnKind.BOOL, listOf(receiverToReturn))
         assertEquals(left.join(right).returns, right.join(left).returns)
         assertEquals(left, left.join(left))
+    }
+
+    @Test
+    fun `join keeps the effects assertion only when both units state it`() {
+        val asserted = ValueUnit(ReturnKind.NUM, listOf(argumentToReturn), effects = emptyList())
+        val unasserted = ValueUnit(ReturnKind.NUM, listOf(argumentToReturn))
+        assertEquals(emptyList(), asserted.join(asserted).effects)
+        assertNull(asserted.join(unasserted).effects)
+        assertNull(unasserted.join(asserted).effects)
+        assertNull(unasserted.join(unasserted).effects)
     }
 }

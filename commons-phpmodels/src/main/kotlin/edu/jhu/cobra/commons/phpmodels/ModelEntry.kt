@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 /**
  * One model: the subject it identifies and the sectioned statement asserted
  * for it, under an optional condition. The subject is the entry's identity —
- * the form carries no name. The eight section fields decode flat beside
+ * the form carries no name. The nine section fields decode flat beside
  * `subject`, with no wrapper key.
  *
  * An entry carrying a `when:` condition holds for the calls its pattern
@@ -58,6 +58,9 @@ public data class ModelEntry(
         }
         require(subject is MethodSubject || !body.namesReceiverPort) {
             "Entry for $subject names the receiver port; 'this' exists only in a call to a method"
+        }
+        require(body.effects == null || admitsEffects(subject, signature != null)) {
+            "Entry for $subject states effects; the assertion belongs to a function or method entry without a signature"
         }
         if (subject is OperationSubject) {
             validateOperation()
@@ -199,6 +202,13 @@ public data class ModelEntry(
             @JsonProperty("signature") signature: JsonNode?,
             @JsonUnwrapped sections: SectionFields,
         ): ModelEntry {
+            // The effects assertion is checked against the raw entry before any
+            // returns derivation, so a derived classification never admits it.
+            val admitted = admitsEffects(subject, signature != null) && sections.returns != null
+            require(sections.effects == null || admitted) {
+                "Entry for $subject states effects; the assertion belongs to a function or method entry " +
+                    "with explicit returns and no signature"
+            }
             val decoded = signature?.let { narrowSignature(subject, it) }
             val callable = decoded as? CallableSignature
             require(sections.returns == null || callable == null) {
@@ -223,6 +233,13 @@ public data class ModelEntry(
             return ModelYaml.narrow(node, expected.java)
         }
 
+        // The one authority for where an effects assertion stands: a hand-written
+        // function or method entry, which declares no signature.
+        private fun admitsEffects(
+            subject: ModelSubject,
+            signed: Boolean,
+        ): Boolean = (subject is FunctionSubject || subject is MethodSubject) && !signed
+
         // The one authority for the subject-kind → signature-subtype mapping;
         // the admissibility check and the decode-time narrowing both read it.
         // Null marks the kind whose entries admit no signature.
@@ -238,12 +255,14 @@ public data class ModelEntry(
 }
 
 /**
- * The eight section fields as they decode flat beside `subject`, gathered into
+ * The nine section fields as they decode flat beside `subject`, gathered into
  * the creator through one `@JsonUnwrapped` parameter — before the
  * signature-derived returns completion, so [ModelBody]'s
  * propagation-requires-returns rule stays out of the raw decode. Each
  * `throws` element is a bare class-name scalar decoded by the [ClassSubject]
- * creator (impl.md).
+ * creator (impl.md). `effects` stays the raw node: an omitted key leaves it
+ * null, while an explicit null arrives as a null node and is rejected with
+ * every value other than the empty sequence (impl.md).
  */
 internal data class SectionFields(
     val returns: ReturnKind? = null,
@@ -254,10 +273,21 @@ internal data class SectionFields(
     val sanitizers: List<SanitizerDecl>? = null,
     val throws: Set<ClassSubject>? = null,
     val callbacks: List<CallbackInvocation>? = null,
+    val effects: JsonNode? = null,
 ) {
     /** The entry's body, with [returns] completed by the enclosing creator. */
     fun complete(returns: ReturnKind?): ModelBody =
-        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, throws, callbacks)
+        ModelBody(returns, propagation, characters, sources, sinks, sanitizers, throws, callbacks, effectsAssertion())
+
+    // Omission is no assertion; the empty sequence is the assertion; any other
+    // node, the null node included, is invalid.
+    private fun effectsAssertion(): List<Nothing>? =
+        effects?.let { node ->
+            require(node.isArray && node.isEmpty) {
+                "The effects section is the empty sequence 'effects: []', not $node"
+            }
+            emptyList()
+        }
 
     // The unwrapped path funnels every key the creator does not name into this
     // holder and would ignore the unknown ones; this rejector restores the

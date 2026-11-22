@@ -178,28 +178,30 @@ public data class SinkDecl(
 )
 
 /**
- * The sectioned statement of one model: eight optional assertion sections.
+ * The sectioned statement of one model: nine optional assertion sections.
  *
- * `returns`, `propagation`, `characters`, and `callbacks` form one value unit:
- * declaring `returns` asserts the flow set exhaustively, so an absent
- * propagation section means the result is unrelated to the arguments.
- * Declaring `propagation` or `characters` alone is a load failure — the unit
- * is asserted whole or not at all. A byte copied into the result is a flow
- * into it, so each `characters.of` port is the source of a declared flow into
- * the result.
+ * `returns`, `propagation`, `characters`, `callbacks` and `effects` form one
+ * value unit: declaring `returns` asserts the flow set exhaustively, so an
+ * absent propagation section means the result is unrelated to the arguments.
+ * Declaring `propagation`, `characters`, `callbacks` or `effects` alone is a
+ * load failure — the unit is asserted whole or not at all. A byte copied into
+ * the result is a flow into it, so each `characters.of` port is the source of
+ * a declared flow into the result.
  *
  * An all-absent body is constructible — a signature-only entry has one — and
  * the at-least-one-section rule therefore lives at the entry level, where the
  * signature is visible: `ModelEntry` requires a signature or a non-empty
  * body.
  *
- * `throws` is the one section whose declared empty value is a statement: the
- * implementation throws no class. Each element is an exact class, spelled and
- * folded as a class subject.
+ * `throws` and `effects` are the two sections whose declared empty value is a
+ * statement: `throws: []` states the implementation throws no class, and
+ * `effects: []` is the effects assertion; null is no assertion. Each `throws`
+ * element is an exact class, spelled and folded as a class subject.
  *
- * @throws IllegalArgumentException If propagation or characters comes without
- *   returns, a `characters.of` port has no declared flow into the result, or a
- *   declared section other than `throws` is empty.
+ * @throws IllegalArgumentException If propagation, characters, callbacks or
+ *   effects comes without returns, a `characters.of` port has no declared flow
+ *   into the result, a declared effects section holds an element, or a declared
+ *   section other than `throws` and `effects` is empty.
  */
 public data class ModelBody(
     val returns: ReturnKind? = null,
@@ -210,8 +212,13 @@ public data class ModelBody(
     val sanitizers: List<SanitizerDecl>? = null,
     val throws: Set<ClassSubject>? = null,
     val callbacks: List<CallbackInvocation>? = null,
+    val effects: List<Nothing>? = null,
 ) {
     init {
+        require(effects == null || returns != null) {
+            "Effects without returns: the value unit is asserted whole or not at all"
+        }
+        require(effects.isNullOrEmpty()) { "A declared effects section is the empty sequence" }
         require(propagation == null || returns != null) {
             "Propagation without returns: the value unit is asserted whole or not at all"
         }
@@ -248,7 +255,7 @@ public data class ModelBody(
     private val declaresNothingBesidesSources: Boolean
         get() =
             returns == null && propagation == null && characters == null && callbacks == null &&
-                sinks == null && sanitizers == null && throws == null
+                effects == null && sinks == null && sanitizers == null && throws == null
 
     /** True when no section is declared. */
     public val isEmpty: Boolean
@@ -271,32 +278,38 @@ public data class ModelBody(
 
     /** The value unit this body asserts, or null when returns is undeclared. */
     public fun valueUnit(): ValueUnit? =
-        returns?.let { ValueUnit(it, propagation.orEmpty(), characters, callbacks.orEmpty()) }
+        returns?.let { ValueUnit(it, propagation.orEmpty(), characters, callbacks.orEmpty(), effects) }
 }
 
 /**
  * The value unit a lookup serves: the classifications the call result may
- * have, together with the exhaustive propagation set and the optional
- * character bound. A body declares one classification; a unit holds several
- * once a consumer joins the units of the alternatives a call may take
- * ([join]). An absent propagation section in the declaring body becomes the
- * empty list here — no flow, not unknown flow; an absent characters section
- * stays null — no bound.
+ * have, together with the exhaustive propagation set, the optional character
+ * bound, the immediate callback declarations and the optional effects
+ * assertion. A body declares one classification; a unit holds several once a
+ * consumer joins the units of the alternatives a call may take ([join]). An
+ * absent propagation section in the declaring body becomes the empty list
+ * here — no flow, not unknown flow; an absent characters section stays null —
+ * no bound; an absent effects section stays null — no assertion.
  *
  * @property returns Classifications of the call's result; never empty.
  * @property propagation Every declared port-to-port flow.
  * @property callbacks The explicitly invoked callables and their input supplies.
  * @property characters The bytes the result may hold, or null when unbounded.
- * @throws IllegalArgumentException If [returns] is empty.
+ * @property effects The empty list when the declaring body states `effects: []`,
+ *   or null when it asserts nothing.
+ * @throws IllegalArgumentException If [returns] is empty, or [effects] holds an
+ *   element.
  */
 public data class ValueUnit(
     val returns: Set<ReturnKind>,
     val propagation: List<Propagation>,
     val characters: CharacterBound? = null,
     val callbacks: List<CallbackInvocation> = emptyList(),
+    val effects: List<Nothing>? = null,
 ) {
     init {
         require(returns.isNotEmpty()) { "A value unit holds at least one returns classification" }
+        require(effects.isNullOrEmpty()) { "An effects assertion is the empty list" }
     }
 
     /** The unit a body declaring the single classification [returns] asserts. */
@@ -305,12 +318,14 @@ public data class ValueUnit(
         propagation: List<Propagation>,
         characters: CharacterBound? = null,
         callbacks: List<CallbackInvocation> = emptyList(),
-    ) : this(setOf(returns), propagation, characters, callbacks)
+        effects: List<Nothing>? = null,
+    ) : this(setOf(returns), propagation, characters, callbacks, effects)
 
     /**
-     * The unit covering both: the union of the classifications and of the
-     * flows (this unit's flows first), and the character bound only when both
-     * units declare it identically.
+     * The unit covering both: the union of the classifications, of the flows
+     * (this unit's flows first) and of the callback declarations, the character
+     * bound only when both units declare it identically, and the effects
+     * assertion only when both units state it.
      */
     public fun join(other: ValueUnit): ValueUnit =
         ValueUnit(
@@ -318,5 +333,6 @@ public data class ValueUnit(
             propagation = (propagation + other.propagation).distinct(),
             characters = characters.takeIf { it == other.characters },
             callbacks = (callbacks + other.callbacks).distinct(),
+            effects = effects?.takeIf { other.effects != null },
         )
 }
