@@ -8,6 +8,9 @@ plugins {
     alias(libs.plugins.detekt) apply false
 }
 
+val publicationVersion = libs.versions.projectVersion.get()
+val ktlintEngineVersion = libs.versions.ktlintEngine.get()
+
 val minJavaProperty = providers.gradleProperty("minJava").get()
 val minJava =
     minJavaProperty.toIntOrNull()?.takeIf { it >= 8 }
@@ -24,7 +27,6 @@ if (runningJavaVersion < targetJavaVersion) {
 // Shared configuration for all library subprojects.
 // Each submodule's build.gradle.kts only needs to declare its own dependencies.
 subprojects {
-
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "org.jetbrains.kotlinx.kover")
     apply(plugin = "java-library")
@@ -33,11 +35,16 @@ subprojects {
     apply(plugin = "io.gitlab.arturbosch.detekt")
 
     group = "edu.jhu.cobra"
-    version = "0.12.0"
+    version = publicationVersion
 
     repositories {
         mavenCentral()
         maven { url = uri("https://jitpack.io") }
+    }
+
+    // kotlin("test") resolves to its JUnit 5 variant because useJUnitPlatform is set.
+    dependencies {
+        "testImplementation"(kotlin("test"))
     }
 
     configure<KotlinJvmProjectExtension> {
@@ -59,23 +66,12 @@ subprojects {
         options.release.set(minJava)
     }
 
-    // kotlin("test") resolves to its JUnit 5 variant because useJUnitPlatform is set.
-    dependencies {
-        "testImplementation"(kotlin("test"))
-    }
-
     tasks.withType<Test> {
         useJUnitPlatform()
     }
 
-    configure<PublishingExtension> {
-        publications {
-            create<MavenPublication>("maven") { from(components["java"]) }
-        }
-    }
-
     configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-        version.set("1.8.0")
+        version.set(ktlintEngineVersion)
         verbose.set(true)
         android.set(false)
         outputToConsole.set(true)
@@ -88,5 +84,11 @@ subprojects {
     configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
         buildUponDefaultConfig = true
         parallel = true
+    }
+
+    configure<PublishingExtension> {
+        publications {
+            create<MavenPublication>("maven") { from(components["java"]) }
+        }
     }
 }
