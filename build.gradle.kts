@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 plugins {
@@ -7,7 +8,18 @@ plugins {
     alias(libs.plugins.detekt) apply false
 }
 
-val jvmVersion = libs.versions.jvm.get().toInt()
+val minJavaProperty = providers.gradleProperty("minJava").get()
+val minJava =
+    minJavaProperty.toIntOrNull()?.takeIf { it >= 8 }
+        ?: throw GradleException("minJava must be a Java version of 8 or later, got '$minJavaProperty'.")
+val targetJavaVersion = JavaVersion.toVersion(minJava)
+val runningJavaVersion = JavaVersion.current()
+if (runningJavaVersion < targetJavaVersion) {
+    throw GradleException(
+        "minJava=$minJava requires JDK $minJava or later to run Gradle. " +
+            "Gradle is running on JDK ${runningJavaVersion.majorVersion}.",
+    )
+}
 
 // Shared configuration for all library subprojects.
 // Each submodule's build.gradle.kts only needs to declare its own dependencies.
@@ -30,14 +42,21 @@ subprojects {
 
     configure<KotlinJvmProjectExtension> {
         explicitApi()
-        jvmToolchain {
-            languageVersion.set(JavaLanguageVersion.of(jvmVersion))
+        compilerOptions {
+            jvmTarget.set(JvmTarget.fromTarget(targetJavaVersion.toString()))
+            freeCompilerArgs.add("-Xjdk-release=$minJava")
         }
     }
 
     configure<JavaPluginExtension> {
+        sourceCompatibility = targetJavaVersion
+        targetCompatibility = targetJavaVersion
         withSourcesJar()
         withJavadocJar()
+    }
+
+    tasks.withType<JavaCompile>().configureEach {
+        options.release.set(minJava)
     }
 
     // kotlin("test") resolves to its JUnit 5 variant because useJUnitPlatform is set.
