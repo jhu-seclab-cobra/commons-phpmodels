@@ -94,6 +94,8 @@ caller.
   side, a source element's explicit site — names a by-reference parameter.
   A position beyond the parameter list is reachable only through a variadic
   tail and resolves to the variadic parameter's by-reference flag.
+  An entry without a signature is not checked, so a hand value rule may write into an argument that holds an object
+  and is not by-reference: the content the call puts into it, as a stream writer puts data into its stream.
 - A `void` return type declares there is no result: a propagation into
   `return` beside it is a load failure.
 
