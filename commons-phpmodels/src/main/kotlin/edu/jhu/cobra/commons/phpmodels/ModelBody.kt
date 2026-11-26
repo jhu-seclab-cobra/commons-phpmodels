@@ -12,16 +12,23 @@ import com.fasterxml.jackson.annotation.JsonCreator
  * @property from The input port the data leaves: an argument, the receiver, or
  *   a callback return.
  * @property to The port the data reaches: the result, or a different port.
- * @throws IllegalArgumentException If a side is missing or doubled, or the flow
- *   targets its own source port.
+ * @property unchanged True when the call returns the value of [from] itself,
+ *   not a new value the flow reaches; the flow then targets the result.
+ * @throws IllegalArgumentException If a side is missing or doubled, the flow
+ *   targets its own source port, or an unchanged flow targets another port than
+ *   the result.
  */
 @ConsistentCopyVisibility
 public data class Propagation private constructor(
     val from: Port.Input,
     val to: Port,
+    val unchanged: Boolean,
 ) {
     init {
         require(to != from) { "Propagation from $from targets its own source port" }
+        require(!unchanged || to == Port.Return) {
+            "Propagation from $from returns its value unchanged but targets $to, not the result"
+        }
     }
 
     public companion object {
@@ -33,10 +40,12 @@ public data class Propagation private constructor(
             input: Port.Input? = null,
             to: Port? = null,
             output: Port? = null,
+            unchanged: Boolean = false,
         ): Propagation =
             Propagation(
                 exactlyOne("from" to from, "input" to input),
                 exactlyOne("to" to to, "output" to output),
+                unchanged,
             )
     }
 }

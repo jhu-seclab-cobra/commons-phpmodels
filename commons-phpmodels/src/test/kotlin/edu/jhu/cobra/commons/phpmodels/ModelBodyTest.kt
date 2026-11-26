@@ -48,6 +48,10 @@ import kotlin.test.assertNull
  *   flow, not unknown flow; null when returns is undeclared.
  * - `equal propagations agree on hash code and spelling` — equality over the
  *   resolved pair, hash-code agreement, and the toString form.
+ * - `unchanged flow differs from the plain flow` — the statement that the call
+ *   returns the input's value itself is part of the flow's equality.
+ * - `unchanged flow targets the result only` — an unchanged flow into any other
+ *   port is rejected.
  */
 internal class ModelBodyTest {
     @Test
@@ -86,7 +90,26 @@ internal class ModelBodyTest {
         val plain = Propagation(from = Port.Argument(0), to = Port.Return)
         val synonym = Propagation(input = Port.Argument(0), output = Port.Return)
         assertEquals(plain.hashCode(), synonym.hashCode())
-        assertEquals("Propagation(from=argument(0), to=return)", plain.toString())
+        assertEquals("Propagation(from=argument(0), to=return, unchanged=false)", plain.toString())
+    }
+
+    @Test
+    fun `unchanged flow differs from the plain flow`() {
+        val plain = Propagation(from = Port.Argument(0), to = Port.Return)
+        val unchanged = Propagation(from = Port.Argument(0), to = Port.Return, unchanged = true)
+        assertEquals(false, plain == unchanged)
+        assertEquals(true, unchanged.unchanged)
+        assertEquals(true, Propagation(from = Port.Receiver, to = Port.Return, unchanged = true).unchanged)
+    }
+
+    @Test
+    fun `unchanged flow targets the result only`() {
+        assertFailsWith<IllegalArgumentException> {
+            Propagation(from = Port.Argument(0), to = Port.Argument(1), unchanged = true)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            Propagation(from = Port.Argument(0), to = Port.Receiver, unchanged = true)
+        }
     }
 
     @Test

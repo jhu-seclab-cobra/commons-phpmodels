@@ -23,8 +23,8 @@
 - **Source:** `Port.kt` `Port`
 
 ### Propagation
-- **Definition:** One declared flow from an argument, receiver or callback result of a call to a different Port of that call, excluding callee.
-- **Example:** `{from: argument(0), to: return}` → the flow from the first argument to the call result.
+- **Definition:** One declared flow from an argument, receiver or callback result of a call to a different Port of that call, excluding callee. A flow into the result marked `unchanged` states that the call returns the value at its from-port itself, not a new value.
+- **Example:** `{from: argument(0), to: return}` → the flow from the first argument to the call result; `{from: this, to: return, unchanged: true}` → the call returns its receiver.
 - **Source:** `ModelBody.kt` `Propagation`
 
 ### Signature

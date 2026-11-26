@@ -21,6 +21,8 @@ import kotlin.test.assertNull
  *   a kind joined with itself stays one.
  * - `join unions the flows of both units` — each flow once, the first unit's
  *   order first.
+ * - `join keeps the unchanged flow beside the plain flow of one port` — the
+ *   two flows are distinct, so a joined unit states both alternatives.
  * - `join keeps a character bound both units declare identically` — and drops
  *   it when the bounds differ or one unit has none.
  * - `join is commutative on the kind set and idempotent` — the join of a unit
@@ -80,6 +82,14 @@ internal class ValueUnitTest {
         assertEquals(listOf(argumentToReturn, receiverToReturn), left.join(right).propagation)
         val none = ValueUnit(ReturnKind.STR, emptyList())
         assertEquals(emptyList(), none.join(none).propagation)
+    }
+
+    @Test
+    fun `join keeps the unchanged flow beside the plain flow of one port`() {
+        val unchanged = Propagation(from = Port.Argument(0), to = Port.Return, unchanged = true)
+        val left = ValueUnit(ReturnKind.ANY, listOf(unchanged))
+        val right = ValueUnit(ReturnKind.ANY, listOf(argumentToReturn))
+        assertEquals(listOf(unchanged, argumentToReturn), left.join(right).propagation)
     }
 
     @Test

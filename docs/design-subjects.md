@@ -126,8 +126,13 @@ creator — takes the synonym spellings `from`/`input` and `to`/`output` as
 four nullable parameters and resolves each side; a Jackson alias would let
 a pair naming both spellings decode silently ([impl.md](impl.md)).
 
+`unchanged: Boolean` (default false, a third constructor and factory
+parameter) states that the call returns the value at `from` itself; it is part
+of the equality, so a joined unit holds the plain and the unchanged flow of
+one port as two flows.
+
 **Validation:** exactly one spelling per side (factory); `to != from`
-(`init`).
+(`init`); `unchanged` only with `to == Port.Return` (`init`).
 
 ## Exception / Error Types
 

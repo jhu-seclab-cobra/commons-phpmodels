@@ -15,6 +15,8 @@ import kotlin.test.assertIs
  *
  * - `entry decodes subject sections and condition` — subject, returns,
  *   propagation, sinks, and when-condition of one callable entry.
+ * - `unchanged propagation decodes` — `unchanged: true` marks the flow that
+ *   returns its input's value itself, and only a flow into the result takes it.
  * - `entries of every subject kind decode` — the seven one-key subject
  *   spellings route to their subtypes.
  * - `sanitizers section decodes to its vulnerability type sets` — the fifth assertion
@@ -53,6 +55,44 @@ internal class ModelLoaderTest {
         assertEquals(ReturnKind.STR, model.body.returns)
         assertEquals(listOf(Propagation(from = Port.Argument(0), to = Port.Return)), model.body.propagation)
         assertEquals(listOf(SinkDecl(Port.Argument(0), VulnTypeId("sqli"))), model.body.sinks)
+    }
+
+    @Test
+    fun `unchanged propagation decodes`() {
+        val model =
+            loadModel(
+                """
+                - subject:
+                    method: Clock::advance
+                  returns: any
+                  propagation:
+                    - from: this
+                      to: return
+                      unchanged: true
+                    - from: argument(0)
+                      to: return
+                """.trimIndent(),
+            )
+        assertEquals(
+            listOf(
+                Propagation(from = Port.Receiver, to = Port.Return, unchanged = true),
+                Propagation(from = Port.Argument(0), to = Port.Return),
+            ),
+            model.body.propagation,
+        )
+        assertFailsWith<IllegalArgumentException> {
+            load(
+                """
+                - subject:
+                    function: pick
+                  returns: any
+                  propagation:
+                    - from: argument(0)
+                      to: argument(1)
+                      unchanged: true
+                """.trimIndent(),
+            )
+        }
     }
 
     @Test

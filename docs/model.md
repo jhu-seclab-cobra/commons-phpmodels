@@ -40,7 +40,8 @@ Vocabulary Mapping: [model-sets.md](model-sets.md).
     callback declarations and optional effects assertion. Each of the four other sections requires *returns*. A unit holds a non-empty set of
     classifications; its join: [model-conditions.md](model-conditions.md).
   - *propagation* — a set of declared flows, each from one input port to a different port of the same call. Declaring *returns* asserts
-    the flow set exhaustively: absent propagation means no flow.
+    the flow set exhaustively: absent propagation means no flow. A flow into *return* marked `unchanged: true` states that the call
+    returns the value at its from-port itself, an argument or the receiver, not a new value that the flow reaches.
   - *callbacks* — the immediate callback declarations. Each declaration selects a callable argument and a supply of its input values;
     absence declares no immediate invocation.
   - *effects* — the optional effects assertion. For the subject and inputs of a unit, `effects: []` asserts that after parameter reception
@@ -144,7 +145,7 @@ model, driven by the declarations defined here.
 - The receiver port *this* exists only in a call to a method subject: a
   model for any other subject naming it, in any section, is a load failure.
 - A propagation's from-port is an input port; its to-port is any different
-  port. *return* as a from-port, and from equals to, are load failures.
+  port. *return* as a from-port, from equals to, and an `unchanged` flow to another port are load failures.
 - A sink names an argument of a callable declaration or the callee input of
   the dynamic invocation operation; neither the receiver nor the return is a sink.
   A callee port in declaration behavior or operation behavior besides callee sinks is a load failure.
